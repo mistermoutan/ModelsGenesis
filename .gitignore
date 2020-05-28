@@ -1,0 +1,13 @@
+pytorch/datasets
+pytorch/__pycache__
+pytorch/.ipynb_checkpoints/
+__pycache__/
+
+.vscode/
+.ipynb_checkpoints/
+
+*.npy 
+*.png
+*.nii.gz
+*.vscode
+*.pt
