@@ -9,10 +9,12 @@ from torch import nn
 import torch
 from torchsummary import summary
 import sys
-from utils import *
+from image_transformations import *
+from image_transformations import generate_pair
 import unet3d
 from config import models_genesis_config
-from tqdm import tqdm
+from tqdm import tqdm 
+import random
 
 print("torch = {}".format(torch.__version__))
 
@@ -22,12 +24,16 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 conf = models_genesis_config()
 conf.display()
 
+# arrays of numpy arrays
 x_train = []
-for i,fold in enumerate(tqdm(conf.train_fold)):
+for i,fold in enumerate((conf.train_fold)):
     file_name = "bat_"+str(conf.scale)+"_s_"+str(conf.input_rows)+"x"+str(conf.input_cols)+"x"+str(conf.input_deps)+"_"+str(fold)+".npy"
     s = np.load(os.path.join(conf.data, file_name))
     x_train.extend(s)
-x_train = np.expand_dims(np.array(x_train), axis=1)
+    
+x_train = np.expand_dims(np.array(x_train), axis=1) #(2848, 64, 64, 32) -> (2848, 1, 64, 64, 32)
+index = [i for i in range(x_train.shape[0])]
+random.shuffle(index)
 
 x_valid = []
 for i,fold in enumerate(tqdm(conf.valid_fold)):
@@ -39,11 +45,11 @@ x_valid = np.expand_dims(np.array(x_valid), axis=1)
 print("x_train: {} | {:.2f} ~ {:.2f}".format(x_train.shape, np.min(x_train), np.max(x_train)))
 print("x_valid: {} | {:.2f} ~ {:.2f}".format(x_valid.shape, np.min(x_valid), np.max(x_valid)))
 
-training_generator = generate_pair(x_train,conf.batch_size, conf)
+#make x, y  for auto enconding with transformations
+training_generator = generate_pair(x_train,conf.batch_size, conf)  
 validation_generator = generate_pair(x_valid,conf.batch_size, conf)
 
-
-device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device= 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model = unet3d.UNet3D()
 model = nn.DataParallel(model, device_ids = [i for i in range(torch.cuda.device_count())])
@@ -51,7 +57,8 @@ model.to(device)
 
 print("Total CUDA devices: ", torch.cuda.device_count())
 
-summary(model, (1,conf.input_rows,conf.input_cols,conf.input_deps), batch_size=-1)
+#summary(model, (1,conf.input_rows,conf.input_cols,conf.input_deps), batch_size=-1)
+
 criterion = nn.MSELoss()
 
 if conf.optimizer == "sgd":
@@ -59,7 +66,7 @@ if conf.optimizer == "sgd":
 elif conf.optimizer == "adam":
 	optimizer = torch.optim.Adam(model.parameters(), conf.lr)
 else:
-	raise
+	raise Exception
 
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=int(conf.patience * 0.8), gamma=0.5)
 
@@ -76,8 +83,10 @@ intial_epoch =0
 num_epoch_no_improvement = 0
 sys.stdout.flush()
 
+
+#load model
 if conf.weights != None:
-	checkpoint=torch.load(conf.weights)
+	checkpoint=torch.load(conf.weights, map_location=device) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	model.load_state_dict(checkpoint['state_dict'])
 	optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 	intial_epoch=checkpoint['epoch']
@@ -89,10 +98,11 @@ for epoch in range(intial_epoch,conf.nb_epoch):
 	scheduler.step(epoch)
 	model.train()
 	for iteration in range(int(x_train.shape[0]//conf.batch_size)):
-		image, gt = next(training_generator)
-		gt = np.repeat(gt,conf.nb_class,axis=1)
-		image,gt = torch.from_numpy(image).float().to(device), torch.from_numpy(gt).float().to(device)
+		image, gt_prev = next(training_generator) #(6, 1, 64, 64, 32)
+		gt = np.repeat(gt,conf.nb_class,axis=1) #(6, 1, 64, 64, 32)
+  		#image,gt = torch.from_numpy(image).float().to(device), torch.from_numpy(gt).float().to(device)
 		pred=model(image)
+		print(pred.shape)
 		loss = criterion(pred,gt)
 		optimizer.zero_grad()
 		loss.backward()

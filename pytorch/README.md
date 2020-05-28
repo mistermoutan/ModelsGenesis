@@ -122,7 +122,7 @@ optimizer = torch.optim.SGD(model.parameters(), config.lr, momentum=0.9, weight_
 
 for epoch in range(intial_epoch, config.nb_epoch):
     scheduler.step(epoch)
-    target_model.train()
+    model.train()
     for batch_ndx, (x,y) in enumerate(train_loader):
         x, y = x.float().to(device), y.float().to(device)
         pred = model
