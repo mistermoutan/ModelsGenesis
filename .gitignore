@@ -2,7 +2,7 @@ pytorch/datasets
 pytorch/__pycache__
 pytorch/.ipynb_checkpoints/
 __pycache__/
-
+pretrained_weights/
 .vscode/
 .ipynb_checkpoints/
 
