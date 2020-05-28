@@ -11,3 +11,4 @@ pretrained_weights/
 *.nii.gz
 *.vscode
 *.pt
+*.ipynb
