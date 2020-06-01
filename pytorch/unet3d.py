@@ -30,7 +30,7 @@ class LUConv(nn.Module):
         elif act == 'elu':
             self.activation = nn.ELU(inplace=True)
         else:
-            raise
+            raise NotImplementedError
 
     def forward(self, x):
         out = self.activation(self.bn1(self.conv1(x)))
