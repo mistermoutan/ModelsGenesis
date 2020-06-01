@@ -157,8 +157,8 @@ def image_out_painting(x):
                 
 
 
-def generate_pair(img, batch_size, config, status="test"):
-    img_rows, img_cols, img_deps = img.shape[2], img.shape[3], img.shape[4] #IMG is (N,1,x,y,z)
+def generate_pair(img, batch_size, config, status="test", return_pair=False, make_tensors=False):
+    img_rows, img_cols, img_deps = img.shape[2], img.shape[3], img.shape[4] #IMG is (N,1,x,y,z) numpy array
     while True:
         index = [i for i in range(img.shape[0])]
         random.shuffle(index)
@@ -200,5 +200,13 @@ def generate_pair(img, batch_size, config, status="test"):
             final_sample = final_sample.astype(np.uint8)
             file_name = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(10)])+'.'+config.save_samples
             imageio.imwrite(os.path.join(config.sample_path, config.exp_name, file_name), final_sample)
+        
+        if make_tensors:
+            from torch import Tensor
+            x = Tensor(x)
+            y = Tensor(y)
 
-        yield (x, y)
+        if not return_pair:
+            yield (x, y)
+        else:
+            return (x,y)
