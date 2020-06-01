@@ -35,13 +35,14 @@ class Dataset():
         """
     
         # only one volume will be in memory at a time
+        
         #if all cubes from current volume were used and there are still volumes left to load
         if (not self.train_idxs and self.x_train_filenames and tr_vl_ts_prop[0]) or force_load[0]: 
             
             x_train_file_name = self.x_train_filenames[0]
             print("LOADED")
             del self.x_train_filenames[0]
-            self.x_array_tr = np.expand_dims(np.load(path.join(self.x_data_dir, x_train_file_name)), axis = 1) # (N, x, y, z) -> (N, 1, x, y, z)
+            self.x_array_tr = np.expand_dims(np.load(path.join(self.x_data_dir, x_train_file_name)), axis = 1) # (N, x, y, z) -> (N, 1 Channel, x, y, z) 
             self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name[:-4] + "_target.npy")), axis=1)
             assert self.x_array_tr.shape == self.y_array_tr.shape
             self.train_idxs = [i for i in range(self.x_array_tr.shape[0])] 
@@ -67,20 +68,23 @@ class Dataset():
             self.test_idxs = [i for i in range(self.x_array_test.shape[0])] 
             shuffle(self.test_idxs)
         
-    def get_train(self, batch_size:int) -> tuple():
+    def get_train(self, batch_size:int, return_tensor = True) -> tuple():
         """
         Returns: tuple(Tensor, Tensor) or tuple(None,None) if all examples have been exhausted
         """
-        
         self._load_data((True,False,False))
         x , y = self.x_array_tr[self.train_idxs[:batch_size]], self.y_array_tr[self.train_idxs[:batch_size]] # (batch_size ,1, x, y, z)
         assert x.shape == y.shape          
         del self.train_idxs[:batch_size]
+        
+        if return_tensor:
+            return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None) 
+        else:
+            return (x,y) if x.shape[0] != 0 else (None, None)
         # in case we can not accept smaller batches
         # if x.shape[0] != batch_size:
         #   self._load_data((True,False,False), force_load=(True,False,False))
         #   self.get_train(batch_size)
-        return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None,None) 
     
     def get_val(self, batch_size:int) -> tuple():
         
