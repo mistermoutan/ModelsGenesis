@@ -25,7 +25,7 @@ parser.add_option("--data", dest="data", help="directory of dataset", default=No
 #parser.add_option("--save", dest="save", help="the output directory of processed 3D cubes, if non existent will be created", default=None, type="string")
 parser.add_option("--scale", dest="scale", help="number of cubes extracted from a single volume", default=32, type="int")
 parser.add_option("--modality", dest="modality", help="ct or mri", default="None", type="string")
-parser.add_option("--target_dir", dest="target_dir", help="target volume dir to for label generation", default=None ,type="string")
+parser.add_option("--target_dir", dest="target_dir", help="target volume dir for label generation", default=None ,type="string")
 
 (options, args) = parser.parse_args()
 
@@ -175,7 +175,7 @@ def get_self_learning_data(config):
     
     for volume in tqdm(volumes_file_names):
 
-        itk_img = sitk.ReadImage(os.path.join(config.DATA_DIR , volume))
+        itk_img = sitk.ReadImage(os.path.join(config.DATA_DIR, volume))
         img_array = sitk.GetArrayFromImage(itk_img)
         img_array = img_array.transpose(2, 1, 0)
         

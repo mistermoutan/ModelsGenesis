@@ -21,7 +21,7 @@ HOW TO USE:
 
 class Statistics:
     
-    def __init__(self,config: FineTuneConfig, dataset: Dataset):
+    def __init__(self, config: FineTuneConfig, dataset: Dataset):
         """
         save_directory: directory where you want to save the stats
         """
@@ -65,7 +65,7 @@ class Statistics:
         self.stats["date"] = time.strftime("%c")
         self.stats["training_time"] = str(datetime.timedelta(seconds=self.end_time - self.start_time))
         self.stats["tr_val_ts_split"] = self.dataset.tr_val_ts_split
-        self.task = self.config.finetune_task
+        self.task = self.config.task
         self.stats["task"] = self.task
 
         self.stats["training_files"] = self.dataset.x_train_filenames
@@ -102,7 +102,7 @@ class Statistics:
         dict_of_arrays["validation_files"] = self.dataset.x_val_filenames
         dict_of_arrays["test_files"] = self.dataset.x_test_filenames
         
-        if self.self_supervised:
+        if self.config.self_supervised:
             dict_of_arrays["avg_training_loss_per_epoch_ss"] = self.avg_training_loss_per_epoch_ss
             dict_of_arrays["avg_validation_loss_per_epoch_ss"] = self.avg_validation_loss_per_epoch_ss
 

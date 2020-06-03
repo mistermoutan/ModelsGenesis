@@ -39,8 +39,8 @@ if __name__ == "__main__":
     import numpy as np
     #a = np.random.rand(6,2)
     for _ in range (1000):
-        a = np.ones((6,2))
-        b = np.ones((6,2))
+        a = np.ones((6, 2))
+        b = np.ones((6, 2))
         a = torch.Tensor(a)
         b = torch.Tensor(b)
         if loss(a,b) > 0.8:
