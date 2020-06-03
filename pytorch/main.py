@@ -7,7 +7,6 @@ from finetune import Trainer
 # script to run experiments
 
 # result replication
-
 config = models_genesis_config()
 dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0)) # train_val_test is non relevant as will ve overwritten after
 dataset.x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
