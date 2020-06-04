@@ -14,8 +14,7 @@ from stats import Statistics
 from dice_loss import DiceLoss
 from image_transformations import generate_pair
 
-writer = SummaryWriter()
-
+from dataset import Dataset
 #TODO LOG CUBE DIMENSIONS
 
 class Trainer():
@@ -29,7 +28,7 @@ class Trainer():
         - Performing supervised task
     """
     
-    def __init__(self, config, dataset):
+    def __init__(self, config: FineTuneConfig, dataset:Dataset):
         
         self.dataset = dataset
         self.config = config
@@ -62,7 +61,7 @@ class Trainer():
             self.model.train()
             x, iteration = 0, 0
             while x is not None: # go through all examples
-                x, _ = self.dataset.get_train(self.config.batch_size_ss, return_tensor=False)
+                x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
                 x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, return_pair=True, make_tensors=True) 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform)
@@ -82,7 +81,7 @@ class Trainer():
                 self.model.eval()
                 x = 0
                 while x != None:
-                    x, _ = self.dataset.get_val(self.config.batch_size_ss, return_tensor=False)
+                    x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
                     x_transform , y = generate_pair(x,self.config.batch_size_ss, self.config, return_pair=True, make_tensors=True) 
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
@@ -90,6 +89,7 @@ class Trainer():
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss, (epoch+1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
                     
+            self.dataset.reset()
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss) 
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Self Supervised", avg_training_loss_of_epoch, epoch+1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_ss)  
@@ -153,7 +153,7 @@ class Trainer():
             self.model.train()
             x, iteration = 0 , 0
             while x is not None: # go through all examples
-                x, y = dataset.get_train(self.config.batch_size_sup)
+                x, y = self.dataset.get_train(batch_size=self.config.batch_size_sup)
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x)
                 loss = criterion(pred, y) 
@@ -172,13 +172,14 @@ class Trainer():
                 self.model.eval()
                 x = 0
                 while x != None:
-                    x, y = dataset.get_val(self.config.batch_size_sup)
+                    x, y = self.dataset.get_val(batch_size=self.config.batch_size_sup)
                     x, y = x.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x)
                     loss = criterion(pred,y)
                     self.tb_writer.add_scalar("Loss/Validation : Supervised", loss, (epoch + 1) * iteration)
                     self.stats.validation_losses_sup.append(loss.item())
                 
+            self.dataset.reset()   
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_sup) 
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Supervised", avg_training_loss_of_epoch, epoch+1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_sup)
@@ -219,7 +220,7 @@ class Trainer():
     def _add_hparams_to_writer(self):
         
         #optimizer, loss , batch size
-        if config.self_supervised:
+        if self.config.self_supervised:
             self.tb_writer.add_hparams({"initial_lr_ss": self.config.lr_ss, "optimizer_ss": self.config.optimizer_ss, "batch_size_ss": self.config.batch_size_ss, "nr_epochs_ss": self.config.nb_epoch_ss},
                                         {"final_val_loss_ss": "sd", "stopped_early_ss": True})
         else:
