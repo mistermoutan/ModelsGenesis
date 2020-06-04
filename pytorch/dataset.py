@@ -2,6 +2,7 @@ from os import listdir, path
 
 from random import shuffle, sample
 from math import ceil, floor
+from copy import deepcopy
 
 from torch import Tensor
 import numpy as np
@@ -26,6 +27,7 @@ class Dataset():
         shuffle(x_filenames)
         self.tr_val_ts_split = train_val_test
         self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(x_filenames, train_val_test)
+        self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
 
     def _load_data(self, tr_vl_ts_prop: tuple, force_load=(False, False, False)):
@@ -41,6 +43,7 @@ class Dataset():
         #if all cubes from current volume were used and there are still volumes left to load
         if (not self.train_idxs and self.x_train_filenames and tr_vl_ts_prop[0]) or force_load[0]: 
             x_train_file_name = self.x_train_filenames[0]
+            #print("SAMPLING FROM", x_train_file_name)
             del self.x_train_filenames[0]
             self.x_array_tr = np.expand_dims(np.load(path.join(self.x_data_dir, x_train_file_name)), axis = 1) # (N, x, y, z) -> (N, 1 Channel, x, y, z) 
             if self.has_target:
@@ -71,8 +74,7 @@ class Dataset():
             self.test_idxs = [i for i in range(self.x_array_test.shape[0])] 
             shuffle(self.test_idxs)
     
-    # FOllowing 3 functions
-    def get_train(self, batch_size:int, return_tensor = True) -> tuple():
+    def get_train(self, batch_size: int, return_tensor=True) -> tuple():
         """
         Returns: tuple(Tensor, Tensor) or tuple(None,None) if all examples have been exhausted
         """
@@ -98,19 +100,25 @@ class Dataset():
         #   self._load_data((True,False,False), force_load=(True,False,False))
         #   self.get_train(batch_size)
     
-    def get_val(self, batch_size: int) -> tuple():
+    def get_val(self, batch_size: int, return_tensor=True) -> tuple():
         
         self._load_data((False, True, False))
         if self.has_target:
             x , y = self.x_array_val[self.val_idxs[:batch_size]], self.y_array_val[self.val_idxs[:batch_size]] # (batch_size ,1, x, y, z)
             assert x.shape == y.shape          
             del self.val_idxs[:batch_size]
-            return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None)
+            if return_tensor:
+                return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None)
+            else:
+                return (x, y) if x.shape[0] != 0 else (None, None)
         else:
             x = self.x_array_val[self.val_idxs[:batch_size]] # (batch_size ,1, x, y, z)
             del self.val_idxs[:batch_size]
-            return (Tensor(x), None) if x.shape[0] != 0 else (None, None)
-    
+            if return_tensor:
+                return (Tensor(x), None) if x.shape[0] != 0 else (None, None)
+            else:
+                return (x, None) if x.shape[0] != 0 else (None, None)
+                
     def get_test(self, batch_size: int) -> tuple():
     
         self._load_data((False, False, True))
@@ -123,11 +131,17 @@ class Dataset():
             x = self.x_array_test[self.test_idxs[:batch_size]] # (batch_size, 1, x , y, z)
             del self.test_idxs[:batch_size]
             return (Tensor(x), None) if  x.shape[0] != 0 else (None, None)
+        
+    def reset(self):
+        #after epoch necessary because list will be empty so will return None when fecthing data
+        self.x_train_filenames = self.x_train_filenames_original
+        self.x_val_filenames = self.x_val_filenames_original
+        self.x_test_filenames = self.x_test_filenames_original
+        
     
     @staticmethod
     def do_file_split(file_names: list, proportions: tuple) -> ([],[],[]):
         
-        print(len(file_names))
         train_prop, val_prop, _ = proportions
         assert train_prop + val_prop + _ == float(1)
         i = ceil(train_prop * len(file_names)) 
@@ -138,6 +152,14 @@ class Dataset():
 if __name__ == "__main__":
     a = Dataset(data_dir="pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes",train_val_test=(0.1,0,0.9))
     print(a.x_train_filenames)
-    print(a.x_val_filenames)
-    print(a.x_test_filenames)
+    for epoch in range(2):
+        x = 0
+        while x is not None:
+            x, y = a.get_train(batch_size=20)
+            if type(x) == type(None):
+                print("X IS NONE")
+            else:
+                print(x.shape)
+        a.reset()
+        print("epoch {} done".format(epoch))
          
