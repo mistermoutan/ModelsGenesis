@@ -3,13 +3,14 @@ import shutil
 
 #FILE IS UNTOUCHED
 
-def _get_task_dir(task):
+def get_task_dir(task):
     # get dir corresponding to next numerical experiment
     task_dir = task + "/run"
+    print(task_dir)
     experiment_nr = 1
     while os.path.isdir(os.path.join("runs/", task + "_" + str(experiment_nr) + "/")): #meaning the experiment has not been run
         experiment_nr += 1
-        return task_dir + "_" + str(experiment_nr) + "/" 
+    return task_dir + "_" + str(experiment_nr) + "/" 
 
 class models_genesis_config:
     
@@ -18,7 +19,8 @@ class models_genesis_config:
     exp_name = model + "-" + suffix
     
     task = "GENESIS_REPLICATION"
-    task_dir = _get_task_dir(task)
+    task_dir = get_task_dir(task)
+    print(task_dir)
     stats_dir = os.path.join("stats/", task_dir)
     model_path_save = os.path.join("pretrained_weights/finetuning/", task_dir)
     summarywriter_dir = os.path.join("runs/", task_dir)
