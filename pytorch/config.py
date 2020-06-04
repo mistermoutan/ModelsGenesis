@@ -45,7 +45,7 @@ class models_genesis_config:
     workers = 10
     max_queue_size = workers * 4
     save_samples = "png"
-    nb_epoch_ss = 10000
+    nb_epoch_ss = 2
     patience_Ss = 50
     lr_ss = 1
 

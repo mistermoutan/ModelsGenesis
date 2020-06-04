@@ -116,11 +116,13 @@ class Trainer():
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(best_loss,num_epoch_no_improvement))
                 num_epoch_no_improvement += 1
             if num_epoch_no_improvement >= self.config.patience_ss:
-                print("Early Stopping")
+                print("Early Stopping SS")
                 self.stats.stopped_early_ss = True
                 break
             sys.stdout.flush()
             self.tb_writer.add_scalar("Num epochs w/ no improvement: Self Supervised", num_epoch_no_improvement, epoch+1)
+        print("FINISHED TRAINING SS")
+
 
                     
     def finetune_supervised(self):
@@ -205,12 +207,13 @@ class Trainer():
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(best_loss, num_epoch_no_improvement))
                 num_epoch_no_improvement += 1
             if num_epoch_no_improvement >= self.config.patience_sup:
-                print("Early Stopping")
+                print("Early Stopping SUP")
                 self.stats.stopped_early_sup = True
                 break
             sys.stdout.flush()
             self.tb_writer.add_scalar("Num epochs w/ no improvement: Supervised", num_epoch_no_improvement, epoch+1)
         
+        print("FINISHED TRAINING SUP")
         self._add_hparams_to_writer()
         
     def _add_hparams_to_writer(self):
