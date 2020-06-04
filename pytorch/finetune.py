@@ -29,11 +29,11 @@ class Trainer():
         - Performing supervised task
     """
     
-    def __init__(self, config, dataset, stats):
+    def __init__(self, config, dataset):
         
         self.dataset = dataset
         self.config = config
-        self.stats = stats
+        self.stats = Statistics(self.config, self.dataset)
         self.tb_writer = SummaryWriter(config.summarywriter_dir)
         self._loadmodel()
 
@@ -245,19 +245,11 @@ class Trainer():
         self.model.to(self.device)
         self.model = nn.DataParallel(self.model, device_ids = [i for i in range(torch.cuda.device_count())])
         
+    def get_stats(self):
+        self.stats.get_statistics()
+        
         
 
         
 if __name__ == "__main__":
-    
-
-    for loss in ["binary_cross_entropy", "dice"]:
-        
-        config = FineTuneConfig(self_supervised=False)
-        dataset = Dataset(data_dir=config.data_dir, train_val_test=(0.8, 0.2, 0))
-        writer = SummaryWriter(config.task)
-        stats = Statistics(config, dataset)
-
-    
-    fineturner = Trainer(config,dataset, tb)
-    stats.get_statistics() 
+    pass
