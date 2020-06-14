@@ -6,7 +6,6 @@ import shutil
 def get_task_dir(task):
     # get dir corresponding to next numerical experiment
     task_dir = task + "/run"
-    print(task_dir)
     experiment_nr = 1
     while os.path.isdir(os.path.join("runs/", task + "_" + str(experiment_nr) + "/")): #meaning the experiment has not been run
         experiment_nr += 1
@@ -20,12 +19,14 @@ class models_genesis_config:
     
     task = "GENESIS_REPLICATION"
     task_dir = get_task_dir(task)
-    print(task_dir)
     stats_dir = os.path.join("stats/", task_dir)
     model_path_save = os.path.join("pretrained_weights/finetuning/", task_dir)
-    summarywriter_dir = os.path.join("runs/", task_dir)
-    
+    summarywriter_dir = os.path.join("runs/", task_dir)    
     # data
+    #data_dir = "pytorch/datasets/luna16_cubes"
+    #train_fold = [0]
+    #valid_fold = [1]
+    #test_fold = [2]
     data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
     train_fold =[0,1,2,3,4]
     valid_fold=[5,6]
@@ -41,15 +42,16 @@ class models_genesis_config:
     # model pre-training
     self_supervised = True
     verbose = 1
-    weights = None
+    weights = "pretrained_weights/Genesis_Chest_CT.pt" #initial weights
     batch_size_ss = 6
     optimizer_ss = "sgd"
     workers = 10
     max_queue_size = workers * 4
     save_samples = "png"
     nb_epoch_ss = 2
-    patience_Ss = 50
+    patience_ss = 50
     lr_ss = 1
+    scheduler_ss = "ReduceLROnPlateau"
 
     # image deformation
     nonlinear_rate = 0.9
@@ -66,7 +68,8 @@ class models_genesis_config:
     nb_epoch_sup = None
     patience_sup = None
     lr_sup = None
-    threshold =  None #above is considered part of mask
+    scheduler_sup = None
+    threshold = None #above is considered part of mask
 
     # logs
     model_path = "pretrained_weights"
