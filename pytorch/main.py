@@ -5,9 +5,19 @@ from finetune import Trainer
 
 # script to run experiments
 
-if __name__ == "__main__":
+# TODO BUILD CLI:
+#       Their Replication:
+#           - Replicate model genesis
+#           - USe their pretrained weights to test on 5 datasets they provide
+#       Me:
+#           - Use their framework w/ different dataset (for scratch training) 
+#           - Use the pretrrained models obtained to test on different datasets
+#           - Move into modality , CT and MRI
+#           
 
-    print("STARTING REPLICATION OF RESULTS EXPERIMENT")
+def replication_of_results():
+
+    #CUBE LOGIC
     # result replication, try to get the pretrained model
     config = models_genesis_config()
     dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0)) # train_val_test is non relevant as will ve overwritten after
@@ -16,14 +26,15 @@ if __name__ == "__main__":
     dataset.x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold] #Dont know in what sense they use this for
     trainer_mg_replication = Trainer(config, dataset)
     trainer_mg_replication.train_from_scratch_model_model_genesis_exact_replication()
+    trainer_mg_replication.close_writer()
     trainer_mg_replication.get_stats()
+
+
+if __name__ == "__main__":
+
+    print("STARTING REPLICATION OF RESULTS EXPERIMENT")
+    replication_of_results()
     print("FINISHED REPLICATION OF RESULTS EXPERIMENT")
 
-
 #
-
-
-
-
-
 
