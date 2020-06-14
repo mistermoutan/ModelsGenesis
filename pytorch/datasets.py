@@ -37,12 +37,12 @@ class Datasets:
         
         if self.mode == "alternate":
             dataset_to_sample = self.datasets[self.idx_train]
-            print("SAMPLING FROM ", self.idx_train)
+            #print("SAMPLING FROM ", self.idx_train)
             x, y = dataset_to_sample.get_train(**kwargs)
             # x, y = dataset_to_sample.get_train(**kwargs["batch_size"], kwargs["return_tensor"])
             if x is None:  # dataset exhausted
                 if self.stop_criteria_alternate == "first_exhausted": #CHECKED
-                    print("JUST EXHAUSTED DATASET ", self.idx_train)
+                    #print("JUST EXHAUSTED DATASET ", self.idx_train)
                     return (None, None)
                 elif self.stop_criteria_alternate == "all_exhausted": #CHECKED
                     self.nr_exhausted_datasets += 1
@@ -64,7 +64,7 @@ class Datasets:
         
         elif self.mode == "sequential":
             dataset_to_sample = self.datasets[self.idx_train]
-            print("TRYING TO SAMPLE FROM ", self.idx_train)
+            #print("TRYING TO SAMPLE FROM ", self.idx_train)
             x, y = dataset_to_sample.get_train(**kwargs)
             #if x is not None:
                 #print("SAMPLING FROM ", self.idx_train)
@@ -99,11 +99,11 @@ class Datasets:
 
     def get_val(self, **kwargs):
         
-        print("TRYING TO SAMPLE FROM ", self.idx_val)
+        #print("TRYING TO SAMPLE FROM ", self.idx_val)
         dataset_to_sample = self.datasets_val[self.idx_val]
         x, y = dataset_to_sample.get_val(**kwargs)
-        if x is not None:
-            print("SAMPLING FROM ", self.idx_val)
+        #if x is not None:
+        #    print("SAMPLING FROM ", self.idx_val)
         if x is None:
             if self.idx_val + 1 >= self.nr_datasets: #idx starts at 0 boy
                 return(None, None)

@@ -51,7 +51,7 @@ class models_genesis_config:
     nb_epoch_ss = 2
     patience_ss = 50
     lr_ss = 1
-    scheduler_ss = "ReduceLROnPlateau"
+    scheduler_ss = "StepLR" #"ReduceLROnPlateau"
 
     # image deformation
     nonlinear_rate = 0.9
