@@ -14,12 +14,12 @@ class Dataset():
     def __init__(self, data_dir:str, train_val_test: tuple):
         """
         Arguments:
-            data_dir -- [folder must be organized with x/ and y/ folders inside with .npy files, in y folder files must be named as the ones in x but ending in _target.npy]
+            data_dir {str} -- [folder must be organized with x/ and y/ folders inside with .npy files, in y folder files must be named as the ones in x but ending in _target.npy]
   
         Keyword Arguments:
             train_val_test {tuple} -- [proportion of train,validation and test examples] (default: {(0.65,0.15,0.20)})
         """
-
+        
         self.x_data_dir = path.join(data_dir, "x/") #dir has an x and y folder
         self.y_data_dir = path.join(data_dir, "y/")
         self.has_target = listdir(self.y_data_dir) != []
@@ -29,6 +29,7 @@ class Dataset():
         self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(x_filenames, train_val_test)
         self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
+        self.cube_dimensions = deepcopy(self.x_train_filenames[0][-16:-4])
 
     def _load_data(self, tr_vl_ts_prop: tuple, force_load=(False, False, False)):
         """
@@ -134,13 +135,13 @@ class Dataset():
         
     def reset(self):
         #after epoch necessary because list will be empty so will return None when fecthing data
-        self.x_train_filenames = self.x_train_filenames_original
-        self.x_val_filenames = self.x_val_filenames_original
-        self.x_test_filenames = self.x_test_filenames_original
+        self.x_train_filenames = deepcopy(self.x_train_filenames_original)
+        self.x_val_filenames = deepcopy(self.x_val_filenames_original)
+        self.x_test_filenames = deepcopy(self.x_test_filenames_original)
         
     
     @staticmethod
-    def do_file_split(file_names: list, proportions: tuple) -> ([],[],[]):
+    def do_file_split(file_names: list, proportions: tuple) -> ([], [], []):
         
         train_prop, val_prop, _ = proportions
         assert train_prop + val_prop + _ == float(1)
@@ -150,9 +151,10 @@ class Dataset():
         return file_names[:i], file_names[i:i+j], file_names[i+j:]
         
 if __name__ == "__main__":
+    
     a = Dataset(data_dir="pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes",train_val_test=(0.1,0,0.9))
     print(a.x_train_filenames)
-    for epoch in range(2):
+    for epoch in range(100):
         x = 0
         while x is not None:
             x, y = a.get_train(batch_size=20)
