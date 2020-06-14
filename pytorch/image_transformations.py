@@ -161,7 +161,7 @@ def generate_pair(img, batch_size, config, status="test", make_tensors=False):
     index = [i for i in range(img.shape[0])]
     random.shuffle(index)
     y = img[index[:batch_size]] # (BAtCH_SIZE, 1, 64, 64, 32)
-    print(y.shape)
+    #print(y.shape)
     x = copy.deepcopy(y)
     for n in range(batch_size):
         
