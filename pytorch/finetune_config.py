@@ -27,8 +27,8 @@ class FineTuneConfig:
             self.loss_function_ss = "mse"
             self.nb_epoch_ss = 1000
             self.patience_ss = 50
-            self.lr_ss = 5e-2  
-            
+            self.lr_ss = 1e-3
+            self.scheduler_ss = "steplr"
             # image deformation for self supervision
             self.nonlinear_rate = 0.9       
             self.paint_rate = 0.9
@@ -36,14 +36,19 @@ class FineTuneConfig:
             self.inpaint_rate = 1.0 - self.outpaint_rate
             self.local_rate = 0.5
             self.flip_rate = 0.4
+            
                 
         # supervised finetuning
         self.batch_size_sup = 6
-        self.optimizer_sup = "sgd"
+        self.optimizer_sup = "adam"
+        self.beta1_sup = 0.9
+        self.beta2_sup = 0.999
+        self.eps_sup = 1e-8
         self.loss_function_sup = "dice" #binary_cross_entropy
         self.nb_epoch_sup = 10000
         self.patience_sup = 50
-        self.lr_sup = 5e-4  
+        self.lr_sup = 1e-3  
+        self.scheduler_ss = "steplr"
         self.threshold =  0.5 #above is considered part of mask
                 
     def display(self):
