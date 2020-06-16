@@ -9,14 +9,14 @@ class DiceLoss:
         pred: tensor with first dimension as batch
         target: tensor with first dimension as batch
         """
-    
-        if not torch.is_tensor(pred) or torch.is_tensor(target):
-            raise TypeError("Input type is not a torch.Tensor. Got {}"
-                            .format(type(input)))
-        if not (pred.shape) == 5:
+        print(type(pred), type(target))
+        if not torch.is_tensor(pred) or not torch.is_tensor(target):
+            raise TypeError("Input type is not a torch.Tensor. Got {} and {}"
+                            .format(type(pred), type(target)))
+        if not len(pred.shape) == 5:
             raise ValueError("Invalid input shape, we expect BxCxHxWxD. Got: {}"
                                 .format(pred.shape))
-        if not pred.shape == target.shape:
+        if not (pred.shape == target.shape):
             raise ValueError("input and target shapes must be the same. Got: {} and {}"
                                 .format(pred.shape, target.shape))
         if not pred.device == target.device:
@@ -27,7 +27,7 @@ class DiceLoss:
         # have to use contiguous since they may from a torch.view op
         iflat = pred[:,0].contiguous().view(-1) # one channel only
         tflat = target[:,0].contiguous().view(-1)
-        
+
         intersection = torch.sum(iflat * tflat)
         A_sum_sq = torch.sum(iflat * iflat)
         B_sum_sq = torch.sum(tflat * tflat)
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     import numpy as np
     #a = np.random.rand(6,2)
     for _ in range (1000):
-        a = np.ones((6, 2))
-        b = np.ones((6, 2))
+        a = np.ones((6,1,64,64,32))
+        b = np.ones((6,1,64,64,32))
         a = torch.Tensor(a)
         b = torch.Tensor(b)
         if loss(a,b) > 0.8:
