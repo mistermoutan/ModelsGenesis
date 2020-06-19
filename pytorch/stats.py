@@ -29,8 +29,7 @@ class Statistics:
         
         self.config = config
         self.dataset = dataset
-        if isinstance(self.dataset, Datasets):
-            self.multiple_datasets = True 
+        self.multiple_datasets = True if isinstance(self.dataset, Datasets) else False 
 
         self.start_time = time.time()
         self.save_directory = config.stats_dir
@@ -90,7 +89,7 @@ class Statistics:
             self.stats["optimizer_ss"] = self.config.optimizer_ss
             self.stats["scheduler_ss"] = self.config.scheduler_ss
             self.stats["stopped_early_ss"] = self.stopped_early_ss
-            self.stats["iterations_ss"] = set(self.iterations_ss)
+            self.stats["iterations_ss"] = list(set(self.iterations_ss))
             self.stats["comment_ss"] = self.comment_ss
             
         
@@ -101,10 +100,10 @@ class Statistics:
         self.stats["optimizer_sup"] = self.config.optimizer_sup
         self.stats["scheduler_sup"] = self.config.scheduler_sup
         self.stats["stopped_early_sup"] = self.stopped_early_sup
-        self.stats["iterations_sup"] = set(self.iterations_sup)
+        self.stats["iterations_sup"] = list(set(self.iterations_sup))
         self.stats["comment_sup"] = self.comment_sup
     
-        self.write_pickle(self.stats,self.save_directory,"stats.pickle")
+        self.write_pickle(self.stats,self.save_directory, "stats.pickle")
 
     def save_arrays(self):
         """ saves arrays in dict, may be relevant for future comparisons"""
@@ -125,7 +124,7 @@ class Statistics:
 
     def save_graphs (self):
 
-        if self.config.self_supervised:
+        if self.config.self_supervised and isinstance(self.config.nb_epoch_ss,int) :
             #plot avg training loss per epoch
             x_axis = np.arange(self.config.nb_epoch_ss)
             figure = plt.figure()
@@ -139,20 +138,21 @@ class Statistics:
             plt.plot(x_axis,self.avg_validation_loss_per_epoch_ss)
             plt.title("Avg Validation Loss per epoch ")
             figure.savefig(self.save_directory + "avg_validation_loss_per_epoch_ss.png")
+        
+        if isinstance(self.config.nb_epoch_sup,int):
+            #plot avg training loss per epoch
+            x_axis = np.arange(self.config.nb_epoch_sup)
+            figure = plt.figure()
+            plt.plot(x_axis,self.avg_training_loss_per_epoch_sup)
+            plt.title("Avg Training Loss per epoch SUP")
+            figure.savefig(self.save_directory + "avg_training_loss_per_epoch_sup.png")
 
-        #plot avg training loss per epoch
-        x_axis = np.arange(self.config.nb_epoch_sup)
-        figure = plt.figure()
-        plt.plot(x_axis,self.avg_training_loss_per_epoch_sup)
-        plt.title("Avg Training Loss per epoch SUP")
-        figure.savefig(self.save_directory + "avg_training_loss_per_epoch_sup.png")
-
-        #plot avg validation loss per epoch
-        x_axis = np.arange(self.config.nb_epoch_sup)
-        figure = plt.figure()
-        plt.plot(x_axis,self.avg_validation_loss_per_epoch_sup)
-        plt.title("Avg Validation Loss per epoch")
-        figure.savefig(self.save_directory + "avg_validation_loss_per_epoch_sup.png")
+            #plot avg validation loss per epoch
+            x_axis = np.arange(self.config.nb_epoch_sup)
+            figure = plt.figure()
+            plt.plot(x_axis,self.avg_validation_loss_per_epoch_sup)
+            plt.title("Avg Validation Loss per epoch")
+            figure.savefig(self.save_directory + "avg_validation_loss_per_epoch_sup.png")
 
     def save_log_book (self, save_json=True):
         
