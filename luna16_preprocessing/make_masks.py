@@ -49,6 +49,7 @@ for subsetindex in range(10):
     file_list_path=[]
     for i in range(len(file_list)):
         file_list_path.append(file_list[i][0:-4]) #without .mhd
+    print(file_list_path)
 
     # The locations of the nodes
     df_node = pd.read_csv(os.path.join(luna_path, "annotations.csv"))
