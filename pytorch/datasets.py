@@ -23,9 +23,9 @@ class Datasets:
             #ugly hack alarm: due to recursion if we want the same nr of samples for all, the first must start at 1
             self.nr_used_samples = 1 if self.max_samples_each else None 
 
-        # for key, value in kwargs.items():
-        self.datasets = datasets
+        self.datasets_tr = datasets
         self.datasets_val = deepcopy(datasets)
+        self.datasets_test = deepcopy(dataset)
         self.datasets_copy = deepcopy(datasets)
         self.nr_datasets = len(self.datasets)
         self.mode = mode
@@ -36,7 +36,7 @@ class Datasets:
     def get_train(self, **kwargs):
         
         if self.mode == "alternate":
-            dataset_to_sample = self.datasets[self.idx_train]
+            dataset_to_sample = self.datasets_tr[self.idx_train]
             #print("SAMPLING FROM ", self.idx_train)
             x, y = dataset_to_sample.get_train(**kwargs)
             # x, y = dataset_to_sample.get_train(**kwargs["batch_size"], kwargs["return_tensor"])
@@ -50,7 +50,7 @@ class Datasets:
                     #print("NUMBER OF DATASETS:", len(self.datasets))
                     if self.nr_exhausted_datasets >= self.nr_datasets:
                         return (None, None)
-                    del self.datasets[self.idx_train]
+                    del self.datasets_tr[self.idx_train]
                     #print("JUST DELETED DATASET ", self.idx_train)
                     #print("NUMBER OF DATASETS REMAINING:", len(self.datasets))
                     #print("PRE ADVANCE INDEX ", self.idx_train)
@@ -63,7 +63,7 @@ class Datasets:
             return (x, y)
         
         elif self.mode == "sequential":
-            dataset_to_sample = self.datasets[self.idx_train]
+            dataset_to_sample = self.datasets_tr[self.idx_train]
             #print("TRYING TO SAMPLE FROM ", self.idx_train)
             x, y = dataset_to_sample.get_train(**kwargs)
             #if x is not None:
@@ -112,9 +112,22 @@ class Datasets:
             
         return (x, y)
     
+    def get_test(self, **kwargs):
+        
+        dataset_to_sample = self.datasets_test[self.idx_test]
+        x, y = dataset_to_sample.get_test(**kwargs)
+        if x is None:
+            if self.idx_val + 1 >= self.nr_datasets: #idx starts at 0 boy
+                return(None, None)
+            self._advance_index("test")
+            x, y = self.get_val(**kwargs) 
+            
+        return (x, y)
+    
     def reset(self):
-        self.datasets = deepcopy(self.datasets_copy)
+        self.datasets_tr = deepcopy(self.datasets_copy)
         self.datasets_val = deepcopy(self.datasets_copy)
+        self.datasets_test = deepcopy(self.datasets_copy)
         self.nr_exhausted_datasets = 0
         self.idx_train, self.idx_val, self.idx_test = 0, 0, 0
         if hasattr(self, "nr_used_samples"):
@@ -127,11 +140,11 @@ class Datasets:
     def _advance_index(self, idx_to_adjust: str):
 
         if idx_to_adjust == "train":
-            self.idx_train = 0 if self.idx_train >= len(self.datasets) - 1 else self.idx_train + 1
+            self.idx_train = 0 if self.idx_train >= len(self.datasets_tr) - 1 else self.idx_train + 1
         elif idx_to_adjust == "val":
-            self.idx_val = 0 if self.idx_val >= len(self.datasets) - 1 else self.idx_val + 1
+            self.idx_val = 0 if self.idx_val >= len(self.datasets_val) - 1 else self.idx_val + 1
         elif idx_to_adjust == "test":
-            self.idx_test = 0 if self.idx_test >= len(self.datasets) - 1 else self.idx_test + 1
+            self.idx_test = 0 if self.idx_test >= len(self.datasets_test) - 1 else self.idx_test + 1
     
     @property    
     def cube_dimensions(self):

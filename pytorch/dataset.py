@@ -29,7 +29,7 @@ class Dataset():
         self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(x_filenames, train_val_test)
         self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
-        self.cube_dimensions = deepcopy(self.x_train_filenames[0][-16:-4])
+        self.cube_dimensions = deepcopy(self.x_train_filenames[0][-14:-6])
 
     def _load_data(self, tr_vl_ts_prop: tuple, force_load=(False, False, False)):
         """
