@@ -63,7 +63,7 @@ class FineTuneConfig:
         # get dir corresponding to next numerical experiment
         task_dir = os.path.join(task, "with_self_supervised") if self.self_supervised else os.path.join(task, "only_supervised")
         experiment_nr = 1
-        while os.path.isdir(os.path.join("runs/", task_dir + "_" + str(experiment_nr) + "/")): #meaning the experiment has not been run
+        while os.path.isdir(os.path.join("runs/", task_dir + "/run_{}/".format(str(experiment_nr)))): #meaning the experiment has not been run
             experiment_nr += 1
         return task_dir + "_" + str(experiment_nr) + "/"
         
