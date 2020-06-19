@@ -40,7 +40,7 @@ def get_filename(file_list, case):
 for subsetindex in range(10):
     luna_path = "/work1/s182312/luna16"
     luna_subset_path = luna_path + "/subset" + str(subsetindex) + "/"
-    output_path = "/work1/s182312/luna16/masks/"
+    output_path = luna_path + "/masks/"
     luna_subset_mask_path = output_path + "subset" + str(subsetindex) + "/"
     if not os.path.exists(luna_subset_mask_path):
         os.makedirs(luna_subset_mask_path)
@@ -99,4 +99,4 @@ for subsetindex in range(10):
         sitk_maskimg.SetSpacing(spacing)
         sitk_maskimg.SetOrigin(origin)
         sub_img_file = img_file[len(luna_subset_path):-4]
-        sitk.WriteImage(sitk_maskimg, luna_subset_mask_path + sub_img_file + "_segmentation.mhd")
+        sitk.WriteImage(sitk_maskimg, luna_subset_mask_path + sub_img_file + ".mhd")
