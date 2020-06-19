@@ -4,7 +4,10 @@ import torch.nn as nn
 class DiceLoss:
     
     @staticmethod
-    def dice_loss(pred, target, smooth=0, eps=1e-7):
+    
+    #TODO: dice needs threshold here no, actually no, so the network after reaching 0.5 has no incentive to become "more certain"
+    
+    def dice_loss(pred, target, smooth=0, eps=1e-7, return_loss=True):
         """
         pred: tensor with first dimension as batch
         target: tensor with first dimension as batch
@@ -25,14 +28,14 @@ class DiceLoss:
                     pred.device, target.device))
 
         # have to use contiguous since they may from a torch.view op
-        iflat = pred[:,0].contiguous().view(-1) # one channel only
+        iflat = pred[:,0].contiguous().view(-1) # one channel only N x 1 x H x D X W -> N x H x D x W
         tflat = target[:,0].contiguous().view(-1)
 
         intersection = torch.sum(iflat * tflat)
         A_sum_sq = torch.sum(iflat * iflat)
         B_sum_sq = torch.sum(tflat * tflat)
-        dice = (2. * intersection + smooth) / (A_sum_sq + B_sum_sq + eps)
-        return 1 - dice
+        dice = (2. * intersection + smooth + eps) / (A_sum_sq + B_sum_sq + eps)
+        return 1 - dice if return_loss else dice
 
 if __name__ == "__main__":
     loss = DiceLoss.dice_loss
@@ -43,6 +46,9 @@ if __name__ == "__main__":
         b = np.ones((6,1,64,64,32))
         a = torch.Tensor(a)
         b = torch.Tensor(b)
+        l = loss(a,b)
+        print(type(l))
+        exit(0)
         if loss(a,b) > 0.8:
             #print(a)
             #print(b)
