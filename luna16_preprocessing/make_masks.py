@@ -37,10 +37,10 @@ def get_filename(file_list, case):
 
 
 # Getting list of image files and save mask image files
-for subsetindex in range(1):
-    luna_path = "pytorch/datasets/luna16"
+for subsetindex in range(10):
+    luna_path = "/work1/s182312/luna16"
     luna_subset_path = luna_path + "/subset" + str(subsetindex) + "/"
-    output_path = "pytorch/datasets/luna16/masks/"
+    output_path = "/work1/s182312/luna16/masks/"
     luna_subset_mask_path = output_path + "subset" + str(subsetindex) + "/"
     if not os.path.exists(luna_subset_mask_path):
         os.makedirs(luna_subset_mask_path)
