@@ -77,7 +77,7 @@ class Trainer:
                 x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform) 
-                print("INFERENCE SUCCESSFUL")
+                #print("INFERENCE SUCCESSFUL")
                 loss = criterion(pred, y)
                 optimizer.zero_grad()
                 loss.backward()
