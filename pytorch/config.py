@@ -1,5 +1,6 @@
 import os
 import shutil
+from utils import make_dir
 
 #FILE IS UNTOUCHED
 
@@ -7,7 +8,7 @@ def get_task_dir(task):
     # get dir corresponding to next numerical experiment
     task_dir = task + "/run"
     experiment_nr = 1
-    while os.path.isdir(os.path.join("runs/", task + "_" + str(experiment_nr) + "/")): #meaning the experiment has not been run
+    while os.path.isdir(os.path.join("runs/", task + "/run_{}/".format(str(experiment_nr)))): #meaning the experiment has not been run
         experiment_nr += 1
     return task_dir + "_" + str(experiment_nr) + "/" 
 
@@ -17,11 +18,14 @@ class models_genesis_config:
     suffix = "genesis_chest_ct"
     exp_name = model + "-" + suffix
     
-    task = "GENESIS_REPLICATION"
+    task = "GENESIS_REPLICATION_PRETRAIN_MODEL"
     task_dir = get_task_dir(task)
     stats_dir = os.path.join("stats/", task_dir)
-    model_path_save = os.path.join("pretrained_weights/finetuning/", task_dir)
-    summarywriter_dir = os.path.join("runs/", task_dir)    
+    model_path_save = os.path.join("pretrained_weights/", task_dir)
+    summarywriter_dir = os.path.join("runs/", task_dir)
+    make_dir(model_path_save)
+    make_dir(stats_dir)
+    
     # data
     #data_dir = "pytorch/datasets/luna16_cubes"
     #train_fold = [0]
@@ -48,8 +52,9 @@ class models_genesis_config:
     workers = 10
     max_queue_size = workers * 4
     save_samples = "png"
-    nb_epoch_ss = 2
+    nb_epoch_ss = 10000
     patience_ss = 50
+    loss_function_ss = "MSE" #binary_cross_entropy
     lr_ss = 1
     scheduler_ss = "StepLR" #"ReduceLROnPlateau"
 
@@ -62,14 +67,14 @@ class models_genesis_config:
     flip_rate = 0.4
     
     #in here just to conform with statistics module
-    batch_size_sup = None
-    optimizer_sup = None
-    loss_function_sup = None #binary_cross_entropy
-    nb_epoch_sup = None
-    patience_sup = None
-    lr_sup = None
-    scheduler_sup = None
-    threshold = None #above is considered part of mask
+    batch_size_sup = False
+    optimizer_sup = False
+    loss_function_sup = False #binary_cross_entropy
+    nb_epoch_sup = False
+    patience_sup = False
+    lr_sup = False
+    scheduler_sup = False
+    threshold = 0.5 #above is considered part of mask
 
     # logs
     model_path = "pretrained_weights"

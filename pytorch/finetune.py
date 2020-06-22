@@ -4,7 +4,9 @@ from torch.utils.tensorboard import SummaryWriter
 import sys
 import os
 import numpy as np
-from memory_profiler import profile
+import time
+from datetime import timedelta
+
 
 from unet3d import UNet3D
 from dataset import Dataset
@@ -45,7 +47,10 @@ class Trainer:
         self._loadmodel(from_weights=False)
         self.finetune_self_supervised()
 
+    #@profile
     def finetune_self_supervised(self):
+        
+        self.start_time = time.time()
 
         if self.config.optimizer_ss == "sgd":
             optimizer = torch.optim.SGD(self.model.parameters(), self.config.lr_ss, momentum=0.9, weight_decay=0.0, nesterov=False)
@@ -68,8 +73,7 @@ class Trainer:
             iteration = 0
             while True:  # go through all examples
                 x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
-                if x is None:
-                    break
+                if x is None: break
                 x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform) 
@@ -78,7 +82,7 @@ class Trainer:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                self.tb_writer.add_scalar("Loss/train : Self Supervised", loss, (epoch + 1) * iteration)
+                self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (epoch + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
                 if (iteration + 1) % 5 == 0:
@@ -95,15 +99,14 @@ class Trainer:
                 x = 0
                 while True:
                     x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
-                    if x is None:
-                        break
+                    if x is None: break
                     x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
-                    self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss, (epoch + 1) * iteration)
+                    self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (epoch + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
-
+                
             self.dataset.reset()
             scheduler.step(epoch)
 
@@ -117,6 +120,7 @@ class Trainer:
             self.stats.iterations_ss.append(iteration)
 
             print("###### SELF SUPERVISED#######")
+            
             print(
                 "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
                     epoch + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
@@ -131,7 +135,7 @@ class Trainer:
                     {"epoch": epoch + 1, "state_dict": self.model.state_dict(), "optimizer_state_dict": optimizer.state_dict()},
                     os.path.join(self.config.model_path_save, "weights.pt"),
                 )
-                print("Model Saved")
+                print("Model Saved in {}".format(self.config.model_path_save))
             else:
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(best_loss, num_epoch_no_improvement))
                 num_epoch_no_improvement += 1
@@ -142,10 +146,12 @@ class Trainer:
             sys.stdout.flush()
             self.tb_writer.add_scalar("Num epochs w/ no improvement: Self Supervised", num_epoch_no_improvement, epoch + 1)
             
-        self._add_hparams_to_writer(task="ss")
+        self.ss_timedelta = timedelta(seconds= time.time() - self.start_time)
         print("FINISHED TRAINING SS")
 
     def finetune_supervised(self):
+        
+        self.start_time = time.time()
 
         # TODO: DO NOT CONTINUE TO SUPERVISED IF SELF SUPERVISED STOPPED EARLY
         if self.config.optimizer_sup == "sgd":
@@ -183,7 +189,7 @@ class Trainer:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                self.tb_writer.add_scalar("Loss/train : Supervised", loss, (epoch + 1) * iteration)
+                self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (epoch + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
                 if (iteration + 1) % 5 == 0:
@@ -197,15 +203,13 @@ class Trainer:
 
             with torch.no_grad():
                 self.model.eval()
-                x = 0
                 while True:
                     x, y = self.dataset.get_val(batch_size=self.config.batch_size_sup)
-                    if x is None:
-                        break
+                    if x is None: break
                     x, y = x.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x)
                     loss = criterion(pred, y)
-                    self.tb_writer.add_scalar("Loss/Validation : Supervised", loss, (epoch + 1) * iteration)
+                    self.tb_writer.add_scalar("Loss/Validation : Supervised", loss.item(), (epoch + 1) * iteration)
                     self.stats.validation_losses_sup.append(loss.item())
 
             self.dataset.reset()
@@ -244,43 +248,58 @@ class Trainer:
             self.tb_writer.add_scalar("Num epochs w/ no improvement: Supervised", num_epoch_no_improvement, epoch + 1)
 
         print("FINISHED TRAINING SUP")
-        self._add_hparams_to_writer(task="sup")
+        self.sup_timedelta = timedelta(seconds= time.time() - self.start_time)
+        
+    def test(self, test_dataset):
+        from evaluate import Tester
+        self.tester = Tester(self.model, self.config)
+        self.tester.test_segmentation(test_dataset)
 
-    def _add_hparams_to_writer(self, task: str):
-
-        # optimizer, loss , batch size
-        if task == "ss" and self.config.self_supervised:
-            self.tb_writer.add_hparams(
-                {   
-                    "initial_lr_ss": self.config.lr_ss,
-                    "optimizer_ss": self.config.optimizer_ss,
-                    "scheduler_ss": self.config.scheduler_ss,
-                    "batch_size_ss": self.config.batch_size_ss,
-                    "nr_epochs_ss": self.config.nb_epoch_ss
-                },
-                {
-                    "final_train_loss_ss": self.stats.avg_training_loss_per_epoch_ss[-1],
-                    "final_val_loss_ss": self.stats.avg_validation_loss_per_epoch_ss[-1],
-                    "stopped_early_ss": self.stats.stopped_early_ss}
-            )
-
-        if task == "sup":
-            self.tb_writer.add_hparams(
-                {   
-                    "cube_dimensions": self.dataset.cube_dimensions,
-                    "initial_lr_sup": self.config.lr_sup,
-                    "optimizer_sup": self.config.optimizer_sup,
-                    "scheduler_sup": self.config.scheduler_sup,
-                    "batch_size_sup": self.config.batch_size_sup,
-                    "nr_epochs_sup": self.config.nb_epoch_sup
-                },
-                {
-                    "final_train_loss_sup": self.stats.avg_training_loss_per_epoch_sup[-1],
-                    "final_val_loss_sup": self.stats.avg_validation_loss_per_epoch_sup[-1],
-                    "stopped_early_sup": self.stats.stopped_early_sup}
-            )
-    
-    def close_writer(self):
+    def add_hparams_to_writer(self):
+        
+        hpa_dict = {   
+                "cube_dimensions": self.dataset.cube_dimensions,
+                "initial_lr_ss": self.config.lr_ss,
+                "loss_ss": self.config.loss_function_ss,
+                "optimizer_ss": self.config.optimizer_ss,
+                "scheduler_ss": self.config.scheduler_ss,
+                "batch_size_ss": self.config.batch_size_ss,
+                "nr_epochs_ss": self.config.nb_epoch_ss,
+                "initial_lr_sup": self.config.lr_sup,
+                "loss_sup": self.config.loss_function_sup,
+                "optimizer_sup": self.config.optimizer_sup,
+                "scheduler_sup": self.config.scheduler_sup,
+                "batch_size_sup": self.config.batch_size_sup,
+                "nr_epochs_sup": self.config.nb_epoch_sup
+            }
+               
+        self.ss_timedelta = 0 if (not hasattr(self, "ss_timedelta")) else (self.ss_timedelta.seconds // 60 % 60)
+        self.sup_timedelta = 0 if (not hasattr(self, "sup_timedelta")) else (self.sup_timedelta.seconds // 60 % 60)
+        self.stats.last_avg_training_loss_per_epoch_ss = 0 if not self.stats.avg_training_loss_per_epoch_ss else self.stats.avg_training_loss_per_epoch_ss[-1]
+        self.stats.last_avg_validation_loss_per_epoch_ss = 0 if not self.stats.avg_validation_loss_per_epoch_ss else self.stats.avg_validation_loss_per_epoch_ss[-1]
+        self.stats.last_avg_training_loss_per_epoch_sup = 0 if not self.stats.avg_training_loss_per_epoch_sup else self.stats.avg_training_loss_per_epoch_sup[-1]
+        self.stats.last_avg_validation_loss_per_epoch_sup = 0 if not self.stats.avg_validation_loss_per_epoch_sup else self.stats.avg_validation_loss_per_epoch_sup[-1]
+        
+        met_dict = {
+                    "final_train_loss_ss": self.stats.last_avg_training_loss_per_epoch_ss,
+                    "final_val_loss_ss": self.stats.last_avg_validation_loss_per_epoch_ss,
+                    "stopped_early_ss": self.stats.stopped_early_ss,
+                    "training_time_ss": self.ss_timedelta,
+                    "final_train_loss_sup": self.stats.last_avg_training_loss_per_epoch_sup,
+                    "final_val_loss_sup": self.stats.last_avg_validation_loss_per_epoch_sup,
+                    "stopped_early_sup": self.stats.stopped_early_sup,
+                    "training_time_sup": self.sup_timedelta
+                    }
+        
+        if hasattr(self, "tester"):
+            if isinstance(self.tester.dice, float):
+                met_dict.update({"test_dice": self.tester.dice, "test_jaccard": self.tester.jaccard})
+            elif isinstance(self.tester.dice, list):
+                met_dict.update({"test_dice_{}".format(str(i)): dice for i, dice in enumerate(self.tester.dice)})
+                met_dict.update({"test_jaccard_{}".format(str(i)): jacd for i, jacd in enumerate(self.tester.jaccard)})
+        
+        self.tb_writer.add_hparams(hparam_dict=hpa_dict, metric_dict=met_dict)
+        self.tb_writer.flush()
         self.tb_writer.close()
 
     def _loadmodel(self, from_weights=True, from_latest_checkpoint=True):
@@ -293,10 +312,11 @@ class Trainer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if from_weights:
             weight_dir = (
-                self.config.model_path_save
+                os.path.join(self.config.model_path_save, "weights.pt")
                 if from_latest_checkpoint and os.path.isfile(os.path.join(self.config.model_path_save, "weights.pt"))
                 else self.config.weights
             )
+            print("LOADING WEIGHTS FROM {}".format(weight_dir))
             checkpoint = torch.load(weight_dir, map_location=self.device)
             state_dict = checkpoint["state_dict"]
             unParalled_state_dict = {}
@@ -313,3 +333,13 @@ class Trainer:
 
 if __name__ == "__main__":
     pass
+    #config = models_genesis_config()
+    #dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0)) # train_val_test is non relevant as will ve overwritten after
+    #dataset.x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
+    #dataset.x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
+    #dataset.x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold] #Dont know in what sense they use this for
+    #trainer_mg_replication = Trainer(config, dataset)
+    #trainer_mg_replication.train_from_scratch_model_model_genesis_exact_replication()
+    #trainer_mg_replication.add_hparams_to_writer()
+    #trainer_mg_replication.get_stats()  
+

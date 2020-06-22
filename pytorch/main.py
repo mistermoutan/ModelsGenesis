@@ -3,6 +3,8 @@ from config import models_genesis_config
 from dataset import Dataset
 from finetune import Trainer
 
+from memory_profiler import profile
+
 # script to run experiments
 
 # TODO BUILD CLI:
@@ -15,7 +17,7 @@ from finetune import Trainer
 #           - Move into modality , CT and MRI
 #           
 
-def replication_of_results():
+def replication_of_results_pretrain():
 
     #CUBE LOGIC
     # result replication, try to get the pretrained model
@@ -26,14 +28,15 @@ def replication_of_results():
     dataset.x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold] #Dont know in what sense they use this for
     trainer_mg_replication = Trainer(config, dataset)
     trainer_mg_replication.train_from_scratch_model_model_genesis_exact_replication()
-    trainer_mg_replication.close_writer()
-    trainer_mg_replication.get_stats()
+    trainer_mg_replication.add_hparams_to_writer()
+    trainer_mg_replication.get_stats()  
+    
 
 
 if __name__ == "__main__":
-
+    
     print("STARTING REPLICATION OF RESULTS EXPERIMENT")
-    replication_of_results()
+    replication_of_results_pretrain()
     print("FINISHED REPLICATION OF RESULTS EXPERIMENT")
 
 #
