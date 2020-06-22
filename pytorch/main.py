@@ -3,7 +3,7 @@ from config import models_genesis_config
 from dataset import Dataset
 from finetune import Trainer
 
-from memory_profiler import profile
+#from memory_profiler import profile
 
 # script to run experiments
 
