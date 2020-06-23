@@ -11,13 +11,15 @@ class Dataset():
     
     #TODO: remove self.has_target logic
 
-    def __init__(self, data_dir:str, train_val_test: tuple):
+    def __init__(self, data_dir:str, train_val_test: tuple, file_names=None):
         """
         Arguments:
             data_dir {str} -- [folder must be organized with x/ and y/ folders inside with .npy files, in y folder files must be named as the ones in x but ending in _target.npy]
-  
-        Keyword Arguments:
             train_val_test {tuple} -- [proportion of train,validation and test examples] (default: {(0.65,0.15,0.20)})
+            
+        Keyword Arguments:
+            file_names {[[], [], []]} -- Pre specify file names used for tr, val and test. Will override train_val_test split behavior
+            
         """
         
         self.x_data_dir = path.join(data_dir, "x/") #dir has an x and y folder
@@ -26,7 +28,11 @@ class Dataset():
         x_filenames = listdir(self.x_data_dir)
         shuffle(x_filenames)
         self.tr_val_ts_split = train_val_test
-        self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(x_filenames, train_val_test)
+        if file_names is None:
+            self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(x_filenames, train_val_test)
+        else:
+            self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = file_names[0], file_names[1], file_names[2]
+            
         self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
         self.cube_dimensions = deepcopy(self.x_train_filenames[0][-14:-6])
