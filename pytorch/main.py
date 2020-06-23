@@ -27,7 +27,7 @@ def replication_of_results_pretrain():
     dataset.x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
     dataset.x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold] #Dont know in what sense they use this for
     trainer_mg_replication = Trainer(config, dataset)
-    trainer_mg_replication.train_from_scratch_model_model_genesis_exact_replication()
+    trainer_mg_replication.train_from_scratch_model_genesis_exact_replication()
     trainer_mg_replication.add_hparams_to_writer()
     trainer_mg_replication.get_stats()  
     

@@ -42,7 +42,7 @@ class Trainer:
         self.tb_writer = SummaryWriter(config.summarywriter_dir)
         self._loadmodel()
 
-    def train_from_scratch_model_model_genesis_exact_replication(self):
+    def train_from_scratch_model_genesis_exact_replication(self):
 
         self._loadmodel(from_weights=False)
         self.finetune_self_supervised()
@@ -85,7 +85,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (epoch + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 5 == 0:
+                if (iteration + 1) % 50 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             epoch + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
@@ -192,7 +192,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (epoch + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
-                if (iteration + 1) % 5 == 0:
+                if (iteration + 1) % 50 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             epoch + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)
