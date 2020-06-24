@@ -57,7 +57,7 @@ class Statistics:
 
         self.end_time = time.time()
         self.build_stats_dictionary()
-        self.save_graphs()
+        #self.save_graphs()
         self.save_log_book()
         self.save_arrays()
 
@@ -124,7 +124,7 @@ class Statistics:
 
     def save_graphs (self):
 
-        if self.config.self_supervised and isinstance(self.config.nb_epoch_ss,int) :
+        if self.config.self_supervised and isinstance(self.config.nb_epoch_ss, int):
             #plot avg training loss per epoch
             x_axis = np.arange(self.config.nb_epoch_ss)
             figure = plt.figure()
@@ -139,7 +139,7 @@ class Statistics:
             plt.title("Avg Validation Loss per epoch ")
             figure.savefig(self.save_directory + "avg_validation_loss_per_epoch_ss.png")
         
-        if isinstance(self.config.nb_epoch_sup,int):
+        if isinstance(self.config.nb_epoch_sup, int):
             #plot avg training loss per epoch
             x_axis = np.arange(self.config.nb_epoch_sup)
             figure = plt.figure()
