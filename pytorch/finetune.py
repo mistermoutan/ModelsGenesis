@@ -83,7 +83,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 50 == 0:
+                if (iteration + 1) % 100 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
@@ -178,7 +178,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
-                if (iteration + 1) % 50 == 0:
+                if (iteration + 1) % 100 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)

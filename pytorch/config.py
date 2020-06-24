@@ -96,7 +96,7 @@ class models_genesis_config:
     def override_dirs(self, run_nr):
         
         task_dir = self.get_task_dir(exp_nr=run_nr)
-        #print(task_dir)
+        self.task_dir = task_dir
         self.stats_dir = os.path.join("stats/", task_dir)
         self.model_path_save = os.path.join("pretrained_weights/", task_dir)
         self.summarywriter_dir = os.path.join("runs/", task_dir)   
