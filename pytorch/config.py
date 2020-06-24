@@ -25,14 +25,14 @@ class models_genesis_config:
         self.resume_sup = False
 
         # data
-        self.data_dir = "pytorch/datasets/luna16_cubes"
-        self.train_fold = [0]
-        self.valid_fold = [1]
-        self.test_fold = [2]
-        #self.data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
-        #self.train_fold =[0,1,2,3,4]
-        #self.valid_fold=[5,6]
-        #self.test_fold=[7,8,9]
+        #self.data_dir = "pytorch/datasets/luna16_cubes"
+        #self.train_fold = [0]
+        #self.valid_fold = [1]
+        #self.test_fold = [2]
+        self.data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
+        self.train_fold =[0,1,2,3,4]
+        self.valid_fold=[5,6]
+        self.test_fold=[7,8,9]
         
         self.hu_min = -1000.0
         self.hu_max = 1000.0
@@ -46,12 +46,12 @@ class models_genesis_config:
         self.self_supervised = True
         self.verbose = 1
         self.weights = "pretrained_weights/Genesis_Chest_CT.pt" #initial weights
-        self.batch_size_ss = 1
+        self.batch_size_ss = 6
         self.optimizer_ss = "sgd"
         self.workers = 10
         self.max_queue_size = self.workers * 4
         self.save_samples = "png"
-        self.nb_epoch_ss = 6
+        self.nb_epoch_ss = 10000
         self.patience_ss = 30
         self.loss_function_ss = "MSE" #binary_cross_entropy
         self.lr_ss = 1

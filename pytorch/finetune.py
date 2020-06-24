@@ -83,7 +83,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 1 == 0:
+                if (iteration + 1) % 50 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
@@ -91,10 +91,8 @@ class Trainer:
                     )
                     sys.stdout.flush()
                 iteration += 1
-                if iteration == 2: break
 
             with torch.no_grad():
-                cnt = 0
                 self.model.eval()
                 x = 0
                 while True:
@@ -106,9 +104,7 @@ class Trainer:
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
-                    cnt += 1
-                    if self.epoch_ss_current == 3: loss = -200 
-                    if cnt == 2: break
+                    
             self.dataset.reset()
             self.scheduler_ss.step(self.epoch_ss_current)
 
@@ -182,7 +178,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
-                if (iteration + 1) % 1 == 0:
+                if (iteration + 1) % 50 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)
@@ -387,6 +383,7 @@ class Trainer:
                 self.optimizer_ss.load_state_dict(checkpoint["optimizer_state_dict_ss"])
                 self.scheduler_ss.load_state_dict(checkpoint["scheduler_state_dict_ss"])
             else:
+                ("NO SS PARAMS FROM PREVIOUS CHECKPOINT TO LOAD")
                 checkpoint = {}
                 
             self.num_epoch_no_improvement_ss = checkpoint.get("num_epoch_no_improvement_ss", 0)
@@ -423,6 +420,7 @@ class Trainer:
                 self.optimizer_sup.load_state_dict(checkpoint["optimizer_state_dict_sup"])
                 self.scheduler_sup.load_state_dict(checkpoint["scheduler_state_dict_sup"])
             else:
+                ("NO SUP PARAMS FROM PREVIOUS CHECKPOINT TO LOAD")
                 checkpoint = {}
                 
             self.num_epoch_no_improvement_sup = checkpoint.get("num_epoch_no_improvement_sup", 0)
