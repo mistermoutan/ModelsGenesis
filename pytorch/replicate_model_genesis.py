@@ -23,7 +23,7 @@ def replication_of_results_pretrain():
     trainer_mg_replication.add_hparams_to_writer()
     trainer_mg_replication.get_stats()
     
-if if __name__ == "__main__":
+if __name__ == "__main__":
     
     print("STARTING REPLICATION OF RESULTS EXPERIMENT")
     replication_of_results_pretrain()
