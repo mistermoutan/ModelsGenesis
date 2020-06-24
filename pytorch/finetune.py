@@ -325,6 +325,8 @@ class Trainer:
             self.model.load_state_dict(unParalled_state_dict)  ### TODO: WHY IS THIS UNPARALLELED NECESSARY?
 
         self.model.to(self.device)
+        nr_devices = len([i for i in range(torch.cuda.device_count())])
+        print("FOUND {} CUDA DEVICES".format(nr_devices))
         self.model = nn.DataParallel(self.model, device_ids=[i for i in range(torch.cuda.device_count())])
     
     
