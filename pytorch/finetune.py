@@ -19,10 +19,8 @@ from image_transformations import generate_pair
 
 from dataset import Dataset
 
-# TODO LOG:
-#        CUBE DIMENSIONS
-#        Scheduler
-#
+# TODO: TAKE ADVANTAGE OF MULTIPLE GPUS
+
 class Trainer:
 
     """ 
@@ -83,7 +81,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 100 == 0:
+                if (iteration + 1) % 200 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
@@ -104,6 +102,7 @@ class Trainer:
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
+                    
                     
             self.dataset.reset()
             self.scheduler_ss.step(self.epoch_ss_current)
@@ -178,7 +177,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
-                if (iteration + 1) % 100 == 0:
+                if (iteration + 1) % 200 == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)
