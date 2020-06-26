@@ -56,7 +56,8 @@ class Trainer:
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
-            print(self.best_loss_ss)
+            print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {} ".format(self.best_loss_ss, self.num_epoch_no_improvement_ss))
+            
         else:
             print("STARTING SS TRAINING FROM SCRATCH")
 
@@ -157,6 +158,7 @@ class Trainer:
 
         if self.epoch_sup_check > 0:
             print("RESUMING SUP TRAINING FROM EPOCH {} out of max {}".format(self.epoch_sup_check, self.config.nb_epoch_sup))
+            print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT ".format(self.best_loss_sup, self.num_epoch_no_improvement_sup))
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
         
