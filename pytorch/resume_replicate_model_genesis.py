@@ -24,4 +24,10 @@ def resume_replication_of_results_pretrain(run_nr:int):
     trainer_mg_replication.get_stats()
     
 if __name__ == "__main__":
-    resume_replication_of_results_pretrain(1)
+    
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run", required=True, dest="run", type=int)
+    args = parser.parse_args()
+    print("RESUMING RUN {}".format(args.run))
+    resume_replication_of_results_pretrain(args.run)
