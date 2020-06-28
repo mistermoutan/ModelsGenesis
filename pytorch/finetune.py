@@ -133,6 +133,7 @@ class Trainer:
             else:
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_ss, self.num_epoch_no_improvement_ss + 1))
                 self.num_epoch_no_improvement_ss += 1
+                self._save_num_epochs_no_improvement("ss")
             if self.num_epoch_no_improvement_ss >= self.config.patience_ss:
                 print("Early Stopping SS")
                 self.stats.stopped_early_ss = True
@@ -218,12 +219,12 @@ class Trainer:
                 print("Validation loss decreases from {:.4f} to {:.4f}".format(self.best_loss_sup, avg_validation_loss_of_epoch))
                 self.best_loss_sup = avg_validation_loss_of_epoch
                 num_epoch_no_improvement = 0
-                # save model
                 self._save_model("sup")
-                print("Model Saved")
+                print("Model Saved in {}".format(self.config.model_path_save))
             else:
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup + 1))
                 self.num_epoch_no_improvement_sup += 1
+                self._save_num_epochs_no_improvement("sup")
             if self.num_epoch_no_improvement_sup >= self.config.patience_sup:
                 print("Early Stopping SUP")
                 self.stats.stopped_early_sup = True
@@ -355,6 +356,32 @@ class Trainer:
                 os.path.join(self.config.model_path_save, "weights_sup.pt"),
             )
             
+    def _save_num_epochs_no_improvement(self, phase:str):
+        """Load Checkpoint and overwrite num_epochs_no_improvement"""
+        
+        assert phase == "ss" or phase == "sup"
+        if phase == "ss":
+            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")):
+                    print("UPDATING NUM EPOCHS NO IMPROV IN SS CHECKPOINT TO {}".format(self.num_epoch_no_improvement_ss))
+                    weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt")
+                    checkpoint = torch.load(weight_dir, map_location=self.device)
+                    checkpoint["num_epoch_no_improvement_ss"] = self.num_epoch_no_improvement_ss
+                    torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss.pt"))
+            else:
+                print("NO CHECKPOINT FOUND TO UPADTE NUM EPOCH NO IMPROVEMENT SS")
+                
+        if phase == "sup":
+            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")):
+                    print("UPDATING NUM EPOCHS NO IMPROV IN SUP CHECKPOINT TO {}".format(self.num_epoch_no_improvement_sup))
+                    weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt")
+                    checkpoint = torch.load(weight_dir, map_location=self.device)
+                    checkpoint["num_epoch_no_improvement_sup"] = self.num_epoch_no_improvement_sup 
+                    torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup.pt"))
+            else:
+                print("NO CHECKPOINT FOUND TO UPDATE NUM EPOCH NO IMPROVEMENT SUP")
+
+        
+            
     def _loadparams(self, phase:str):
     
         if phase=="ss":
@@ -374,7 +401,7 @@ class Trainer:
                 if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")):
                     print("RESUMING FROM SS CHECKPOINT")
                     weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt")
-                    
+            #TODO: THIS SHOULD BE if self.config.resume_from_original
                 elif os.path.isfile(os.path.join(self.config.model_path_save, "weights.pt")):
                     print("RESUMING FROM ORIGINAL GIVEN PRETRAINED WEIGHTTS")
                     weight_dir = os.path.join(self.config.weights, "weights.pt")
