@@ -31,12 +31,12 @@ parser.add_option("--target_dir", dest="target_dir", help="target volume dir for
 
 
 seed = 1
-random.seed(seed)
+#random.seed(seed)
 
 assert options.data is not None
 assert options.modality is not None, "input --modality , ct or mri"
 
-
+#TODO: dont generate cubes with only 0 or 1's in label
 
 class setup_config():
     """
@@ -171,7 +171,7 @@ def get_self_learning_data(config):
     make_dir(os.path.join(cubes_dir, "x/"))
     make_dir(os.path.join(cubes_dir, "y/"))
     
-    volumes_file_names = [i for i in os.listdir(config.DATA_DIR) if "." != i[0] and i.endswith(".nii.gz")] 
+    volumes_file_names = [i for i in os.listdir(config.DATA_DIR) if "." != i[0] and i.endswith(".nii.gz") or i.endswith(".mhd")] 
     
     for volume in tqdm(volumes_file_names):
 
