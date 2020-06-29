@@ -6,6 +6,7 @@ from utils import make_dir
 
 
 def replication_of_results_pretrain():
+    """New Run starting froms scratch"""
 
     #CUBE LOGIC
     # result replication, try to get the pretrained model
