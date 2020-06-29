@@ -10,6 +10,7 @@ def resume_replication_of_results_pretrain(run_nr:int):
     config = models_genesis_config()
     config.override_dirs(run_nr)
     config.resume_ss = True
+    config.scheduler_ss = "ReduceLROnPlateau"
     config.display()
     
     dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0)) # train_val_test is non relevant as will ve overwritten after
