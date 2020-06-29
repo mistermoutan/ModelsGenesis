@@ -56,7 +56,7 @@ class Trainer:
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
-            print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {} ".format(self.best_loss_ss, self.num_epoch_no_improvement_ss))
+            print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {} // LAST LR SS: {} ".format(self.best_loss_ss, self.num_epoch_no_improvement_ss, self.scheduler_ss.get_last_lr()))
             
         else:
             print("STARTING SS TRAINING FROM SCRATCH")
@@ -133,7 +133,7 @@ class Trainer:
             else:
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_ss, self.num_epoch_no_improvement_ss + 1))
                 self.num_epoch_no_improvement_ss += 1
-                self._save_num_epochs_no_improvement("ss")
+                #self._save_num_epochs_no_improvement("ss")
             if self.num_epoch_no_improvement_ss >= self.config.patience_ss:
                 print("Early Stopping SS")
                 self.stats.stopped_early_ss = True
@@ -159,7 +159,7 @@ class Trainer:
 
         if self.epoch_sup_check > 0:
             print("RESUMING SUP TRAINING FROM EPOCH {} out of max {}".format(self.epoch_sup_check, self.config.nb_epoch_sup))
-            print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT ".format(self.best_loss_sup, self.num_epoch_no_improvement_sup))
+            print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT // LAST LR SUP: {} ".format(self.best_loss_sup, self.num_epoch_no_improvement_sup, self.scheduler_sup.get_last_lr()))
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
         
@@ -224,7 +224,7 @@ class Trainer:
             else:
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup + 1))
                 self.num_epoch_no_improvement_sup += 1
-                self._save_num_epochs_no_improvement("sup")
+                #self._save_num_epochs_no_improvement("sup")
             if self.num_epoch_no_improvement_sup >= self.config.patience_sup:
                 print("Early Stopping SUP")
                 self.stats.stopped_early_sup = True
@@ -356,16 +356,17 @@ class Trainer:
                 os.path.join(self.config.model_path_save, "weights_sup.pt"),
             )
             
-    def _save_num_epochs_no_improvement(self, phase:str):
-        """Load Checkpoint and overwrite num_epochs_no_improvement"""
-        
+    def _save_num_epochs_no_improvement(self, phase:str, optimizer_ss):
+        """Load Checkpoint and overwrite values to avoid resuming too far behind """
+        #TODO: SHOULD MODEL BE SAVED? FOR ME NOT CAUSE THEN IF NO IMPROVEMENT YOU'LL GET A FINAL OVERFITTED ONE
         assert phase == "ss" or phase == "sup"
         if phase == "ss":
             if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")):
                     print("UPDATING NUM EPOCHS NO IMPROV IN SS CHECKPOINT TO {}".format(self.num_epoch_no_improvement_ss))
                     weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt")
                     checkpoint = torch.load(weight_dir, map_location=self.device)
-                    checkpoint["num_epoch_no_improvement_ss"] = self.num_epoch_no_improvement_ss
+                    checkpoint["num_epoch_no_improvement_ss"] = self.num_epoch_no_improvement_ss    
+                    checkpoint["scheduler_state_dict_ss"] = self.scheduler_ss.state_dict()
                     torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss.pt"))
             else:
                 print("NO CHECKPOINT FOUND TO UPADTE NUM EPOCH NO IMPROVEMENT SS")
@@ -376,6 +377,7 @@ class Trainer:
                     weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt")
                     checkpoint = torch.load(weight_dir, map_location=self.device)
                     checkpoint["num_epoch_no_improvement_sup"] = self.num_epoch_no_improvement_sup 
+                    checkpoint["scheduler_state_dict_sup"] = self.scheduler_sup.state_dict()
                     torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup.pt"))
             else:
                 print("NO CHECKPOINT FOUND TO UPDATE NUM EPOCH NO IMPROVEMENT SUP")
