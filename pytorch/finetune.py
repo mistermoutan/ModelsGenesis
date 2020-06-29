@@ -53,6 +53,7 @@ class Trainer:
         self.start_time = time.time()
 
         criterion = nn.MSELoss()
+        criterion.to(self.device)
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
@@ -76,6 +77,7 @@ class Trainer:
                 pred = self.model(x_transform) 
                 #print("INFERENCE SUCCESSFUL")
                 loss = criterion(pred, y)
+                loss.to(self.device)
                 self.optimizer_ss.zero_grad()
                 loss.backward()
                 self.optimizer_ss.step()
@@ -151,6 +153,7 @@ class Trainer:
 
         if self.config.loss_function_sup == "binary_cross_entropy":
             criterion = nn.BCELoss()  # #model outputs sigmoid so no use of BCEwithLogits
+            criterion.to(self.device)
         elif self.config.loss_function_sup == "dice":
             criterion = DiceLoss.dice_loss
         elif self.config.loss_function_sup == "mix_dice_bce":
@@ -174,6 +177,7 @@ class Trainer:
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x)
                 loss = criterion(pred, y)
+                loss.to(self.device)
                 self.optimizer_sup.zero_grad()
                 loss.backward()
                 self.optimizer_sup.step()
