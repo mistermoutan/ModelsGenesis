@@ -57,7 +57,11 @@ class Trainer:
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
-            print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {} // LAST LR SS: {} ".format(self.best_loss_ss, self.num_epoch_no_improvement_ss, self.scheduler_ss.get_last_lr()))
+            print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {}".format(self.best_loss_ss, self.num_epoch_no_improvement_ss))
+            try:
+                print("CURRNT SS LR: {}",format(self.scheduler_ss.get_last_lr()))
+            except AttributeError:
+                print("CURRNT SS LR: {}",format(self.optimizer_ss.param_groups[0]['lr']))
             
         else:
             print("STARTING SS TRAINING FROM SCRATCH")
@@ -108,7 +112,7 @@ class Trainer:
                     
                     
             self.dataset.reset()
-            self.scheduler_ss.step(self.epoch_ss_current)
+
 
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Self Supervised", avg_training_loss_of_epoch, self.epoch_ss_current + 1)
@@ -118,6 +122,11 @@ class Trainer:
             self.stats.avg_training_loss_per_epoch_ss.append(avg_training_loss_of_epoch)
             self.stats.avg_validation_loss_per_epoch_ss.append(avg_validation_loss_of_epoch)
             self.stats.iterations_ss.append(iteration)
+            
+            if self.config.scheduler_ss == "ReduceLROnPlateau":
+                self.scheduler_ss.step(avg_validation_loss_of_epoch)
+            else:
+                self.scheduler_ss.step(self.epoch_ss_current)
 
             print("###### SELF SUPERVISED#######")
             
@@ -162,7 +171,11 @@ class Trainer:
 
         if self.epoch_sup_check > 0:
             print("RESUMING SUP TRAINING FROM EPOCH {} out of max {}".format(self.epoch_sup_check, self.config.nb_epoch_sup))
-            print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT // LAST LR SUP: {} ".format(self.best_loss_sup, self.num_epoch_no_improvement_sup, self.scheduler_sup.get_last_lr()))
+            print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT ".format(self.best_loss_sup, self.num_epoch_no_improvement_sup))
+            try:
+                print("CURRNT SUP LR: {}",format(self.scheduler_sup.get_last_lr()))
+            except AttributeError:
+                print("CURRNT SUP LR: {}",format(self.optimizer_sup.param_groups[0]['lr']))
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
         
@@ -398,7 +411,7 @@ class Trainer:
                 self.optimizer_ss = torch.optim.Adam(self.model.parameters(), self.config.lr_ss)
                 
             if self.config.scheduler_ss == "ReduceLROnPlateau":
-                self.scheduler_ss = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_ss)
+                self.scheduler_ss = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_ss, mode="min", factor = 0.5, patience = 20)
             elif self.config.scheduler_ss == "StepLR":
                 self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss * 0.8), gamma=0.5)
                 
