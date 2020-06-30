@@ -2,7 +2,6 @@ import os
 import shutil
 from utils import make_dir
 
-#FILE IS UNTOUCHED
 
 class models_genesis_config:
     
@@ -23,7 +22,9 @@ class models_genesis_config:
         #resume
         self.resume_ss = False
         self.resume_sup = False
-
+        self.resume_from_provided_weights = False
+        self.resume_from_ss_model = False
+        
         # data
         #self.data_dir = "pytorch/datasets/luna16_cubes"
         #self.train_fold = [0]
@@ -52,7 +53,8 @@ class models_genesis_config:
         self.max_queue_size = self.workers * 4
         self.save_samples = "png"
         self.nb_epoch_ss = 10000
-        self.patience_ss = 30
+        self.patience_ss_terminate = 45
+        self.patience_ss = self.patience_ss_terminate // 2
         self.loss_function_ss = "MSE" #binary_cross_entropy
         self.lr_ss = 1
         self.scheduler_ss = "StepLR" #"ReduceLROnPlateau"
@@ -71,6 +73,7 @@ class models_genesis_config:
         self.loss_function_sup = False #binary_cross_entropy
         self.nb_epoch_sup = False
         self.patience_sup = False
+        self.patience_sup_terminate = False
         self.lr_sup = False
         self.scheduler_sup = False
         self.threshold = 0.5 #above is considered part of mask
