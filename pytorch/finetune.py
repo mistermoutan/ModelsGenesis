@@ -333,7 +333,7 @@ class Trainer:
         if from_latest_improvement_ss: # Transition from 
             raise NotImplementedError
 
-        if from_given_weights:
+        if from_weights:
             weight_dir = self.config.weights if os.path.isfile(self.config.weights) else None
                 
         if from_scratch:
