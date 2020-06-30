@@ -312,7 +312,7 @@ class Trainer:
         self.model = UNet3D()
         from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
         from_latest_improvement_ss = kwargs.get("from_latest_improvement", False)
-        from_given_weights = kwargs.get("from_weights", False)
+        from_weights = kwargs.get("from_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
         
         if from_latest_checkpoint:
