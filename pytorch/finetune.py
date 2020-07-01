@@ -83,7 +83,7 @@ class Trainer:
                 transform_start_time = time.time()
                 x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                 transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
-                print("TOOK {} seconds to generate pair".format(str(transform_timedelta // 60 % 60)))
+                print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds // 60 % 60)))
                 print("NVIDIA SMI POST TRANSFORM")
                 os.system("nvidia-smi")
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
