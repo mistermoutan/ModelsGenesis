@@ -53,8 +53,8 @@ class models_genesis_config:
         self.max_queue_size = self.workers * 4
         self.save_samples = "png"
         self.nb_epoch_ss = 10000
-        self.patience_ss_terminate = 45
-        self.patience_ss = self.patience_ss_terminate // 2
+        self.patience_ss_terminate = 50
+        self.patience_ss = int(self.patience_ss_terminate * 0.8)    
         self.loss_function_ss = "MSE" #binary_cross_entropy
         self.lr_ss = 1
         self.scheduler_ss = "StepLR" #"ReduceLROnPlateau"
@@ -67,7 +67,7 @@ class models_genesis_config:
         self.local_rate = 0.5
         self.flip_rate = 0.4
 
-        #in here just to conform with statistics module
+        #in here just to conform with statistics and finetune module
         self.batch_size_sup = False
         self.optimizer_sup = False
         self.loss_function_sup = False #binary_cross_entropy
