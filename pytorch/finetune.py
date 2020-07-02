@@ -78,19 +78,14 @@ class Trainer:
             while True:  # go through all examples
                 x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
                 if x is None: break
-                print("NVIDIA SMI PRE TRANSFORM")
-                os.system("nvidia-smi")
-                transform_start_time = time.time()
+                if self.epoch_ss_current == 5:
+                    transform_start_time = time.time()
                 x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
-                transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
-                print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds // 60 % 60)))
-                print("NVIDIA SMI POST TRANSFORM")
-                os.system("nvidia-smi")
+                if self.epoch_ss_current == 5:
+                    transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
+                    print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds // 60 % 60)))
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform) 
-                print("NVIDIA SMI POST INFERENC")
-                os.system("nvidia-smi")
-                #print("INFERENCE SUCCESSFUL")
                 loss = criterion(pred, y)
                 loss.to(self.device)
                 self.optimizer_ss.zero_grad()
