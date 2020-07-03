@@ -78,12 +78,12 @@ class Trainer:
             while True:  # go through all examples
                 x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
                 if x is None: break
-                if self.epoch_ss_current == 5 and iteration == 200:
+                if self.epoch_ss_current % 50 == 0 and iteration == 200:
                     transform_start_time = time.time()
                 x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
-                if self.epoch_ss_current == 5 and iteration == 200:
+                if self.epoch_ss_current % 50 == 0 and iteration == 200:
                     transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
-                    print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds // 60 % 60)))
+                    print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds)))
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform) 
                 loss = criterion(pred, y)
@@ -281,7 +281,7 @@ class Trainer:
                 "nr_epochs_sup": self.config.nb_epoch_sup
             }
                
-        self.ss_timedelta = 0 if (not hasattr(self, "ss_timedelta")) else (self.ss_timedelta.seconds // 60 % 60)
+        self.ss_timedelta = 0 if (not hasattr(self, "ss_timedelta")) else (self.ss_timedelta.seconds // 60 % 60) #conversion to minutes
         self.sup_timedelta = 0 if (not hasattr(self, "sup_timedelta")) else (self.sup_timedelta.seconds // 60 % 60)
         self.stats.last_avg_training_loss_per_epoch_ss = 0 if not self.stats.avg_training_loss_per_epoch_ss else self.stats.avg_training_loss_per_epoch_ss[-1]
         self.stats.last_avg_validation_loss_per_epoch_ss = 0 if not self.stats.avg_validation_loss_per_epoch_ss else self.stats.avg_validation_loss_per_epoch_ss[-1]
