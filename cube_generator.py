@@ -69,8 +69,10 @@ class setup_config():
         self.scale = scale
         self.DATA_DIR = DATA_DIR
         self.len_depth = len_depth
-        self.hu_max = 1000.0 if modality == "ct" else 4000
-        self.hu_min = -1000.0 if modality =="mri" else 0
+        if modality == "ct":
+            self.hu_max, self.hu_min = 1000, -1000
+        if modality == "mri":
+            self.hu_max, self.hu_min = 4000, 0
         self.target_dir = target_dir
         
             
@@ -95,7 +97,8 @@ config = setup_config(input_rows=options.input_rows,
                       len_border_z=30,
                       len_depth=    3,
                       DATA_DIR = options.data,
-                      target_dir = options.target_dir
+                      target_dir = options.target_dir,
+                      modality= options.modality
                      )
 config.display()
 
@@ -122,33 +125,79 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
             return None
         elif cnt > 50 * config.scale and num_pair > 0:
             return np.array(slice_set[:num_pair])
-
-        start_x = random.randint(0+config.len_border, size_x-config.crop_rows-1-config.len_border)
-        start_y = random.randint(0+config.len_border, size_y-config.crop_cols-1-config.len_border)
-        start_z = random.randint(0+config.len_border_z, size_z-config.input_deps-config.len_depth-1-config.len_border_z)
         
+        if hasattr(config,"starting_x"):
+            
+            x_interval = config.ending_x - config.starting_x
+            y_interval = config.ending_y - config.starting_y
+            z_interval = config.ending_z - config.starting_z
+            x_slack = config.crop_rows - x_interval
+            y_slack = config.crop_cols - y_interval
+            z_slack = config.input_deps - z_interval
+            
+            if x_slack >= 0: #then make sure you get everything as it is possible
+                start_x = random.randint(config.starting_x - x_slack // 2, config.starting_x)
+                while 1 not in target_array[start_x : start_x+config.crop_rows, :, :]:
+                    print("this should not happen")
+                    start_x = random.randint(config.starting_x - x_slack // 2, config.starting_x)
+            else:
+                start_x = random.randint(config.starting_x , config.starting_x + x_slack // 2)
+                while 1 not in target_array[start_x : start_x+config.crop_rows, : , :]:
+                    print("FINDING NEW X STARTING POINT")
+                    start_x = random.randint(config.starting_x , config.starting_x + x_slack // 2)
+
+            if y_slack >= 0: #then make sure you get everything as it is possible
+                start_y = random.randint(config.starting_y - y_slack // 2, config.starting_y)
+                while 1 not in target_array[:, start_y : start_y + config.crop_cols, :]:
+                    print("this should not happen")
+                    start_y = random.randint(config.starting_y - y_slack // 2, config.starting_y)
+            else:
+                start_y = random.randint(config.starting_y, config.starting_y + y_slack // 2)
+                while 1 not in target_array[:, start_y : start_y+config.crop_cols , :]:
+                    print("FINDING NEW Y STARTING POINT")
+                    start_y = random.randint(config.starting_y , config.starting_y + y_slack // 2)
+
+            if z_slack >= 0: #then make sure you get everything as it is possible
+                start_z = random.randint(config.starting_z - z_slack // 2, config.starting_z)
+                while 1 not in target_array[:, : , start_z : start_z + config.input_deps]:
+                    print("this should not happen")
+                    start_z = random.randint(config.starting_z - z_slack // 2, config.starting_z)
+            else:
+                start_z = random.randint(config.starting_z, config.starting_z + z_slack // 2)
+                while 1 not in target_array[:, : , start_z : start_z+config.input_deps]:
+                    print("FINDING NEW Z STARTING POINT")
+                    start_z = random.randint(config.starting_z , config.starting_z + z_slack // 2)
+            
+                
+            
+        else:
+
+            start_x = random.randint(0+config.len_border, size_x-config.crop_rows-1-config.len_border)
+            start_y = random.randint(0+config.len_border, size_y-config.crop_cols-1-config.len_border)
+            start_z = random.randint(0+config.len_border_z, size_z-config.input_deps-config.len_depth-1-config.len_border_z)
+            
         #get the cube
         crop_window = img_array[start_x : start_x+config.crop_rows,
                                 start_y : start_y+config.crop_cols,
                                 start_z : start_z+config.input_deps+config.len_depth,
-                               ]
+                            ]
 
         if target_array is not None:
             assert type(target_array) == np.ndarray
             crop_window_target = target_array[start_x : start_x+config.crop_rows,
                                 start_y : start_y+config.crop_cols,
                                 start_z : start_z+config.input_deps+config.len_depth,
-                               ]
+                            ]
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
             crop_window = resize(crop_window, 
-                                 (config.input_rows, config.input_cols, config.input_deps+config.len_depth), 
-                                 preserve_range=True,
+                                (config.input_rows, config.input_cols, config.input_deps+config.len_depth), 
+                                preserve_range=True,
                                 )
             if target_array:
-                crop_window_target = resize (crop_window_target, 
-                                 (config.input_rows, config.input_cols, config.input_deps+config.len_depth), 
-                                 preserve_range=True,
+                crop_window_target = resize(crop_window_target, 
+                                (config.input_rows, config.input_cols, config.input_deps+config.len_depth), 
+                                preserve_range=True,
                                 )
         
         slice_set[num_pair] = crop_window[:,:,:config.input_deps]
