@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import sys
 import os
@@ -10,6 +11,7 @@ from datetime import timedelta
 
 from unet3d import UNet3D
 from dataset import Dataset
+from dataset_pytorch import DatasetPytorch
 from finetune_config import FineTuneConfig
 from config import models_genesis_config
 from stats import Statistics
@@ -51,10 +53,24 @@ class Trainer:
     #@profile    
     def finetune_self_supervised(self):
         
-        buffer = GeneratePairBuffer(self.dataset, self.config)
+        #buffer = GeneratePairBuffer(self.dataset, self.config)
         self._loadparams("ss")
         self.start_time = time.time()
 
+        train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
+        train_data_loader = DataLoader(train_dataset,
+                                       batch_size=self.config.batch_size_ss,
+                                       shuffle=False,
+                                       num_workers=self.config.workers,
+                                       pin_memory=True)
+        
+        val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
+        val_data_loader = DataLoader(train_dataset,
+                                       batch_size=self.config.batch_size_ss,
+                                       shuffle=False,
+                                       num_workers=self.config.workers,
+                                       pin_memory=True)
+        
         criterion = nn.MSELoss()
         criterion.to(self.device)
 
@@ -77,11 +93,10 @@ class Trainer:
             self.model.train()
             iteration = 0
             
-            while True:  # go through all examples
-
-                if iteration == 0:
-                    time.sleep(3)
-                x_transform, y = buffer.get_train()
+            #while True:  # go through all examples
+            for x_transform, y in train_data_loader:
+    
+                #x_transform, y = 
                 if x_transform is None: break
                 #if self.epoch_ss_current % 10 == 0 and iteration == 200:
                 #    transform_start_time = time.time()
@@ -111,8 +126,8 @@ class Trainer:
             with torch.no_grad():
                 self.model.eval()
                 x = 0
-                while True:
-                    x_transform, y = buffer.get_val()
+                #while True:
+                for x_transform, y in val_data_loader:
                     #x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
                     if x_transform is None: break
                     #x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
@@ -122,10 +137,7 @@ class Trainer:
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
                     
-                    
             self.dataset.reset()
-            
-
 
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Self Supervised", avg_training_loss_of_epoch, self.epoch_ss_current + 1)
