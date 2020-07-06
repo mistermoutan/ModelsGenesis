@@ -36,6 +36,7 @@ class Dataset():
         self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
         self.cube_dimensions = deepcopy(self.x_train_filenames[0][-14:-6])
+        self.reseted = False
 
     def _load_data(self, tr_vl_ts_prop: tuple, force_load=(False, False, False)):
         """
@@ -85,6 +86,8 @@ class Dataset():
         """
         Returns: tuple(Tensor, Tensor) or tuple(None,None) if all examples have been exhausted
         """
+        
+        self.reseted = False
         self._load_data((True, False, False))
         if self.has_target:
             x , y = self.x_array_tr[self.train_idxs[:batch_size]], self.y_array_tr[self.train_idxs[:batch_size]] # (batch_size ,1, x, y, z)
@@ -101,6 +104,7 @@ class Dataset():
                 return (Tensor(x), None) if x.shape[0] != 0 else (None, None)
             else:
                 return (x, None) if x.shape[0] != 0 else (None, None)
+        
             
         # in case we can not accept smaller batches
         # if x.shape[0] != batch_size:
@@ -109,6 +113,7 @@ class Dataset():
     
     def get_val(self, batch_size: int, return_tensor=True) -> tuple():
         
+        self.reseted = False
         self._load_data((False, True, False))
         if self.has_target:
             x , y = self.x_array_val[self.val_idxs[:batch_size]], self.y_array_val[self.val_idxs[:batch_size]] # (batch_size ,1, x, y, z)
@@ -125,9 +130,11 @@ class Dataset():
                 return (Tensor(x), None) if x.shape[0] != 0 else (None, None)
             else:
                 return (x, None) if x.shape[0] != 0 else (None, None)
+            
                 
     def get_test(self, batch_size: int) -> tuple():
     
+        self.reseted = False
         self._load_data((False, False, True))
         if self.has_target:
             x , y = self.x_array_test[self.test_idxs[:batch_size]], self.y_array_test[self.test_idxs[:batch_size]] # (batch_size, 1, x , y, z)
@@ -144,6 +151,8 @@ class Dataset():
         self.x_train_filenames = deepcopy(self.x_train_filenames_original)
         self.x_val_filenames = deepcopy(self.x_val_filenames_original)
         self.x_test_filenames = deepcopy(self.x_test_filenames_original)
+        self.reseted = True
+
         
     
     @staticmethod
