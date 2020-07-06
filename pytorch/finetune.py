@@ -51,6 +51,7 @@ class Trainer:
     #@profile    
     def finetune_self_supervised(self):
         
+        buffer = GeneratePairBuffer(self.dataset, self.config)
         self._loadparams("ss")
         self.start_time = time.time()
 
@@ -69,21 +70,25 @@ class Trainer:
             print("STARTING SS TRAINING FROM SCRATCH")
 
         for self.epoch_ss_current in range(self.epoch_ss_check, self.config.nb_epoch_ss):
-
+            
+            buffer.start_processes()
             self.stats.training_losses_ss = []
             self.stats.validation_losses_ss = []
             self.model.train()
             iteration = 0
             
             while True:  # go through all examples
-                x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
-                if x is None: break
-                if self.epoch_ss_current % 10 == 0 and iteration == 200:
-                    transform_start_time = time.time()
-                x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
-                if self.epoch_ss_current % 10 == 0 and iteration == 200:
-                    transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
-                    print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds)))
+
+                if iteration == 0:
+                    time.sleep(3)
+                x_transform, y = buffer.get_train()
+                if x_transform is None: break
+                #if self.epoch_ss_current % 10 == 0 and iteration == 200:
+                #    transform_start_time = time.time()
+                #x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
+                #if self.epoch_ss_current % 10 == 0 and iteration == 200:
+                #    transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
+                #    print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds)))
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform) 
                 loss = criterion(pred, y)
@@ -107,9 +112,10 @@ class Trainer:
                 self.model.eval()
                 x = 0
                 while True:
-                    x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
-                    if x is None: break
-                    x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
+                    x_transform, y = buffer.get_val()
+                    #x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
+                    if x_transform is None: break
+                    #x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
@@ -118,6 +124,7 @@ class Trainer:
                     
                     
             self.dataset.reset()
+            
 
 
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
@@ -248,7 +255,7 @@ class Trainer:
                 self.num_epoch_no_improvement_sup += 1
                 self._save_model("sup", suffix="_no_decrease")
                 #self._save_num_epochs_no_improvement("sup")
-            if self.num_epoch_no_improvement_sup >= self.config.patience_sup:
+            if self.num_epoch_no_improvement_sup >= self.config.patience_sup_terminate:
                 print("Early Stopping SUP")
                 self.stats.stopped_early_sup = True
                 break
@@ -316,7 +323,7 @@ class Trainer:
         self.model = UNet3D()
         from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
         from_latest_improvement_ss = kwargs.get("from_latest_improvement", False)
-        from_weights = kwargs.get("from_weights", False)
+        from_provided_weights = kwargs.get("from_provided_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
         
         if from_latest_checkpoint:
@@ -337,8 +344,9 @@ class Trainer:
         if from_latest_improvement_ss: # Transition from 
             raise NotImplementedError
 
-        if from_weights:
+        if from_provided_weights:
             weight_dir = self.config.weights if os.path.isfile(self.config.weights) else None
+            if weight_dir is None: raise FileNotFoundError("Could not find provided weights to load")
                 
         if from_scratch:
             weight_dir = None
@@ -353,7 +361,7 @@ class Trainer:
                 state_dict = checkpoint["model_state_dict_ss"]
             if self.config.resume_sup:
                 state_dict = checkpoint["model_state_dict_sup"]
-            if from_weights:
+            if from_provided_weights:
                 state_dict = checkpoint["state_dict"]
                 
             unParalled_state_dict = {}
@@ -400,15 +408,15 @@ class Trainer:
         
         if phase=="ss":
             
-            if self.config.optimizer_ss == "sgd":
+            if self.config.optimizer_ss.lower() == "sgd":
                 self.optimizer_ss = torch.optim.SGD(self.model.parameters(), self.config.lr_ss, momentum=0.9, weight_decay=0.0, nesterov=False)
-            elif self.config.optimizer_ss == "adam":
+            elif self.config.optimizer_ss.lower() == "adam":
                 self.optimizer_ss = torch.optim.Adam(self.model.parameters(), self.config.lr_ss)
                 
-            if self.config.scheduler_ss == "ReduceLROnPlateau":
+            if self.config.scheduler_ss.lower() == "reducelronplateau":
                 self.scheduler_ss = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_ss, mode="min", factor=0.5, patience=self.config.patience_ss)
-            elif self.config.scheduler_ss == "StepLR":
-                self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss * 0.8), gamma=0.5)
+            elif self.config.scheduler_ss.lower() == "steplr":
+                self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss), gamma=0.5)
                 
             if self.config.resume_ss:
                 weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt")  if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
@@ -443,14 +451,14 @@ class Trainer:
     
         elif phase == "sup":
 
-            if self.config.optimizer_sup == "sgd":
+            if self.config.optimizer_sup.lower() == "sgd":
                 self.optimizer_sup = torch.optim.SGD(self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False)
-            elif self.config.optimizer_sup == "adam":
+            elif self.config.optimizer_sup.lower() == "adam":
                 self.optimizer_sup = torch.optim.Adam(
                     self.model.parameters(), self.config.lr_sup, betas=(self.config.beta1_sup, self.config.beta2_sup), eps=self.config.eps_sup
                 )
             
-            self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup * 0.8), gamma=0.5)
+            self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
             
             if self.config.resume_from_original:
                     print("RESUMING FROM ORIGINAL GIVEN PRETRAINED WEIGHTTS")
