@@ -164,7 +164,7 @@ class Dataset():
         j = ceil(len(file_names) * val_prop)
         assert len(file_names[:i]) + len(file_names[i:i+j]) + len(file_names[i+j:]) == len(file_names)
         return file_names[:i], file_names[i:i+j], file_names[i+j:]
-        
+    
 if __name__ == "__main__":
     
     a = Dataset(data_dir="pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes",train_val_test=(0.1,0,0.9))
