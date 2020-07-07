@@ -53,7 +53,7 @@ class Dataset():
             x_train_file_name = self.x_train_filenames[0]
             #print("SAMPLING FROM", x_train_file_name)
             del self.x_train_filenames[0]
-            self.x_array_tr = np.expand_dims(np.load(path.join(self.x_data_dir, x_train_file_name)), axis = 1) # (N, x, y, z) -> (N, 1 Channel, x, y, z) 
+            self.x_array_tr = np.expand_dims(np.load(path.join(self.x_data_dir, x_train_file_name)), axis = 1) # (N, x, y, z) -> (N, 1-Channel, x, y, z) 
             if self.has_target:
                 self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name[:-4] + "_target.npy")), axis=1)
                 assert self.x_array_tr.shape == self.y_array_tr.shape
@@ -132,7 +132,7 @@ class Dataset():
                 return (x, None) if x.shape[0] != 0 else (None, None)
             
                 
-    def get_test(self, batch_size: int) -> tuple():
+    def get_test(self, batch_size: int, return_tensor=True) -> tuple():
     
         self.reseted = False
         self._load_data((False, False, True))
@@ -140,12 +140,18 @@ class Dataset():
             x , y = self.x_array_test[self.test_idxs[:batch_size]], self.y_array_test[self.test_idxs[:batch_size]] # (batch_size, 1, x , y, z)
             assert x.shape == y.shape          
             del self.test_idxs[:batch_size]
-            return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None,None)
+            if return_tensor:
+                return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None)
+            else:
+                return (x, y) if x.shape[0] != 0 else (None, None)
         else:
             x = self.x_array_test[self.test_idxs[:batch_size]] # (batch_size, 1, x , y, z)
             del self.test_idxs[:batch_size]
-            return (Tensor(x), None) if  x.shape[0] != 0 else (None, None)
-        
+            if return_tensor:
+                return (Tensor(x), None) if x.shape[0] != 0 else (None, None)
+            else:
+                return (x, None) if x.shape[0] != 0 else (None, None)    
+                
     def reset(self):
         #after epoch necessary because list will be empty so will return None when fecthing data
         self.x_train_filenames = deepcopy(self.x_train_filenames_original)
