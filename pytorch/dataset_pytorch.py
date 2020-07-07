@@ -2,6 +2,7 @@ import os
 import numpy as np
 from torch.utils.data import Dataset
 from torch import Tensor
+import torch
 import numpy as np
 
 from image_transformations import generate_pair
@@ -65,50 +66,39 @@ class DatasetPytorch(Dataset):
     def __getitem__(self, idx):
         
         if self.type == "train":
-            x, y = self.dataset.get_train(batch_size=1, return_tensor=False)
+            x, y = self.dataset.get_train(batch_size=1, return_tensor=True)
             if x is not None:
                 if self.apply_mg_transforms:
-                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=False)
+                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
                 return (x,y)
            
         if self.type == "val":
-            x, y = self.dataset.get_val(batch_size=1, return_tensor=False)
+            x, y = self.dataset.get_val(batch_size=1, return_tensor=True)
             if x is not None:
                 if self.apply_mg_transforms:
-                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=False)
+                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
                 return (x, y)
         
         if self.type == "ts":
-            x, y = self.dataset.get_test(batch_size=1, return_tensor=False)
+            x, y = self.dataset.get_test(batch_size=1, return_tensor=True)
             if x is not None:
                 if self.apply_mg_transforms:
-                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=False)
+                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
                 return (x, y)
         
     @staticmethod
     def custom_collate(batch):
-        x_list, y_list = [], []
-        for x, y in batch: # y can be none in ss case
-            x_list.extend(x)
-            if y is None: y_list.append(None)
-            else: y_list.extend(y)
+        dims = batch[0][0].shape
+        x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        for idx, (x, y) in enumerate(batch): # y can be none in ss case
+            x_tensor[idx] = x
+            if y is None: y_tensor = None
+            else: y_tensor[idx] = y
             
-        x_array = np.array(x_list)
-        assert len(x_array.shape) == 5, "shape should be (N,1,X,Y,Z)"
-        x = Tensor(x_array)
-        
-        if None in y_list:
-            for i in y_list:
-                assert i is None, "All y's should be None if there is one, meaning we are in ss"
-            y = None
-        else:
-            y_array = np.array(y_list)
-            assert len(y_array.shape) == 5, "shape should be (N,1,X,Y,Z)"
-            y = Tensor(y_array)
-        
         return (x,y)
             
             
