@@ -25,11 +25,11 @@ class Dataset():
         self.x_data_dir = path.join(data_dir, "x/") #dir has an x and y folder
         self.y_data_dir = path.join(data_dir, "y/")
         self.has_target = listdir(self.y_data_dir) != []
-        x_filenames = listdir(self.x_data_dir)
-        shuffle(x_filenames)
+        self.x_filenames = listdir(self.x_data_dir)
+        shuffle(self.x_filenames)
         self.tr_val_ts_split = train_val_test
         if file_names is None:
-            self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(x_filenames, train_val_test)
+            self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = self.do_file_split(self.x_filenames, train_val_test)
         else:
             self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = file_names[0], file_names[1], file_names[2]
             
