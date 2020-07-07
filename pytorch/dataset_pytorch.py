@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from torch.utils.data import Dataset
+from torch import Tensor
+import numpy as np
 
 from image_transformations import generate_pair
 
@@ -62,28 +64,53 @@ class DatasetPytorch(Dataset):
     
     def __getitem__(self, idx):
         
-        #fuck the idx
         if self.type == "train":
-            if self.apply_mg_transforms:
-                x, _ = self.dataset.get_train(batch_size=1)
-                x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
-                return (x_transform, y)
-            x, y = self.dataset.get_train(batch_size=1)
-            return (x,y)
-            
+            x, y = self.dataset.get_train(batch_size=1, return_tensor=False)
+            if x is not None:
+                if self.apply_mg_transforms:
+                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=False)
+                    return (x_transform, y)
+                return (x,y)
+           
         if self.type == "val":
-            if self.apply_mg_transforms:
-                x, _ = self.dataset.get_val(batch_size = 1)
-                x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
-                return (x_transform, y)
-            x, y  = self.dataset.get_val(bacth_size = 1)
-            return (x, y)
+            x, y = self.dataset.get_val(batch_size=1, return_tensor=False)
+            if x is not None:
+                if self.apply_mg_transforms:
+                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=False)
+                    return (x_transform, y)
+                return (x, y)
         
         if self.type == "ts":
-            if self.apply_mg_transforms:
-                x, _ = self.dataset.get_test(batch_size = 1)
-                x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
-                return (x_transform, y)
-            x, y  = self.dataset.get_test(bacth_size = 1)
-            return (x, y)
+            x, y = self.dataset.get_test(batch_size=1, return_tensor=False)
+            if x is not None:
+                if self.apply_mg_transforms:
+                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=False)
+                    return (x_transform, y)
+                return (x, y)
         
+    @staticmethod
+    def custom_collate(batch):
+        x_list, y_list = [], []
+        for x, y in batch: # y can be none in ss case
+            x_list.extend(x)
+            if y is None: y_list.append(None)
+            else: y_list.extend(y)
+            
+        x_array = np.array(x_list)
+        assert len(x_array.shape) == 5, "shape should be (N,1,X,Y,Z)"
+        x = Tensor(x_array)
+        
+        if None in y_list:
+            for i in y_list:
+                assert i is None, "All y's should be None if there is one, meaning we are in ss"
+            y = None
+        else:
+            y_array = np.array(y_list)
+            assert len(y_array.shape) == 5, "shape should be (N,1,X,Y,Z)"
+            y = Tensor(y_array)
+        
+        return (x,y)
+            
+            
+            
+                
