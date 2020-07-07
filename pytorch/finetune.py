@@ -60,15 +60,15 @@ class Trainer:
         train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
         train_data_loader = DataLoader(train_dataset,
                                        batch_size=self.config.batch_size_ss,
-                                       shuffle=False,
                                        num_workers=self.config.workers,
+                                       collate_fn=DatasetPytorch.custom_collate,
                                        pin_memory=True)
-        
+
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
-        val_data_loader = DataLoader(train_dataset,
+        val_data_loader = DataLoader(val_dataset,
                                        batch_size=self.config.batch_size_ss,
-                                       shuffle=False,
                                        num_workers=self.config.workers,
+                                       collate_fn=DatasetPytorch.custom_collate,
                                        pin_memory=True)
         
         criterion = nn.MSELoss()
@@ -91,10 +91,9 @@ class Trainer:
             self.stats.training_losses_ss = []
             self.stats.validation_losses_ss = []
             self.model.train()
-            iteration = 0
             
             #while True:  # go through all examples
-            for x_transform, y in train_data_loader:
+            for iteration, (x_transform, y) in enumerate(train_data_loader):
     
                 #x_transform, y = 
                 if x_transform is None: break
