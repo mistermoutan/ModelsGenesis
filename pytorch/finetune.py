@@ -53,7 +53,6 @@ class Trainer:
     #@profile    
     def finetune_self_supervised(self):
         
-        #buffer = GeneratePairBuffer(self.dataset, self.config)
         self._loadparams("ss")
         self.start_time = time.time()
 
@@ -87,7 +86,6 @@ class Trainer:
 
         for self.epoch_ss_current in range(self.epoch_ss_check, self.config.nb_epoch_ss):
             
-            buffer.start_processes()
             self.stats.training_losses_ss = []
             self.stats.validation_losses_ss = []
             self.model.train()
