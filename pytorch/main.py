@@ -53,6 +53,7 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
         config = load_object(os.path.join(config.object_dir, "config.pkl"))  #!
     else:
+        # not raising error because some experimetns were done before with saving the object
         print("NO PREVIOUS CONFIG FOUND at {}".format(config.object_dir))
 
     config.resume_ss = True

@@ -59,6 +59,8 @@ class Trainer:
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
         val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
+        print("{} TRAINING EXAMPLES".format(train_dataset.__len__()))
+
         criterion = nn.MSELoss()
         criterion.to(self.device)
 
@@ -66,9 +68,9 @@ class Trainer:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
             print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {}".format(self.best_loss_ss, self.num_epoch_no_improvement_ss))
             try:
-                print("CURRNT SS LR: {}", format(self.scheduler_ss.get_last_lr()))
+                print("CURRNT SS LR: {}".format(self.scheduler_ss.get_last_lr()))
             except AttributeError:
-                print("CURRNT SS LR: {}", format(self.optimizer_ss.param_groups[0]["lr"]))
+                print("CURRNT SS LR: {}".format(self.optimizer_ss.param_groups[0]["lr"]))
 
         else:
             print("STARTING SS TRAINING FROM SCRATCH")
@@ -78,9 +80,9 @@ class Trainer:
             self.stats.training_losses_ss = []
             self.stats.validation_losses_ss = []
             self.model.train()
-            iteration = 0
+            # sample_cnt = 0
             for iteration, (x_transform, y) in enumerate(train_data_loader):
-
+                # sample_cnt += x_transform.shape[0]
                 start_time = time.time()
                 if x_transform is None:
                     print("THIS SHOULD NOT HAPPEN ANYMORE")
@@ -102,6 +104,7 @@ class Trainer:
                 timedelta_iter = timedelta(seconds=time.time() - start_time)
                 if (iteration + 1) % 50 == 0:
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
+            # print("SAMPLE COUNT {}".format(sample_cnt))
 
             with torch.no_grad():
                 self.model.eval()
@@ -173,9 +176,9 @@ class Trainer:
             print("RESUMING SUP TRAINING FROM EPOCH {} out of max {}".format(self.epoch_sup_check, self.config.nb_epoch_sup))
             print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup))
             try:
-                print("CURRNT SUP LR: {}", format(self.scheduler_sup.get_last_lr()))
+                print("CURRNT SUP LR: {}".format(self.scheduler_sup.get_last_lr()))
             except AttributeError:
-                print("CURRNT SUP LR: {}", format(self.optimizer_sup.param_groups[0]["lr"]))
+                print("CURRNT SUP LR: {}".format(self.optimizer_sup.param_groups[0]["lr"]))
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
 
