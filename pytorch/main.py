@@ -103,6 +103,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     trainer.add_hparams_to_writer()
     trainer.get_stats()
 
+
 def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, **kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
@@ -189,7 +190,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
 
     trainer = Trainer(config, dataset)
     completed_ss = trainer.ss_has_been_completed()
-    
+
     if not completed_ss:
         trainer.load_model(from_latest_checkpoint=True)
         trainer.finetune_self_supervised()
@@ -211,8 +212,9 @@ def use_model_weights_and_finetune_on_dataset_without_ss():
 def use_model_weights_and_finetune_on_dataset_with_ss():
     pass
 
+
 def train_from_scratch_on_dataset():
-    
+    pass
 
 
 if __name__ == "__main__":
