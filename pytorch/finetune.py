@@ -42,6 +42,7 @@ class Trainer:
         self.stats = Statistics(self.config, self.dataset)
         self.tb_writer = SummaryWriter(config.summarywriter_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.device)
 
     def train_from_scratch_model_genesis_exact_replication(self):
         self.finetune_self_supervised()
@@ -533,6 +534,13 @@ class Trainer:
 
             if phase == "ss" or phase == "both":
                 self.optimizer_ss.load_state_dict(checkpoint["optimizer_state_dict_ss"])
+                # RUN TIME ERROR FIX ON RESUME: https://github.com/jwyang/faster-rcnn.pytorch/issues/222
+                if self.config.optimizer_ss.lower() == "sgd":
+                    for state in self.optimizer_ss.state.values():
+                        for k, v in state.items():
+                            if isinstance(v, torch.Tensor):
+                                state[k] = v.cuda()
+
                 self.scheduler_ss.load_state_dict(checkpoint["scheduler_state_dict_ss"])
 
             if phase == "sup" or phase == "both":
