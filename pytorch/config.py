@@ -32,8 +32,8 @@ class models_genesis_config:
         # data
         self.data_dir = "pytorch/datasets/luna16_cubes"
         self.train_fold = [0]
-        self.valid_fold = [1]
-        self.test_fold = [2]
+        self.valid_fold = [0]
+        self.test_fold = [0]
         # self.data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
         # self.train_fold =[0,1,2,3,4]
         # self.valid_fold=[5,6]
@@ -53,7 +53,7 @@ class models_genesis_config:
 
         # model pre-training
 
-        self.batch_size_ss = 1
+        self.batch_size_ss = 6
         self.optimizer_ss = "sgd"
         self.loss_function_ss = "MSE"  # binary_cross_entropy
         self.nb_epoch_ss = 5
@@ -63,15 +63,18 @@ class models_genesis_config:
         self.scheduler_ss = "StepLR"  # "ReduceLROnPlateau"
 
         # in here just to conform with statistics and finetune module
-        self.batch_size_sup = False
-        self.optimizer_sup = False
-        self.loss_function_sup = False  # binary_cross_entropy
-        self.nb_epoch_sup = False
-        self.patience_sup = False
-        self.patience_sup_terminate = False
-        self.lr_sup = False
-        self.scheduler_sup = False
-        self.threshold = 0.5  # above is considered part of mask
+        self.batch_size_sup = 6
+        self.optimizer_sup = "adam"
+        self.loss_function_sup = "dice"  # binary_cross_entropy
+        self.nb_epoch_sup = 10000
+        self.patience_sup_terminate = 50
+        self.patience_sup = int(self.patience_sup_terminate * 0.7)
+        self.lr_sup = 1e-3
+        self.scheduler_sup = "steplr"
+        self.beta1_sup = 0.9
+        self.beta2_sup = 0.999
+        self.eps_sup = 1e-8
+
         # logs
         self.model_path = "pretrained_weights"
         if not os.path.exists(self.model_path):
