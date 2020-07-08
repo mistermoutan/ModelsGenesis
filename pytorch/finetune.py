@@ -59,8 +59,6 @@ class Trainer:
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
         val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
-        print(train_dataset.__len__())
-
         criterion = nn.MSELoss()
         criterion.to(self.device)
 
@@ -81,7 +79,6 @@ class Trainer:
             self.stats.validation_losses_ss = []
             self.model.train()
             iteration = 0
-
             for iteration, (x_transform, y) in enumerate(train_data_loader):
 
                 start_time = time.time()
