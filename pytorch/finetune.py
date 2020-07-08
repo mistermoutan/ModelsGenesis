@@ -22,8 +22,6 @@ from image_transformations import generate_pair
 from dataset import Dataset
 
 # TODO: TAKE ADVANTAGE OF MULTIPLE GPUS
-# TODO: RESUME FROM LATEST GOOD SS CHECKPOINT
-# TODO: ADD patience_sup_terminate
 
 
 class Trainer:
@@ -51,10 +49,8 @@ class Trainer:
     def finetune_from_given_model_genesis_weights(self):
         raise NotImplementedError
 
-    # @profile
     def finetune_self_supervised(self):
 
-        #self._loadparams("ss")
         self.start_time = time.time()
 
         train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
@@ -62,6 +58,8 @@ class Trainer:
 
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
         val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+
+        print(train_dataset.__len__())
 
         criterion = nn.MSELoss()
         criterion.to(self.device)
@@ -83,24 +81,14 @@ class Trainer:
             self.stats.validation_losses_ss = []
             self.model.train()
             iteration = 0
-            # while True:  # go through all examples
-            for iteration, (x_transform, y) in enumerate(train_data_loader):
-                start_time = time.time()
 
-                # x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
-                # x_transform, y =
+            for iteration, (x_transform, y) in enumerate(train_data_loader):
+
+                start_time = time.time()
                 if x_transform is None:
                     print("THIS SHOULD NOT HAPPEN ANYMORE")
                     break
 
-                # if self.epoch_ss_current % 10 == 0 and iteration == 200:
-                # x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
-                print(x_transform.shape, type(y))
-                timedelta_transform = timedelta(seconds=time.time() - start_time)
-                print("TIMEDELTA FOR TRANSFORM {}".format(str(timedelta_transform)))
-                # if self.epoch_ss_current % 10 == 0 and iteration == 200:
-                #    transform_timedelta = timedelta(seconds= time.time() - transform_start_time)
-                #    print("TOOK {} seconds to generate pair".format(str(transform_timedelta.seconds)))
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
@@ -114,19 +102,16 @@ class Trainer:
                 if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
                     sys.stdout.flush()
-                iteration += 1
                 timedelta_iter = timedelta(seconds=time.time() - start_time)
-                print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
+                if (iteration + 1) % 50 == 0:
+                    print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
 
             with torch.no_grad():
                 self.model.eval()
                 x = 0
-                # while True:
                 for x_transform, y in val_data_loader:
-                    # x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
                     if x_transform is None:
                         break
-                    # x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
@@ -171,12 +156,11 @@ class Trainer:
 
         self.ss_timedelta = timedelta(seconds=time.time() - self.start_time)
         self._add_completed_flag_to_last_checkpoint_saved(phase="ss")
-        
+
         print("FINISHED TRAINING SS")
 
     def finetune_supervised(self):
 
-        #self._loadparams("sup")
         self.start_time = time.time()
 
         if self.config.loss_function_sup == "binary_cross_entropy":
@@ -327,14 +311,14 @@ class Trainer:
 
         if self.config.model == "VNET_MG":
             self.model = UNet3D()
-            
+
         from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
         from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
         from_provided_weights = kwargs.get("from_provided_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
-        
-        DEFAULTING_TO_LAST_SS = False 
-        
+
+        DEFAULTING_TO_LAST_SS = False
+
         if from_latest_checkpoint:
 
             # for doing ss and sup finetuning
@@ -347,7 +331,7 @@ class Trainer:
                     if weight_dir_no_decrease is not None:
                         weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="ss")
                     self._loadparams(dir=weight_dir, phase="ss")
-                
+
                 else:
                     weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
                     weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
@@ -360,7 +344,8 @@ class Trainer:
                         DEFAULTING_TO_LAST_SS = True
                         print("IT SEEMS SS COMPLETED BUT NO SUP EPOCH WAS COMPLETED, RESUMING FROM LATEST SS CHECKPOINT")
                         weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
-                        if weight_dir is None: raise FileNotFoundError("Could not find weights to load")
+                        if weight_dir is None:
+                            raise FileNotFoundError("Could not find weights to load")
                         self._loadparams(fresh_params=True, phase="sup")
 
             elif self.config.resume_ss:
@@ -369,26 +354,29 @@ class Trainer:
                 weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
                 if weight_dir_no_decrease is not None:
                     weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="ss")
-                if weight_dir is None: raise FileNotFoundError("Could not find provided weights to load")
+                if weight_dir is None:
+                    raise FileNotFoundError("Could not find provided weights to load")
                 self._loadparams(dir=weight_dir, phase="ss")
-
 
             elif self.config.resume_sup:
                 weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
                 weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
                 if weight_dir_no_decrease is not None:
                     weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="sup")
-                if weight_dir is None: raise FileNotFoundError("Could not find provided weights to load")
+                if weight_dir is None:
+                    raise FileNotFoundError("Could not find provided weights to load")
                 self._loadparams(dir=weight_dir, phase="sup")
 
         if from_latest_improvement_ss:  # Transition from
             weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
-            if weight_dir is None: raise FileNotFoundError("Could not find latest SS Improvement checkpoint to start from")
+            if weight_dir is None:
+                raise FileNotFoundError("Could not find latest SS Improvement checkpoint to start from")
             self._loadparams(fresh_params=True, phase="sup")
 
         if from_provided_weights:
             weight_dir = self.config.weights if os.path.isfile(self.config.weights) else None
-            if weight_dir is None: raise FileNotFoundError("Could not find provided weights to load")
+            if weight_dir is None:
+                raise FileNotFoundError("Could not find provided weights to load")
             self._loadparams(fresh_params=True, phase="both")
 
         if from_scratch:
@@ -404,12 +392,12 @@ class Trainer:
             if self.config.resume_ss and self.config.resume_sup:
                 completed_ss = self.ss_has_been_completed()
                 if not completed_ss:
-                    state_dict = checkpoint["model_state_dict_ss"]  
-                else: 
+                    state_dict = checkpoint["model_state_dict_ss"]
+                else:
                     if DEFAULTING_TO_LAST_SS:
                         state_dict = checkpoint["model_state_dict_ss"]
-                    else: 
-                        state_dict = checkpoint["model_state_dict_sup"] 
+                    else:
+                        state_dict = checkpoint["model_state_dict_sup"]
 
             if self.config.resume_ss:
                 state_dict = checkpoint["model_state_dict_ss"]
@@ -457,19 +445,18 @@ class Trainer:
             print("ADDED COMPLETED SUP FLAG TO CHECKPOINT")
         else:
             raise ValueError("Invalid phase")
-        
+
     def ss_has_been_completed(self):
-        
+
         weight_dir_ss = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
         checkpoint = torch.load(weight_dir_ss, map_location=self.device)
         return checkpoint.get("completed_ss", False)
 
     def sup_has_been_completed(self):
-        
+
         weight_dir_ss = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
         checkpoint = torch.load(weight_dir_ss, map_location=self.device)
         return checkpoint.get("completed_ss", False)
-        
 
     def _save_model(self, phase: str, suffix=""):
         """
@@ -506,16 +493,15 @@ class Trainer:
                 os.path.join(self.config.model_path_save, "weights_sup{}.pt".format(suffix)),
             )
             print("Model Saved in {}".format(os.path.join(self.config.model_path_save, "weights_sup{}.pt".format(suffix))))
-            
 
-    def _loadparams(self, phase:str,  **kwargs):
+    def _loadparams(self, phase: str, **kwargs):
         """
         phase: "ss", "sup" or "both"
         """
         weight_dir = kwargs.get("dir", None)
         fresh_params = kwargs.get("fresh_params", False)
-        
-        #intialize params
+
+        # intialize params
         if phase == "ss" or phase == "both":
 
             if self.config.optimizer_ss.lower() == "sgd":
@@ -527,54 +513,53 @@ class Trainer:
                 self.scheduler_ss = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_ss, mode="min", factor=0.5, patience=self.config.patience_ss)
             elif self.config.scheduler_ss.lower() == "steplr":
                 self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss), gamma=0.5)
-                
+
         if phase == "sup" or phase == "both":
-            
+
             if self.config.optimizer_sup.lower() == "sgd":
                 self.optimizer_sup = torch.optim.SGD(self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False)
             elif self.config.optimizer_sup.lower() == "adam":
                 self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup, betas=(self.config.beta1_sup, self.config.beta2_sup), eps=self.config.eps_sup)
 
             self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
-        
+
         if fresh_params:
             print("LOADING FRESH PARAMS")
             checkpoint = {}
-            
+
         elif weight_dir:
             print("LOADING PARAMS FROM {} FOR PHASE {}".format(weight_dir, phase))
             checkpoint = torch.load(weight_dir, map_location=self.device)
-            
+
             if phase == "ss" or phase == "both":
                 self.optimizer_ss.load_state_dict(checkpoint["optimizer_state_dict_ss"])
                 self.scheduler_ss.load_state_dict(checkpoint["scheduler_state_dict_ss"])
-                
+
             if phase == "sup" or phase == "both":
                 self.optimizer_sup.load_state_dict(checkpoint["optimizer_state_dict_sup"])
                 self.scheduler_sup.load_state_dict(checkpoint["scheduler_state_dict_sup"])
-                
+
         if phase == "ss" or phase == "both":
-            
+
             self.num_epoch_no_improvement_ss = checkpoint.get("num_epoch_no_improvement_ss", 0)
             self.stats.training_losses_ss = checkpoint.get("training_losses_ss", [])
             self.stats.validation_losses_ss = checkpoint.get("validation_losses_ss", [])
             self.epoch_ss_check = checkpoint.get("epoch_ss", 0)
             self.best_loss_ss = checkpoint.get("best_loss_ss", 10000000000)
-            
+
         if phase == "sup" or phase == "both":
-            
+
             self.num_epoch_no_improvement_sup = checkpoint.get("num_epoch_no_improvement_sup", 0)
             self.stats.training_losses_sup = checkpoint.get("training_losses_sup", [])
             self.stats.validation_losses_sup = checkpoint.get("validation_losses_sup", [])
             self.epoch_sup_check = checkpoint.get("epoch_sup", 0)
             self.best_loss_sup = checkpoint.get("best_loss_sup", 10000000000)
 
-
     def get_stats(self):
         self.stats.get_statistics()
 
     def _get_dir_with_more_advanced_epoch(self, dir_a, dir_b, phase):
-        
+
         check_a = torch.load(dir_a, map_location=self.device)
         check_b = torch.load(dir_b, map_location=self.device)
         if phase == "ss":
@@ -585,96 +570,6 @@ class Trainer:
             epoch_b = check_b["epoch_sup"]
 
         return dir_a if epoch_a > epoch_b else dir_b
-
-        """     def _save_num_epochs_no_improvement(self, phase:str, optimizer_ss):
-        oad Checkpoint and overwrite values to avoid resuming too far behind 
-        #TODO: SHOULD MODEL BE SAVED? FOR ME NOT CAUSE THEN IF NO IMPROVEMENT YOU'LL GET A FINAL OVERFITTED ONE
-        assert phase == "ss" or phase == "sup"
-        if phase == "ss":
-            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")):
-                    print("UPDATING NUM EPOCHS NO IMPROV IN SS CHECKPOINT TO {}".format(self.num_epoch_no_improvement_ss))
-                    weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt")
-                    checkpoint = torch.load(weight_dir, map_location=self.device)
-                    checkpoint["num_epoch_no_improvement_ss"] = self.num_epoch_no_improvement_ss    
-                    checkpoint["scheduler_state_dict_ss"] = self.scheduler_ss.state_dict()
-                    torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss.pt"))
-            else:
-                print("NO CHECKPOINT FOUND TO UPADTE NUM EPOCH NO IMPROVEMENT SS")
-                
-        if phase == "sup":
-            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")):
-                    print("UPDATING NUM EPOCHS NO IMPROV IN SUP CHECKPOINT TO {}".format(self.num_epoch_no_improvement_sup))
-                    weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt")
-                    checkpoint = torch.load(weight_dir, map_location=self.device)
-                    checkpoint["num_epoch_no_improvement_sup"] = self.num_epoch_no_improvement_sup 
-                    checkpoint["scheduler_state_dict_sup"] = self.scheduler_sup.state_dict()
-                    torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup.pt"))
-            else:
-                print("NO CHECKPOINT FOUND TO UPDATE NUM EPOCH NO IMPROVEMENT SUP") """
-                
-           """  if from_latest_checkpoint:
-                if self.config.resume_ss and self.config.resume_sup:
-                    completed_ss = self.ss_has_been_completed()
-
-                    if completed_ss is False:
-                        weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")) else None
-                        weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
-                        if weight_dir_no_decrease is not None:
-                            weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="ss")
-                    else: 
-                        print("SS HAS BEEN COMPLETED, NOT GOING TO LOAD PARAMS")
-                        
-                                        
-                elif self.config.resume_ss:
-                    weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
-                    weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")) else None
-                    print("RESUMING FROM SS CHECKPOINT")
-                    # resumes latest model this logic is necessary as we want to save the latest model that had an increase in valid loss
-                    if weight_dir_no_decrease is not None:
-                        weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="ss")
-
-                    elif weight_dir is None: raise FileNotFoundError("Trying to resume from non existent checkpoint") """
-
-
-"""         elif phase == "sup":
-            
-            if self.config.optimizer_sup.lower() == "sgd":
-                self.optimizer_sup = torch.optim.SGD(self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False)
-            elif self.config.optimizer_sup.lower() == "adam":
-                self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup, betas=(self.config.beta1_sup, self.config.beta2_sup), eps=self.config.eps_sup)
-
-            self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
-            
-            if from_latest_checkpoint:
-                if self.config.resume_ss and self.config.resume_sup:
-                    completed_ss = self.ss_has_been_completed()
-                    if completed_ss is False:
-                        raise ValueError("Should not be loading SUP PARAMS WHEN SS IS NOT COMPLETED YET")
-                    else:
-                        weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
-                        weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
-                        if weight_dir_no_decrease is not None and weight_dir is not None:
-                            weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="sup")
-                        elif weight_dir is None:
-                            print("IT SEEMS SS COMPLETED BUT NO SUP EPOCH WAS COMPLETED, Initializing params from scratch to conitnue latest improved ss with sup")
-         
-
-                if self.config.resume_sup:
-                    weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
-                    weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
-                    print("RESUMING FROM SUP CHECKPOINT")
-                    if weight_dir_no_decrease is not None:
-                        weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="sup")
-
-                    if weight_dir is None:
-                        raise FileNotFoundError("Trying to resume from non existent checkpoint")
-
-                    print("LOADING PARAMS FROM {}".format(weight_dir))
-                    checkpoint = torch.load(weight_dir, map_location=self.device)
-                    
-                else:
-                    ("NO SUP PARAMS FROM PREVIOUS CHECKPOINT TO LOAD. THIS SHOULD NOT HAPPEN")
-                    checkpoint = {} """
 
 
 if __name__ == "__main__":
