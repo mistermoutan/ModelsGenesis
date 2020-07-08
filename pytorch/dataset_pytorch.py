@@ -101,4 +101,4 @@ class DatasetPytorch(Dataset):
             else:
                 y_tensor[idx] = y
 
-        return (x, y)
+        return (x_tensor, y_tensor)
