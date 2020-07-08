@@ -19,7 +19,7 @@ def load_object(location):
 
     with open(location, "rb") as f:
         o = dill.load(f)
-    print("LOAD {} object".format(location))
+    print("LOADED {} object".format(location))
     return o
 
 
