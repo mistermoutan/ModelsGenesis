@@ -22,7 +22,6 @@ from utils import make_dir, save_object, load_object, replace_obj_attributes
 def replication_of_results_pretrain(**kwargs):
 
     config = models_genesis_config()
-    # config.scheduler_ss = "ReduceLROnPlateau"
     # config.optimizer_ss = "adam"
 
     if kwargs:
@@ -138,6 +137,10 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     trainer.add_hparams_to_writer()
     trainer.get_stats()
 
+    """
+    ---
+    """
+
 
 def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
 
@@ -230,6 +233,7 @@ def train_from_scratch_on_dataset():
 if __name__ == "__main__":
 
     import argparse
+    from dataset_map import dataset_map
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--command", required=True, dest="command", type=str)
@@ -239,10 +243,10 @@ if __name__ == "__main__":
     parser.add_argument("--split", nargs="+", required=False, dest="tr_val_ts_split", default=None, type=float)
     parser.add_argument("-opt_ss", "--optimizer_ss", required=False, dest="optimizer_ss", type=str)
     parser.add_argument("-opt_sup", "--optimizer_sup", required=False, dest="optimizer_sup", type=str)
-    # parser.add_argument("")
+    # model argument?
     args = parser.parse_args()
 
-    # TODO: Add optim and scheduler handling
+    # TODO: Add optim and scheduler handling, initial lr
     # TODO: WATCH OUT FOR LIDC WHICH IS ONLY 3 FILES: TR, VAL and TEST
 
     if args.command == "replicate_model_genesis_pretrain":
@@ -255,7 +259,6 @@ if __name__ == "__main__":
         resume_replication_of_results_pretrain(args.run)
 
     elif args.command == "finetune_from_provided_weights_no_ss":
-        from dataset_map import dataset_map
 
         kwargs_dict = {}
         assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
@@ -272,7 +275,6 @@ if __name__ == "__main__":
         use_provided_weights_and_finetune_on_dataset_without_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_finetune_from_provided_weights_no_ss":
-        from dataset_map import dataset_map
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
         kwargs_dict = {}
@@ -287,6 +289,41 @@ if __name__ == "__main__":
         print("RESUMING FINETUNE FROM PROVIDED WEIGHTS EXPERIMENT WITH NO SS FROM RUN {}".format(args.run))
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], kwargs_dict["mode"]))
         resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
+
+    elif args.command == "finetune_from_provided_weights_with_ss":
+
+        kwargs_dict = {}
+        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
+        kwargs_dict["dataset"] = args.dataset
+        if len(args.dataset > 1):
+            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
+            kwargs_dict["mode"] = args.mode
+        else:
+            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
+
+        if args.tr_val_ts_split is not None:
+            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
+
+        use_provided_weights_and_finetune_on_dataset_with_ss(kwargs_dict=kwargs_dict)
+
+    elif args.command == "resume_finetune_from_provided_weights_with_ss":
+
+        assert args.run is not None, "You have to specify which --run to resume (int)"
+        kwargs_dict = {}
+        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
+        kwargs_dict["dataset"] = args.dataset
+        if len(args.dataset > 1):
+            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
+            kwargs_dict["mode"] = args.mode
+        else:
+            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
+
+        print("RESUMING FINETUNE FROM PROVIDED WEIGHTS EXPERIMENT WITH SS FROM RUN {}".format(args.run))
+        print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], kwargs_dict["mode"]))
+        resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
+
+    elif args.command == "IMPLEMENT THIS":
+        pass
 
     else:
         raise ValueError("Input a valid command")
