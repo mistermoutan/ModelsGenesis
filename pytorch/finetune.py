@@ -120,7 +120,6 @@ class Trainer:
                     self.stats.validation_losses_ss.append(loss.item())
 
             self.dataset.reset()
-
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Self Supervised", avg_training_loss_of_epoch, self.epoch_ss_current + 1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_ss)
@@ -338,7 +337,7 @@ class Trainer:
                     weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
                     if weight_dir_no_decrease is not None and weight_dir is not None:
                         weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="sup")
-                        self._loadparams(dir=weight_dir, phase="ss")
+                        self._loadparams(dir=weight_dir, phase="sup")
 
                     elif weight_dir is None:
                         # if it didnt have time to do a full sup epoch
@@ -368,7 +367,7 @@ class Trainer:
                     raise FileNotFoundError("Could not find provided weights to load")
                 self._loadparams(dir=weight_dir, phase="sup")
 
-        if from_latest_improvement_ss:  # Transition from
+        if from_latest_improvement_ss:  # Transition
             weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
             if weight_dir is None:
                 raise FileNotFoundError("Could not find latest SS Improvement checkpoint to start from")
@@ -394,17 +393,20 @@ class Trainer:
                 completed_ss = self.ss_has_been_completed()
                 if not completed_ss:
                     state_dict = checkpoint["model_state_dict_ss"]
-                else:
+                else:  # could be shortened but it's nice to see the logic
                     if DEFAULTING_TO_LAST_SS:
                         state_dict = checkpoint["model_state_dict_ss"]
                     else:
                         state_dict = checkpoint["model_state_dict_sup"]
 
-            if self.config.resume_ss:
+            if self.config.resume_ss or from_latest_improvement_ss:
+                print("Loaded Model State dict from model_state_dict_ss checkpoint key")
                 state_dict = checkpoint["model_state_dict_ss"]
             if self.config.resume_sup:
+                print("Loaded Model State dict from model_state_dict_sup checkpoint key")
                 state_dict = checkpoint["model_state_dict_sup"]
             if from_provided_weights:
+                print("Loaded Model State dict from state_dict checkpoint key")
                 state_dict = checkpoint["state_dict"]
 
             unParalled_state_dict = {}
@@ -442,8 +444,8 @@ class Trainer:
             checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
             checkpoint["completed_sup"] = True
             torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
-
             print("ADDED COMPLETED SUP FLAG TO CHECKPOINT")
+
         else:
             raise ValueError("Invalid phase")
 
@@ -540,6 +542,9 @@ class Trainer:
                         for k, v in state.items():
                             if isinstance(v, torch.Tensor):
                                 state[k] = v.cuda()
+                elif self.optimizer_ss.lower() == "adam":
+                    # Might need fix for this as well
+                    pass
 
                 self.scheduler_ss.load_state_dict(checkpoint["scheduler_state_dict_ss"])
 
