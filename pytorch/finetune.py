@@ -103,7 +103,7 @@ class Trainer:
                     print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
                     sys.stdout.flush()
                 timedelta_iter = timedelta(seconds=time.time() - start_time)
-                if (iteration + 1) % 50 == 0:
+                if (iteration + 1) % 200 == 0:
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
             # print("SAMPLE COUNT {}".format(sample_cnt))
 
