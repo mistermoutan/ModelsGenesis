@@ -73,12 +73,17 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     trainer_mg_replication.add_hparams_to_writer()
     trainer_mg_replication.get_stats()
 
+    """
+    ---
+    """
+
 
 def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
 
     dataset_list = kwargs_dict_["dataset"]
+    dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -87,7 +92,6 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
         dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
     else:
         assert mode != ""
-        dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
         datasets = [Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None) for idx in range((dataset_list))]
         dataset = Datasets(datasets=datasets, mode=mode)
 
@@ -108,7 +112,9 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, **kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
+
     dataset_list = kwargs_dict_["dataset"]
+    dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True)
@@ -138,6 +144,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
 
     dataset_list = kwargs_dict_["dataset"]
+    dataset_list.sort()
     split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -169,7 +176,9 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
 def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
+
     dataset_list = kwargs_dict_["dataset"]
+    dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True)
@@ -254,6 +263,8 @@ if __name__ == "__main__":
         if len(args.dataset > 1):
             assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
             kwargs_dict["mode"] = args.mode
+        else:
+            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
 
         if args.tr_val_ts_split is not None:
             kwargs_dict["split"] = tuple(args.tr_val_ts_split)
@@ -270,6 +281,8 @@ if __name__ == "__main__":
         if len(args.dataset > 1):
             assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
             kwargs_dict["mode"] = args.mode
+        else:
+            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
 
         print("RESUMING FINETUNE FROM PROVIDED WEIGHTS EXPERIMENT WITH NO SS FROM RUN {}".format(args.run))
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], kwargs_dict["mode"]))
