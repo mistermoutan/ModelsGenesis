@@ -219,6 +219,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
 
 
 def use_model_weights_and_finetune_on_dataset_without_ss():
+    # pass it the directory of the task that the model you want to resume from is
     pass
 
 
