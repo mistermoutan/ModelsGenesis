@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset as DatasetP
 from torch import Tensor
 import torch
 import numpy as np
@@ -8,7 +8,7 @@ import numpy as np
 from image_transformations import generate_pair
 
 
-class DatasetPytorch(Dataset):
+class DatasetPytorch(DatasetP):
     def __init__(self, dataset, config, type_: str, apply_mg_transforms: bool):
         """[summary]
 
@@ -102,3 +102,33 @@ class DatasetPytorch(Dataset):
                 y_tensor[idx] = y
 
         return (x_tensor, y_tensor)
+
+
+if __name__ == "__main__":
+
+    from config import models_genesis_config
+    from torch.utils.data import DataLoader
+    from dataset import Dataset
+
+    config = models_genesis_config()
+    x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
+    x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
+    x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
+    files = [x_train_filenames, x_val_filenames, x_test_filenames]
+    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files
+
+    PD = DatasetPytorch(dataset, config, type_="val", apply_mg_transforms=False)
+    DL = DataLoader(PD, batch_size=6, num_workers=0, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+    n_samples = PD.__len__()
+    sample_count = 0
+    print(n_samples)
+    while True:
+        print("new epoch")
+        for iteration, (x, y) in enumerate(DL):
+            sample_count += x.shape[0]
+            if (iteration + 1) % 200 == 0:
+                print(iteration, type(x), type(y))
+            if sample_count == n_samples:
+                print("exhausted dataset")
+        dataset.reset()  # works
+
