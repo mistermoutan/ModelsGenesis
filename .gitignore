@@ -12,3 +12,4 @@ pretrained_weights/
 *.vscode
 *.pt
 *.ipynb
+objects/
