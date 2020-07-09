@@ -30,14 +30,14 @@ class models_genesis_config:
         self.weights = "pretrained_weights/Genesis_Chest_CT.pt"  # initial weights
 
         # data
-        self.data_dir = "pytorch/datasets/luna16_cubes"
-        self.train_fold = [0]
-        self.valid_fold = [0]
-        self.test_fold = [0]
-        # self.data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
-        # self.train_fold =[0,1,2,3,4]
-        # self.valid_fold=[5,6]
-        # elf.test_fold=[7,8,9]
+        # self.data_dir = "pytorch/datasets/luna16_cubes"
+        # self.train_fold = [0]
+        # self.valid_fold = [0]
+        # elf.test_fold = [0]
+        self.data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
+        self.train_fold = [0, 1, 2, 3, 4]
+        self.valid_fold = [5, 6]
+        self.test_fold = [7, 8, 9]
 
         # image deformation
         self.nonlinear_rate = 0.9
@@ -56,11 +56,11 @@ class models_genesis_config:
         self.batch_size_ss = 6
         self.optimizer_ss = "sgd"
         self.loss_function_ss = "MSE"  # binary_cross_entropy
-        self.nb_epoch_ss = 5
+        self.nb_epoch_ss = 10000
         self.patience_ss_terminate = 50
         self.patience_ss = int(self.patience_ss_terminate * 0.8)
         self.lr_ss = 1
-        self.scheduler_ss = "StepLR"  # "ReduceLROnPlateau"
+        self.scheduler_ss = "ReduceLROnPlateau"  # "ReduceLROnPlateau" or StepLr
 
         # in here just to conform with statistics and finetune module
         self.batch_size_sup = 6
