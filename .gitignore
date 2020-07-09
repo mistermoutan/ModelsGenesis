@@ -13,3 +13,5 @@ pretrained_weights/
 *.pt
 *.ipynb
 objects/
+runs/
+stats/
