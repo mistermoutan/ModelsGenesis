@@ -55,10 +55,10 @@ class models_genesis_config:
 
         self.batch_size_ss = 6
         self.optimizer_ss = "sgd"
-        self.loss_function_ss = "MSE"  # binary_cross_entropy
+        self.loss_function_ss = "MSE"
         self.nb_epoch_ss = 10000
         self.patience_ss_terminate = 50
-        self.patience_ss = int(self.patience_ss_terminate * 0.8)
+        self.patience_ss = int(self.patience_ss_terminate * 0.4)
         self.lr_ss = 1
         self.scheduler_ss = "ReduceLROnPlateau"  # "ReduceLROnPlateau" or StepLr
 
@@ -68,7 +68,7 @@ class models_genesis_config:
         self.loss_function_sup = "dice"  # binary_cross_entropy
         self.nb_epoch_sup = 10000
         self.patience_sup_terminate = 50
-        self.patience_sup = int(self.patience_sup_terminate * 0.7)
+        self.patience_sup = int(self.patience_sup_terminate * 0.4)
         self.lr_sup = 1e-3
         self.scheduler_sup = "steplr"
         self.beta1_sup = 0.9
