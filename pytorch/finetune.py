@@ -86,21 +86,25 @@ class Trainer:
             with torch.no_grad():
                 self.model.eval()
                 for iteration, (x_transform, y) in enumerate(train_data_loader):
-                    if x_transform is None:
-                        print("THIS SHOULD NOT HAPPEN ANYMORE")
-                        break
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
-                    print("TRAINING LOSS {}", format(loss.item()))
-                    if iteration == 20:
+                    loss.to(self.device)
+                    self.stats.training_losses_ss.append(loss.item())
+                    if (iteration + 1) % 10:
+                        print("iteration {}, TRAINING Loss: {:.6f}".format(iteration + 1, np.average(self.stats.training_losses_ss)))
+
+                    if iteration == 200:
                         break
                 for iteration, (x_transform, y) in enumerate(val_data_loader):
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
-                    print("VALIDATIOn LOSS {}", format(loss.item()))
-                    if iteration == 20:
+                    loss.to(self.device)
+                    self.stats.validation_losses_ss.append(loss.item())
+                    if (iteration + 1) % 10:
+                        print("iteration {}, VALIDATION Loss: {:.6f}".format(iteration + 1, np.average(self.stats.validation_losses_ss)))
+                    if iteration == 200:
                         break
             exit(0)
 
