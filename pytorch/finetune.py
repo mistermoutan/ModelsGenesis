@@ -110,14 +110,27 @@ class Trainer:
             with torch.no_grad():
                 self.model.eval()
                 x = 0
-                for x_transform, y in val_data_loader:
-                    if x_transform is None:
+                iteration = 0
+                while True:
+                    x, _ = self.dataset.get_val(batch_size=self.config.batch_size_ss, return_tensor=False)
+                    if x is None:
                         break
+                    x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
+                    iteration += 1
+                    """                 for iteration(x_transform, y) in enumerate(val_data_loader):
+                    if x_transform is None:
+                        print("THIS SHOULD NOT HAPPEN ANYMORE")
+                        break
+                    x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
+                    pred = self.model(x_transform)
+                    loss = criterion(pred, y)
+                    self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
+                    self.stats.validation_losses_ss.append(loss.item()) """
 
             self.dataset.reset()
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
