@@ -42,13 +42,7 @@ class Trainer:
         self.stats = Statistics(self.config, self.dataset)
         self.tb_writer = SummaryWriter(config.summarywriter_dir)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(self.device)
-
-    def train_from_scratch_model_genesis_exact_replication(self):
-        self.finetune_self_supervised()
-
-    def finetune_from_given_model_genesis_weights(self):
-        raise NotImplementedError
+        print("DEVICE: ", self.device)
 
     def finetune_self_supervised(self):
 
@@ -77,47 +71,14 @@ class Trainer:
             print("STARTING SS TRAINING FROM SCRATCH")
 
         for self.epoch_ss_current in range(self.epoch_ss_check, self.config.nb_epoch_ss):
-
             self.stats.training_losses_ss = []
             self.stats.validation_losses_ss = []
             self.model.train()
-            # sample_cnt = 0
 
-            with torch.no_grad():
-                self.model.eval()
-                for iteration, (x_transform, y) in enumerate(train_data_loader):
-                    x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                    pred = self.model(x_transform)
-                    loss = criterion(pred, y)
-                    loss.to(self.device)
-                    self.stats.training_losses_ss.append(loss.item())
-                    if (iteration + 1) % 10 == 0:
-                        print("iteration {}, TRAINING Loss: {:.6f}".format(iteration + 1, np.average(self.stats.training_losses_ss)))
-
-                    if iteration == 200:
-                        break
-                for iteration, (x_transform, y) in enumerate(val_data_loader):
-                    x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                    pred = self.model(x_transform)
-                    loss = criterion(pred, y)
-                    loss.to(self.device)
-                    self.stats.validation_losses_ss.append(loss.item())
-                    if (iteration + 1) % 10 == 0:
-                        print("iteration {}, VALIDATION Loss: {:.6f}".format(iteration + 1, np.average(self.stats.validation_losses_ss)))
-                    if iteration == 200:
-                        break
-            exit(0)
-
-            # self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
-            # self.stats.validation_losses_ss.append(loss.item())
-
-            """ for iteration, (x_transform, y) in enumerate(train_data_loader):
+            for iteration, (x_transform, y) in enumerate(train_data_loader):
 
                 if (iteration + 1) % 200 == 0:
                     start_time = time.time()
-
-                if x_transform is None:
-                    print("THIS SHOULD NOT HAPPEN")
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform)
@@ -134,8 +95,6 @@ class Trainer:
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
                     sys.stdout.flush()
-
-                # print("SAMPLE COUNT {}".format(sample_cnt)) """
 
             with torch.no_grad():
                 self.model.eval()
@@ -166,6 +125,12 @@ class Trainer:
 
             print("###### SELF SUPERVISED#######")
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
+
+            try:
+                print("CURRNT SS LR: {}".format(self.scheduler_ss.get_last_lr()))
+            except AttributeError:
+                print("CURRENT SS LR: {}".format(self.optimizer_ss.param_groups[0]["lr"]))
+
             if avg_validation_loss_of_epoch < self.best_loss_ss:
                 print("Validation loss decreased from {:.4f} to {:.4f}".format(self.best_loss_ss, avg_validation_loss_of_epoch))
                 self.best_loss_ss = avg_validation_loss_of_epoch
@@ -185,7 +150,6 @@ class Trainer:
 
         self.ss_timedelta = timedelta(seconds=time.time() - self.start_time)
         self._add_completed_flag_to_last_checkpoint_saved(phase="ss")
-
         print("FINISHED TRAINING SS")
 
     def finetune_supervised(self):
@@ -212,11 +176,15 @@ class Trainer:
             print("STARTING SUP TRAINING FROM SCRATCH")
 
         for self.epoch_sup_current in range(self.epoch_sup_check, self.config.nb_epoch_sup):
+
             self.stats.training_losses_sup = []
             self.stats.validation_losses_sup = []
             self.model.train()
             iteration = 0
             while True:  # go through all examples
+
+                if (iteration + 1) % 200 == 0:
+                    start_time = time.time()
                 x, y = self.dataset.get_train(batch_size=self.config.batch_size_sup)
                 if x is None:
                     break
@@ -232,6 +200,8 @@ class Trainer:
 
                 if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)))
+                    timedelta_iter = timedelta(seconds=time.time() - start_time)
+                    print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
                     sys.stdout.flush()
                 iteration += 1
 
@@ -258,14 +228,17 @@ class Trainer:
             self.stats.avg_validation_loss_per_epoch_sup.append(avg_validation_loss_of_epoch)
             self.stats.iterations_sup.append(iteration)
 
-            avg_training_loss_of_epoch = np.average(self.stats.training_losses_sup)
-            avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_sup)
-
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_sup_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
+
+            try:
+                print("CURRNT SUP LR: {}".format(self.scheduler_sup.get_last_lr()))
+            except AttributeError:
+                print("CURRENT SUP LR: {}".format(self.optimizer_sup.param_groups[0]["lr"]))
+
             if avg_validation_loss_of_epoch < self.best_loss_sup:
-                print("Validation loss decreases from {:.4f} to {:.4f}".format(self.best_loss_sup, avg_validation_loss_of_epoch))
+                print("Validation loss decreased from {:.4f} to {:.4f}".format(self.best_loss_sup, avg_validation_loss_of_epoch))
                 self.best_loss_sup = avg_validation_loss_of_epoch
-                num_epoch_no_improvement = 0
+                self.num_epoch_no_improvement_sup = 0
                 self._save_model("sup")
             else:
                 print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup + 1))
@@ -279,9 +252,9 @@ class Trainer:
             sys.stdout.flush()
             self.tb_writer.add_scalar("Num epochs w/ no improvement: Supervised", self.num_epoch_no_improvement_sup, self.epoch_sup_current + 1)
 
-        print("FINISHED TRAINING SUP")
         self.sup_timedelta = timedelta(seconds=time.time() - self.start_time)
         self._add_completed_flag_to_last_checkpoint_saved(phase="sup")
+        print("FINISHED TRAINING SUP")
 
     def test(self, test_dataset):
         from evaluate import Tester
