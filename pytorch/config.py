@@ -47,7 +47,7 @@ class models_genesis_config:
         self.local_rate = 0.5
         self.flip_rate = 0.4
 
-        self.workers = 2
+        self.workers = 1
         self.max_queue_size = self.workers * 4
         self.save_samples = "png"
 
