@@ -91,7 +91,7 @@ class Trainer:
                     loss = criterion(pred, y)
                     loss.to(self.device)
                     self.stats.training_losses_ss.append(loss.item())
-                    if (iteration + 1) % 10:
+                    if (iteration + 1) % 10 == 0:
                         print("iteration {}, TRAINING Loss: {:.6f}".format(iteration + 1, np.average(self.stats.training_losses_ss)))
 
                     if iteration == 200:
@@ -102,7 +102,7 @@ class Trainer:
                     loss = criterion(pred, y)
                     loss.to(self.device)
                     self.stats.validation_losses_ss.append(loss.item())
-                    if (iteration + 1) % 10:
+                    if (iteration + 1) % 10 == 0:
                         print("iteration {}, VALIDATION Loss: {:.6f}".format(iteration + 1, np.average(self.stats.validation_losses_ss)))
                     if iteration == 200:
                         break
@@ -167,7 +167,7 @@ class Trainer:
             print("###### SELF SUPERVISED#######")
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
             if avg_validation_loss_of_epoch < self.best_loss_ss:
-                print("Validation loss decreases from {:.4f} to {:.4f}".format(self.best_loss_ss, avg_validation_loss_of_epoch))
+                print("Validation loss decreased from {:.4f} to {:.4f}".format(self.best_loss_ss, avg_validation_loss_of_epoch))
                 self.best_loss_ss = avg_validation_loss_of_epoch
                 self.num_epoch_no_improvement_ss = 0
                 self._save_model("ss")
