@@ -73,7 +73,7 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     trainer_mg_replication.get_stats()
 
     """
-    ---
+    --- 
     """
 
 
@@ -323,7 +323,7 @@ if __name__ == "__main__":
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], kwargs_dict["mode"]))
         resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
 
-    elif args.command == "IMPLEMENT THIS":
+    elif args.command == "finetune_from_model_no_ss":
         pass
 
     else:
