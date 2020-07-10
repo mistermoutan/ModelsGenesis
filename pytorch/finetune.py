@@ -82,6 +82,7 @@ class Trainer:
             self.stats.validation_losses_ss = []
             self.model.train()
             # sample_cnt = 0
+            iteration = 0
             while True:  # go through all examples
                 start_time = time.time()
                 x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
@@ -111,7 +112,9 @@ class Trainer:
                 timedelta_iter = timedelta(seconds=time.time() - start_time)
                 if (iteration + 1) % 10 == 0:
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
-            # print("SAMPLE COUNT {}".format(sample_cnt))
+                # print("SAMPLE COUNT {}".format(sample_cnt))
+
+                iteration += 1
 
             with torch.no_grad():
                 self.model.eval()
