@@ -1,6 +1,5 @@
 from os import listdir, path
 
-from random import shuffle, sample
 from math import ceil, floor
 from copy import deepcopy
 
@@ -22,7 +21,6 @@ class Dataset:
             file_names {[[], [], []]} -- Pre specify file names used for tr, val and test. Will override train_val_test split behavior
             
         """
-
         self.x_data_dir = path.join(data_dir, "x/")  # dir has an x and y folder
         self.y_data_dir = path.join(data_dir, "y/")
         self.has_target = listdir(self.y_data_dir) != []
