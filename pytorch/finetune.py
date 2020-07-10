@@ -55,7 +55,7 @@ class Trainer:
         self.start_time = time.time()
 
         train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
-        # train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+        train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
         val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
@@ -82,21 +82,40 @@ class Trainer:
             self.stats.validation_losses_ss = []
             self.model.train()
             # sample_cnt = 0
-            iteration = 0
-            while True:  # go through all examples
-                start_time = time.time()
-                x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
-                if x is None:
-                    break
-                x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
-                x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                """ for iteration, (x_transform, y) in enumerate(train_data_loader):
-                # sample_cnt += x_transform.shape[0]
-                if x_transform is None:
-                    print("THIS SHOULD NOT HAPPEN ANYMORE")
-                    break
-                x_transform, y = x_transform.float().to(self.device), y.float().to(self.device) """
 
+            with torch.no_grad():
+                self.model.eval()
+                for iteration, (x_transform, y) in enumerate(train_data_loader):
+                    if x_transform is None:
+                        print("THIS SHOULD NOT HAPPEN ANYMORE")
+                        break
+                    x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
+                    pred = self.model(x_transform)
+                    loss = criterion(pred, y)
+                    print("TRAINING LOSS {}", format(loss.item()))
+                    if iteration == 20:
+                        break
+                for iteration, (x_transform, y) in enumerate(val_data_loader):
+                    x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
+                    pred = self.model(x_transform)
+                    loss = criterion(pred, y)
+                    print("VALIDATIOn LOSS {}", format(loss.item()))
+                    if iteration == 20:
+                        break
+            exit(0)
+
+            # self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
+            # self.stats.validation_losses_ss.append(loss.item())
+
+            """ for iteration, (x_transform, y) in enumerate(train_data_loader):
+
+                if (iteration + 1) % 200 == 0:
+                    start_time = time.time()
+
+                if x_transform is None:
+                    print("THIS SHOULD NOT HAPPEN")
+
+                x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
                 loss.to(self.device)
@@ -106,15 +125,13 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 10 == 0:
+                if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
-                    sys.stdout.flush()
-                timedelta_iter = timedelta(seconds=time.time() - start_time)
-                if (iteration + 1) % 10 == 0:
+                    timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
-                # print("SAMPLE COUNT {}".format(sample_cnt))
+                    sys.stdout.flush()
 
-                iteration += 1
+                # print("SAMPLE COUNT {}".format(sample_cnt)) """
 
             with torch.no_grad():
                 self.model.eval()
