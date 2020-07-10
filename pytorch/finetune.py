@@ -54,8 +54,8 @@ class Trainer:
 
         self.start_time = time.time()
 
-        train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
-        train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+        # train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
+        # train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
         val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
@@ -82,14 +82,20 @@ class Trainer:
             self.stats.validation_losses_ss = []
             self.model.train()
             # sample_cnt = 0
-            for iteration, (x_transform, y) in enumerate(train_data_loader):
-                # sample_cnt += x_transform.shape[0]
+            while True:  # go through all examples
                 start_time = time.time()
+                x, _ = self.dataset.get_train(batch_size=self.config.batch_size_ss, return_tensor=False)
+                if x is None:
+                    break
+                x_transform, y = generate_pair(x, self.config.batch_size_ss, self.config, make_tensors=True)
+                x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
+                """ for iteration, (x_transform, y) in enumerate(train_data_loader):
+                # sample_cnt += x_transform.shape[0]
                 if x_transform is None:
                     print("THIS SHOULD NOT HAPPEN ANYMORE")
                     break
+                x_transform, y = x_transform.float().to(self.device), y.float().to(self.device) """
 
-                x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
                 loss.to(self.device)
@@ -99,11 +105,11 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 200 == 0:
-                    print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
+                if (iteration + 1) % 10 == 0:
+                    print("Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
                     sys.stdout.flush()
                 timedelta_iter = timedelta(seconds=time.time() - start_time)
-                if (iteration + 1) % 200 == 0:
+                if (iteration + 1) % 10 == 0:
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
             # print("SAMPLE COUNT {}".format(sample_cnt))
 
@@ -135,7 +141,6 @@ class Trainer:
                 self.scheduler_ss.step(self.epoch_ss_current)
 
             print("###### SELF SUPERVISED#######")
-
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
             if avg_validation_loss_of_epoch < self.best_loss_ss:
                 print("Validation loss decreases from {:.4f} to {:.4f}".format(self.best_loss_ss, avg_validation_loss_of_epoch))
