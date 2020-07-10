@@ -59,16 +59,12 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     # config.scheduler_ss = "ReduceLROnPlateau"
     config.display()
 
-    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0))  # train_val_test is non relevant as will ve overwritten after
-    dataset.x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
-    dataset.x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
-    dataset.x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
     # for replication the datasets stay the same
-    """ x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
+    x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
     x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
     x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
     files = [x_train_filenames, x_val_filenames, x_test_filenames]
-    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files """
+    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files
 
     trainer_mg_replication = Trainer(config, dataset)
     trainer_mg_replication.load_model(from_latest_checkpoint=True)  # still requires override dirs to find the specific checkpoint to resume from
