@@ -65,7 +65,6 @@ class DatasetPytorch(DatasetP):
     def __getitem__(self, idx):
 
         if self.type == "train":
-
             x, y = self.dataset.get_train(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_train(batch_size=1, return_tensor=True)
             if x is not None:
                 if self.apply_mg_transforms:
