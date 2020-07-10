@@ -77,7 +77,7 @@ class Trainer:
 
             for iteration, (x_transform, y) in enumerate(train_data_loader):
 
-                if (iteration + 1) % 200 == 0:
+                if iteration == 0:
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
@@ -92,9 +92,10 @@ class Trainer:
 
                 if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
+                if iteration == 0:
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
-                    sys.stdout.flush()
+                sys.stdout.flush()
 
             with torch.no_grad():
                 self.model.eval()
