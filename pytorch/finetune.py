@@ -54,7 +54,7 @@ class Trainer:
 
         self.start_time = time.time()
 
-        # train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
+        train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
         # train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
         val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
