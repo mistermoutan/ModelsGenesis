@@ -1,6 +1,5 @@
 import os
 import dill
-from dataset_map import dataset_map
 
 
 def make_dir(dir: str):
@@ -53,7 +52,7 @@ def build_dataset(dataset_list: list, split: tuple, mode: str):
         else:
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
     else:
-        assert mode != ""
+        assert mode != "" and (mode == "alternate" or mode == "sequential")
         datasets = []
         for idx in range(len(dataset_list)):
 
