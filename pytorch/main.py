@@ -5,7 +5,7 @@ from config import models_genesis_config
 from dataset import Dataset
 from datasets import Datasets
 from finetune import Trainer
-from utils import make_dir, save_object, load_object, replace_obj_attributes
+from utils import *
 
 # script to run experiments
 
@@ -87,12 +87,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    if len(dataset_list) == 1:
-        dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
-    else:
-        assert mode != ""
-        datasets = [Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None) for idx in range((dataset_list))]
-        dataset = Datasets(datasets=datasets, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
 
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
@@ -152,13 +147,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    if len(dataset_list) == 1:
-        dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
-    else:
-        assert mode != ""
-        dataset_list.sort()
-        datasets = [Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None) for idx in range((dataset_list))]
-        dataset = Datasets(datasets=datasets, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
 
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
@@ -234,7 +223,6 @@ def train_from_scratch_on_dataset():
 if __name__ == "__main__":
 
     import argparse
-    from dataset_map import dataset_map
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--command", required=True, dest="command", type=str)
