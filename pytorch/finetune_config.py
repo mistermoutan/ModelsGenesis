@@ -16,6 +16,8 @@ class FineTuneConfig:
         self.resume_sup = False
         self.resume_from_provided_weights = False
         self.resume_from_ss_model = False
+        self.resume_from_specific_model = False
+        self.from_scratch = False
 
         self.task = task + "_{}".format(self.model)
         self.task_dir = self._get_task_dir(None)
