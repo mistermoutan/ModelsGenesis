@@ -4,7 +4,7 @@ from utils import make_dir
 
 
 class models_genesis_config:
-    def __init__(self):
+    def __init__(self, task: str = None):
 
         self.model = "VNET_MG"
         self.suffix = "genesis_chest_ct"
@@ -16,8 +16,11 @@ class models_genesis_config:
         self.resume_sup = False
         self.resume_from_provided_weights = False
         self.resume_from_ss_model = False
+        self.resume_from_specific_model = False
+        self.scratch = True
 
-        self.task = "GENESIS_REPLICATION_PRETRAIN_MODEL"
+        self.task = "GENESIS_REPLICATION_PRETRAIN_MODEL" if task is None else task
+        self.task += "_{}".format(self.model)
         self.task_dir = self._get_task_dir(None)
         self.stats_dir = os.path.join("stats/", self.task_dir)
         self.model_path_save = os.path.join("pretrained_weights/", self.task_dir)
