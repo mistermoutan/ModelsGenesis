@@ -319,6 +319,10 @@ class Trainer:
         from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
         from_provided_weights = kwargs.get("from_provided_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
+        from_directory = kwargs.get("from_directory", False)
+        if from_directory is not False:
+            specific_weight_dir = kwargs.get("directory", None)
+            assert specific_weight_dir is not None, "Specifiy weight dir to load"
 
         DEFAULTING_TO_LAST_SS = False
 
@@ -382,6 +386,11 @@ class Trainer:
                 raise FileNotFoundError("Could not find provided weights to load")
             self._loadparams(fresh_params=True, phase="both")
 
+        if from_directory:
+            # assuming for now will only load model after doing ss
+            weight_dir = specific_weight_dir
+            self._loadparams(fresh_params=True, phase="sup")
+
         if from_scratch:
             weight_dir = None
             self._loadparams(fresh_params=True, phase="both")
@@ -411,6 +420,9 @@ class Trainer:
             if from_provided_weights:
                 print("Loaded Model State dict from state_dict checkpoint key")
                 state_dict = checkpoint["state_dict"]
+            if from_directory:
+                print("Loaded Model State dict from model_state_dict_ss checkpoint key")
+                state_dict = checkpoint["model_state_dict_ss"]
 
             unParalled_state_dict = {}
             for key in state_dict.keys():
