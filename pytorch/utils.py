@@ -23,18 +23,20 @@ def load_object(location):
     return o
 
 
-def replace_obj_attributes(config_object, **kwargs):
+def replace_config_param_attributes(config_object, kwargs_dict):
 
-    for key, value in kwargs.items():
+    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup"}
+    for key, value in kwargs_dict.items():
+        if key not in possible_keys:
+            continue
         if not hasattr(config_object, key):
             raise AttributeError("Config does not have this attribute")
         assert type(value) == type(config_object.key), "Trying to replace a {} attribute by a {}".format(str(type(config_object.key)), str(type(value)))
         config_object.key = value
+        print("SETTING CONFIG {} to {}".format(key, value))
 
 
-dataset_map = {
-    "lidc": "/work1/s182312/lidc_idri/np_cubes",
-}
+dataset_map = {"lidc": "/work1/s182312/lidc_idri/np_cubes"}
 
 
 def build_dataset(dataset_list: list, split: tuple, mode: str):
@@ -69,6 +71,55 @@ def build_dataset(dataset_list: list, split: tuple, mode: str):
         dataset = Datasets(datasets=datasets, mode=mode)
 
     return dataset
+
+
+def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
+    """[summary]
+
+    Args:
+        args_object ([type]): argparse object
+        kwargs:
+            - get_dataset
+            - search_for_split
+            - get_directory
+    """
+
+    kwargs_dict = {}
+
+    if kwargs.get("get_dataset", False):
+        assert len(args_object.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
+        kwargs_dict["dataset"] = args_object.dataset
+        if len(args_object.dataset) > 1:
+            assert args_object.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
+            kwargs_dict["mode"] = args_object.mode
+        else:
+            assert args_object.mode is None, "Don't Specify mode if you are only using 1 dataset"
+
+    if kwargs.get("search_for_split", False):
+        if args_object.tr_val_ts_split is not None:
+            kwargs_dict["split"] = tuple(args_object.tr_val_ts_split)
+
+    if kwargs.get("get_directory", False):
+        assert args_object.directory is not None, "Specify --directory of model weights to load"
+        if not os.path.isdir(args_object.directory):
+            raise NotADirectoryError("Make sure directory exists")
+        kwargs_dict["directory"] = args_object.directory
+
+    if search_for_params:
+        if hasattr(args_object, "optimizer_ss"):
+            kwargs_dict["optimizer_ss"] = args_object.optimizer_ss
+        if hasattr(args_object, "scheduler_ss"):
+            kwargs_dict["scheduler_ss"] = args_object.scheduler_ss
+        if hasattr(args_object, "lr_ss"):
+            kwargs_dict["lr_ss"] = args_object.lr_ss
+        if hasattr(args_object, "optimizer_sup"):
+            kwargs_dict["optimizer_sup"] = args_object.optimizer_sup
+        if hasattr(args_object, "scheduler_sup"):
+            kwargs_dict["scheduler_sup"] = args_object.scheduler_sup
+        if hasattr(args_object, "lr_sup"):
+            kwargs_dict["lr_sup"] = args_object.lr_sup
+
+    return kwargs_dict
 
 
 if __name__ == "__main__":

@@ -22,10 +22,8 @@ from utils import *
 def replication_of_results_pretrain(**kwargs):
 
     config = models_genesis_config(False)
-    # config.optimizer_ss = "adam"
-
-    if kwargs:
-        replace_obj_attributes(config, **kwargs)
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    replace_config_param_attributes(config, kwargs_dict_)
 
     config.display()
     save_object(config, "config", config.object_dir)
@@ -46,6 +44,9 @@ def replication_of_results_pretrain(**kwargs):
 def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
 
     config = models_genesis_config(False)
+    kwargs_dict_ = kwargs.get("kwargs_dict", False)
+    if kwargs_dict_ is not False:
+        replace_config_param_attributes(config, kwargs_dict_)
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     # ensure we are not resuming with a different config
@@ -89,6 +90,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
+    replace_config_param_attributes(config, kwargs_dict_)
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -110,6 +112,7 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
+    replace_config_param_attributes(config, kwargs_dict_)
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -149,6 +152,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
 
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
     config.display()
 
@@ -183,6 +187,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_sup = True
     config.display()
     trainer = Trainer(config, dataset)
@@ -209,6 +214,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
 
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
     config.display()
 
@@ -245,6 +251,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_ss = True
     config.resume_sup = True
     config.display()
@@ -284,6 +291,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
 
     config = FineTuneConfig(data_dir="", task="FROM_{}_SUP_ONLY{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True)
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
     config.display()
 
@@ -319,6 +327,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_sup = True
     config.display()
 
@@ -346,6 +355,7 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
 
     config = FineTuneConfig(data_dir="", task="FROM_{}_SS_AND_SUP{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True)
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
     config.display()
 
@@ -383,6 +393,7 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_ss = True
     config.resume_sup = True
     config.display()
@@ -421,6 +432,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH_NO_SS{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
     config.display()
 
@@ -455,6 +467,7 @@ def resume_train_from_scratch_on_dataset_no_ss(run_nr: int, **kwargs):
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_sup = True
     config.display()
 
@@ -480,6 +493,7 @@ def train_from_scratch_on_dataset_with_ss(**kwargs):
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH_WITH_SS{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
     config.display()
 
@@ -515,6 +529,7 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_sup = True
     config.resume_ss = True
     config.display()
@@ -547,17 +562,22 @@ if __name__ == "__main__":
     parser.add_argument("--mode", required=False, dest="mode", default=None, type=str)
     parser.add_argument("--directory", required=False, dest="directory", type=str, default=None)
     parser.add_argument("--split", nargs="+", required=False, dest="tr_val_ts_split", default=None, type=str)
+
     parser.add_argument("-opt_ss", "--optimizer_ss", required=False, dest="optimizer_ss", type=str)
+    parser.add_argument("-sch_ss", "--scheduler_ss", required=False, dest="scheduler_ss", type=str)
+    parser.add_argument("-lr_ss", "--learning_rate_ss", required=False, dest="lr_ss", type=float)
     parser.add_argument("-opt_sup", "--optimizer_sup", required=False, dest="optimizer_sup", type=str)
+    parser.add_argument("sch_sup", "scheduler_sup", required=False, dest="scheduler_sup", type=str)
+    parser.add_argument("-lr_sup", "--learning_rate_sup", required=False, dest="lr_sup", type=float)
     # model argument?
     args = parser.parse_args()
 
     # TODO: Add optim and scheduler handling, initial lr, model change
-    # TODO: WATCH OUT FOR LIDC WHICH IS ONLY 3 FILES: TR, VAL and TEST
 
     if args.command == "replicate_model_genesis_pretrain":
         print("STARTING REPLICATION OF RESULTS EXPERIMENT")
-        replication_of_results_pretrain()
+        kwargs_dict = build_kwargs_dict(args)
+        replication_of_results_pretrain(kwargs_dict)
 
     elif args.command == "resume_model_genesis_pretrain":
         assert args.run is not None, "You have to specify which --run to resume (int)"
@@ -566,64 +586,26 @@ if __name__ == "__main__":
 
     elif args.command == "finetune_from_provided_weights_no_ss":
 
-        kwargs_dict = {}
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
-        kwargs_dict["dataset"] = args.dataset
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True)
         use_provided_weights_and_finetune_on_dataset_without_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_finetune_from_provided_weights_no_ss":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        kwargs_dict = {}
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
-        kwargs_dict["dataset"] = args.dataset
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True)
         print("RESUMING FINETUNE FROM PROVIDED WEIGHTS EXPERIMENT WITH NO SS FROM RUN {}".format(args.run))
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], args.mode))
         resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_provided_weights_with_ss":
 
-        kwargs_dict = {}
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
-        kwargs_dict["dataset"] = args.dataset
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True)
         use_provided_weights_and_finetune_on_dataset_with_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_finetune_from_provided_weights_with_ss":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        kwargs_dict = {}
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
-        kwargs_dict["dataset"] = args.dataset
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True)
         print("RESUMING FINETUNE FROM PROVIDED WEIGHTS EXPERIMENT WITH SS FROM RUN {}".format(args.run))
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], args.mode))
         resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
@@ -634,32 +616,13 @@ if __name__ == "__main__":
 
     elif args.command == "pretrain_mg_framework":
 
-        kwargs_dict = {}
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
-        kwargs_dict["dataset"] = args.dataset
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True)
         pretrain_mg_framework_specific_dataset(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_pretrain_mg_framework":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        kwargs_dict = {}
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map.py"
-        kwargs_dict["dataset"] = args.dataset
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True)
         print("RESUMING PRETRAIN ACCORDING TO MG FRAMEWORK FROM RUN {}".format(args.run))
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], args.mode))
         resume_pretrain_mg_framework_specific_dataset(run_nr=args.run, kwargs_dict=kwargs_dict)
@@ -670,44 +633,13 @@ if __name__ == "__main__":
 
     elif args.command == "finetune_from_model_no_ss":
 
-        assert args.directory is not None, "Specify --directory of model weights to load"
-        if not os.path.isdir(args.directory):
-            raise NotADirectoryError("Make sure directory exists")
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-        kwargs_dict["directory"] = args.directory
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True, get_directory=True)
         use_model_weights_and_finetune_on_dataset_without_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_finetune_from_model_no_ss":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        assert args.directory is not None, "Specify --directory of model weights loaded initally so training can be  resumed"
-        if not os.path.isdir(args.directory):
-            raise NotADirectoryError("Make sure directory exists")
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-        kwargs_dict["directory"] = args.directory
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, get_directory=True)
         print("RESUMING FINETUNE FROM {} WEIGHTS NO SS FROM RUN {}".format(args.directory, args.run))
         print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], args.mode))
         resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
@@ -718,44 +650,13 @@ if __name__ == "__main__":
 
     elif args.command == "finetune_from_model_with_ss":
 
-        assert args.directory is not None, "Specify --directory of model weights to load"
-        if not os.path.isdir(args.directory):
-            raise NotADirectoryError("Make sure directory exists")
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-        kwargs_dict["directory"] = args.directory
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True, get_directory=True)
         use_model_weights_and_finetune_on_dataset_with_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_finetune_from_model_with_ss":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        assert args.directory is not None, "Specify --directory of model weights to load"
-        if not os.path.isdir(args.directory):
-            raise NotADirectoryError("Make sure directory exists")
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-        kwargs_dict["directory"] = args.directory
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, get_directory=True)
         resume_use_model_weights_and_finetune_on_dataset_with_ss(args.run, kwargs_dict=kwargs_dict)
 
         """
@@ -764,67 +665,24 @@ if __name__ == "__main__":
 
     elif args.command == "from_scratch_supervised":
 
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True)
         train_from_scratch_on_dataset_no_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_from_scratch_supervised":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True)
         resume_train_from_scratch_on_dataset_no_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "from_scratch_ss_and_sup":
 
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
-        if args.tr_val_ts_split is not None:
-            kwargs_dict["split"] = tuple(args.tr_val_ts_split)
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True)
         train_from_scratch_on_dataset_with_ss(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_from_scratch_ss_and_sup":
 
         assert args.run is not None, "You have to specify which --run to resume (int)"
-        assert len(args.dataset) > 0, "Specify dataset(s) with -d, check keys of dataset_map"
-        kwargs_dict = {}
-        kwargs_dict["dataset"] = args.dataset
-
-        if len(args.dataset) > 1:
-            assert args.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
-            kwargs_dict["mode"] = args.mode
-        else:
-            assert args.mode is None, "Don't Specify mode if you are only using 1 dataset"
-
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True)
         resume_train_from_scratch_on_dataset_with_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
 
     else:
