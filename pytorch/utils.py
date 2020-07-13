@@ -36,7 +36,6 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         assert type(value) == type(getattr(config_object, key)), "{}: Trying to replace a {} attribute by a {}".format(key, str(type(getattr(config_object, key))), str(type(value)))
         print("REPLACING {} from {} to {} in Config".format(key, getattr(config_object, key), value))
         setattr(config_object, key, value)
-        print("SETTING CONFIG {} to {}".format(key, value))
 
 
 dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
