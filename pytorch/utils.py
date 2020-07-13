@@ -25,15 +25,16 @@ def load_object(location):
 
 def replace_config_param_attributes(config_object, kwargs_dict):
 
-    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup"}
+    #!!!
+    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate"}
     for key, value in kwargs_dict.items():
         assert isinstance(key, str)
         if key not in possible_keys:
             continue
-        print(key, kwargs_dict[key])
         if not hasattr(config_object, key):
             raise AttributeError("Config does not have this attribute")
         assert type(value) == type(getattr(config_object, key)), "{}: Trying to replace a {} attribute by a {}".format(key, str(type(getattr(config_object, key))), str(type(value)))
+        print("REPLACING {} from {} to {} in Config".format(key, getattr(config_object, key), value))
         setattr(config_object, key, value)
         print("SETTING CONFIG {} to {}".format(key, value))
 
@@ -107,19 +108,28 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             raise NotADirectoryError("Make sure directory exists")
         kwargs_dict["directory"] = args_object.directory
 
+    #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):
             kwargs_dict["optimizer_ss"] = args_object.optimizer_ss
         if isinstance(args_object.scheduler_ss, str):
             kwargs_dict["scheduler_ss"] = args_object.scheduler_ss
-        if isinstance(args_object.lr_ss, str):
+        if isinstance(args_object.lr_ss, float):
             kwargs_dict["lr_ss"] = args_object.lr_ss
+        if isinstance(args_object.patience_ss, int):
+            kwargs_dict["patience_ss"] = args_object.patience_ss
+        if isinstance(args_object.patience_ss_terminate, int):
+            kwargs_dict["patience_ss_terminate"] = args_object.patience_ss_terminate
         if isinstance(args_object.optimizer_sup, str):
             kwargs_dict["optimizer_sup"] = args_object.optimizer_sup
         if isinstance(args_object.scheduler_sup, str):
             kwargs_dict["scheduler_sup"] = args_object.scheduler_sup
-        if isinstance(args_object.lr_sup, str):
+        if isinstance(args_object.lr_sup, float):
             kwargs_dict["lr_sup"] = args_object.lr_sup
+        if isinstance(args_object.patience_sup, int):
+            kwargs_dict["patience_sup"] = args_object.patience_sup
+        if isinstance(args_object.patience_sup_terminate, int):
+            kwargs_dict["patience_sup_terminate"] = args_object.patience_sup_terminate
 
     return kwargs_dict
 
