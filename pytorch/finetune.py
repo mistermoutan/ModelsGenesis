@@ -545,6 +545,10 @@ class Trainer:
             elif self.config.optimizer_sup.lower() == "adam":
                 self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup, betas=(self.config.beta1_sup, self.config.beta2_sup), eps=self.config.eps_sup)
 
+            if self.config.scheduler_sup.lower() == "reducelronplateau":
+                self.scheduler_sup = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_sup, mode="min", factor=0.5, patience=self.config.patience_sup)
+            elif self.config.scheduler_sup.lower() == "steplr":
+                self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
             self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
 
         if fresh_params:
