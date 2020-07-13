@@ -21,7 +21,7 @@ from utils import *
 
 def replication_of_results_pretrain(**kwargs):
 
-    config = models_genesis_config()
+    config = models_genesis_config(False)
     # config.optimizer_ss = "adam"
 
     if kwargs:
@@ -45,7 +45,7 @@ def replication_of_results_pretrain(**kwargs):
 
 def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
 
-    config = models_genesis_config()
+    config = models_genesis_config(False)
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     # ensure we are not resuming with a different config
@@ -88,7 +88,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
     dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
-    config = models_genesis_config(task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
+    config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -109,7 +109,7 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    config = models_genesis_config(task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
+    config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
