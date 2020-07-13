@@ -124,7 +124,7 @@ class Trainer:
             else:
                 self.scheduler_ss.step(self.epoch_ss_current)
 
-            print("###### SELF SUPERVISED#######")
+            print("\n###### SELF SUPERVISED#######")
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
 
             try:
@@ -315,6 +315,8 @@ class Trainer:
         if self.config.model == "VNET_MG":
             self.model = UNet3D()
 
+        self.model.to(self.device)
+
         from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
         from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
         from_provided_weights = kwargs.get("from_provided_weights", False)
@@ -388,8 +390,8 @@ class Trainer:
 
         if from_directory:
             # assuming for now will only load model after doing ss
-            weight_dir = specific_weight_dir
-            self._loadparams(fresh_params=True, phase="sup")
+            weight_dir = os.path.join(specific_weight_dir, "weights_ss.pt")
+            self._loadparams(fresh_params=True, phase="both")
 
         if from_scratch:
             weight_dir = None
@@ -429,7 +431,6 @@ class Trainer:
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
             self.model.load_state_dict(unParalled_state_dict)  ### TODO: WHY IS THIS UNPARALLELED NECESSARY?
 
-        self.model.to(self.device)
         nr_devices = len([i for i in range(torch.cuda.device_count())])
         print("FOUND {} CUDA DEVICES".format(nr_devices))
         self.model = nn.DataParallel(self.model, device_ids=[i for i in range(torch.cuda.device_count())])
@@ -552,19 +553,20 @@ class Trainer:
             if phase == "ss" or phase == "both":
                 self.optimizer_ss.load_state_dict(checkpoint["optimizer_state_dict_ss"])
                 # RUN TIME ERROR FIX ON RESUME: https://github.com/jwyang/faster-rcnn.pytorch/issues/222
-                if self.config.optimizer_ss.lower() == "sgd":
-                    for state in self.optimizer_ss.state.values():
-                        for k, v in state.items():
-                            if isinstance(v, torch.Tensor):
-                                state[k] = v.cuda()
-                elif self.optimizer_ss.lower() == "adam":
-                    # Might need fix for this as well
-                    pass
+                # https://github.com/pytorch/pytorch/issues/2830
+                #    for state in self.optimizer_ss.state.values():
+                #        for k, v in state.items():
+                #            if isinstance(v, torch.Tensor):
+                #                state[k] = v.cuda()
 
                 self.scheduler_ss.load_state_dict(checkpoint["scheduler_state_dict_ss"])
 
             if phase == "sup" or phase == "both":
                 self.optimizer_sup.load_state_dict(checkpoint["optimizer_state_dict_sup"])
+                # for state in self.optimizer_sup.state.values():
+                #    for k, v in state.items():
+                #        if isinstance(v, torch.Tensor):
+                #            state[k] = v.cuda()
                 self.scheduler_sup.load_state_dict(checkpoint["scheduler_state_dict_sup"])
 
         if phase == "ss" or phase == "both":
