@@ -63,7 +63,7 @@ class models_genesis_config:
         self.nb_epoch_ss = 10000
         self.patience_ss_terminate = 50
         self.patience_ss = int(self.patience_ss_terminate * 0.4)
-        self.lr_ss = 1
+        self.lr_ss = float(1)
         self.scheduler_ss = "ReduceLROnPlateau"  # "ReduceLROnPlateau" or StepLr
 
         # in here just to conform with statistics and finetune module
