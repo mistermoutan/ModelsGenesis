@@ -577,12 +577,13 @@ if __name__ == "__main__":
     if args.command == "replicate_model_genesis_pretrain":
         print("STARTING REPLICATION OF RESULTS EXPERIMENT")
         kwargs_dict = build_kwargs_dict(args)
-        replication_of_results_pretrain(kwargs_dict)
+        replication_of_results_pretrain(kwargs_dict=kwargs_dict)
 
     elif args.command == "resume_model_genesis_pretrain":
         assert args.run is not None, "You have to specify which --run to resume (int)"
+        kwargs_dict = build_kwargs_dict(args)
         print("RESUMING REPLICATION OF RESULTS EXPERIMENT FROM RUN {}".format(args.run))
-        resume_replication_of_results_pretrain(args.run)
+        resume_replication_of_results_pretrain(args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_provided_weights_no_ss":
 
