@@ -19,6 +19,8 @@ class FineTuneConfig:
         self.resume_from_specific_model = False
         self.from_scratch = False
 
+        self.workers = 1
+
         self.task = task + "_{}".format(self.model)
         self.task_dir = self._get_task_dir(None)
         self.stats_dir = os.path.join("stats/", self.task_dir)
