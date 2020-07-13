@@ -12,7 +12,6 @@ class DiceLoss:
         pred: tensor with first dimension as batch
         target: tensor with first dimension as batch
         """
-        print(type(pred), type(target))
         if not torch.is_tensor(pred) or not torch.is_tensor(target):
             raise TypeError("Input type is not a torch.Tensor. Got {} and {}".format(type(pred), type(target)))
         if not len(pred.shape) == 5:
