@@ -55,6 +55,7 @@ class Trainer:
         val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
         print("{} TRAINING EXAMPLES".format(train_dataset.__len__()))
+        print("{} VALIDATION EXAMPLES".format(val_dataset.__len__()))
 
         criterion = nn.MSELoss()
         criterion.to(self.device)
@@ -176,6 +177,9 @@ class Trainer:
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
 
+        print("{} TRAINING EXAMPLES".format(self.dataset.get_len_train()))
+        print("{} VALIDATION EXAMPLES".format(self.dataset.get_len_val()))
+
         for self.epoch_sup_current in range(self.epoch_sup_check, self.config.nb_epoch_sup):
 
             self.stats.training_losses_sup = []
@@ -184,7 +188,7 @@ class Trainer:
             iteration = 0
             while True:  # go through all examples
 
-                if (iteration + 1) % 200 == 0:
+                if iteration == 0:
                     start_time = time.time()
                 x, y = self.dataset.get_train(batch_size=self.config.batch_size_sup)
                 if x is None:
@@ -201,9 +205,10 @@ class Trainer:
 
                 if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)))
+                if iteration == 0:
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
-                    sys.stdout.flush()
+                sys.stdout.flush()
                 iteration += 1
 
             with torch.no_grad():

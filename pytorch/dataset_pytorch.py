@@ -30,37 +30,40 @@ class DatasetPytorch(DatasetP):
     def __len__(self):
 
         if self.type == "train":
-            if self.nr_samples_train is None:
-                np_array_names = self.dataset.x_train_filenames_original
-                self.nr_samples_train = 0
-                for f in np_array_names:
-                    a = np.load(os.path.join(self.dataset.x_data_dir, f))
-                    self.nr_samples_train += a.shape[0]
-                return self.nr_samples_train
-            else:
-                return self.nr_samples_train
+            return self.dataset.get_len_train()
+            # if self.nr_samples_train is None:
+            #    np_array_names = self.dataset.x_train_filenames_original
+            #    self.nr_samples_train = 0
+            #    for f in np_array_names:
+            #        a = np.load(os.path.join(self.dataset.x_data_dir, f))
+            #        self.nr_samples_train += a.shape[0]
+            #    return self.nr_samples_train
+            # else:
+            #    return self.nr_samples_train
 
         if self.type == "val":
-            if self.nr_samples_val is None:
-                np_array_names = self.dataset.x_val_filenames_original
-                self.nr_samples_val = 0
-                for f in np_array_names:
-                    a = np.load(os.path.join(self.dataset.x_data_dir, f))
-                    self.nr_samples_val += a.shape[0]
-                return self.nr_samples_val
-            else:
-                return self.nr_samples_val
+            return self.dataset.get_len_val()
+            # if self.nr_samples_val is None:
+            #    np_array_names = self.dataset.x_val_filenames_original
+            #    self.nr_samples_val = 0
+            #    for f in np_array_names:
+            #        a = np.load(os.path.join(self.dataset.x_data_dir, f))
+            #        self.nr_samples_val += a.shape[0]
+            #    return self.nr_samples_val
+            # else:
+            #    return self.nr_samples_val
 
         if self.type == "ts":
-            if self.nr_samples_test is None:
-                np_array_names = self.dataset.x_test_filenames_original
-                self.nr_samples_test = 0
-                for f in np_array_names:
-                    a = np.load(os.path.join(self.dataset.x_data_dir, f))
-                    self.nr_samples_test += a.shape[0]
-                return self.nr_samples_test
-            else:
-                return self.nr_samples_test
+            return self.dataset.get_len_test()
+            # if self.nr_samples_test is None:
+            #    np_array_names = self.dataset.x_test_filenames_original
+            #    self.nr_samples_test = 0
+            #    for f in np_array_names:
+            #        a = np.load(os.path.join(self.dataset.x_data_dir, f))
+            #        self.nr_samples_test += a.shape[0]
+            #    return self.nr_samples_test
+            # else:
+            #    return self.nr_samples_test
 
     def __getitem__(self, idx):
 
