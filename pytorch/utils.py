@@ -27,16 +27,18 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 
     possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup"}
     for key, value in kwargs_dict.items():
+        assert isinstance(key, str)
         if key not in possible_keys:
             continue
+        print(key, kwargs_dict[key])
         if not hasattr(config_object, key):
             raise AttributeError("Config does not have this attribute")
-        assert type(value) == type(config_object.key), "Trying to replace a {} attribute by a {}".format(str(type(config_object.key)), str(type(value)))
-        config_object.key = value
+        assert type(value) == type(getattr(config_object, key)), "{}: Trying to replace a {} attribute by a {}".format(key, str(type(getattr(config_object, key))), str(type(value)))
+        setattr(config_object, key, value)
         print("SETTING CONFIG {} to {}".format(key, value))
 
 
-dataset_map = {"lidc": "/work1/s182312/lidc_idri/np_cubes"}
+dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
 def build_dataset(dataset_list: list, split: tuple, mode: str):
@@ -106,17 +108,17 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         kwargs_dict["directory"] = args_object.directory
 
     if search_for_params:
-        if hasattr(args_object, "optimizer_ss"):
+        if isinstance(args_object.optimizer_ss, str):
             kwargs_dict["optimizer_ss"] = args_object.optimizer_ss
-        if hasattr(args_object, "scheduler_ss"):
+        if isinstance(args_object.scheduler_ss, str):
             kwargs_dict["scheduler_ss"] = args_object.scheduler_ss
-        if hasattr(args_object, "lr_ss"):
+        if isinstance(args_object.lr_ss, str):
             kwargs_dict["lr_ss"] = args_object.lr_ss
-        if hasattr(args_object, "optimizer_sup"):
+        if isinstance(args_object.optimizer_sup, str):
             kwargs_dict["optimizer_sup"] = args_object.optimizer_sup
-        if hasattr(args_object, "scheduler_sup"):
+        if isinstance(args_object.scheduler_sup, str):
             kwargs_dict["scheduler_sup"] = args_object.scheduler_sup
-        if hasattr(args_object, "lr_sup"):
+        if isinstance(args_object.lr_sup, str):
             kwargs_dict["lr_sup"] = args_object.lr_sup
 
     return kwargs_dict

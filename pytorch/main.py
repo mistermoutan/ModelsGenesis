@@ -567,7 +567,7 @@ if __name__ == "__main__":
     parser.add_argument("-sch_ss", "--scheduler_ss", required=False, dest="scheduler_ss", type=str)
     parser.add_argument("-lr_ss", "--learning_rate_ss", required=False, dest="lr_ss", type=float)
     parser.add_argument("-opt_sup", "--optimizer_sup", required=False, dest="optimizer_sup", type=str)
-    parser.add_argument("sch_sup", "scheduler_sup", required=False, dest="scheduler_sup", type=str)
+    parser.add_argument("-sch_sup", "--scheduler_sup", required=False, dest="scheduler_sup", type=str)
     parser.add_argument("-lr_sup", "--learning_rate_sup", required=False, dest="lr_sup", type=float)
     # model argument?
     args = parser.parse_args()
