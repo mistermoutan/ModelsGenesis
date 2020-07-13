@@ -1,5 +1,8 @@
-import os
+from warnings import simplefilter
 
+simplefilter(action="ignore", category=FutureWarning)
+
+import os
 from finetune_config import FineTuneConfig
 from config import models_genesis_config
 from dataset import Dataset
@@ -112,7 +115,6 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
-    replace_config_param_attributes(config, kwargs_dict_)
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -125,6 +127,7 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
+    replace_config_param_attributes(config, kwargs_dict_)
     config.resume_ss = True
     config.display()
 
@@ -566,9 +569,13 @@ if __name__ == "__main__":
     parser.add_argument("-opt_ss", "--optimizer_ss", required=False, dest="optimizer_ss", type=str)
     parser.add_argument("-sch_ss", "--scheduler_ss", required=False, dest="scheduler_ss", type=str)
     parser.add_argument("-lr_ss", "--learning_rate_ss", required=False, dest="lr_ss", type=float)
+    parser.add_argument("--patience_ss_terminate", required=False, dest="patience_ss_terminate", type=int)
+    parser.add_argument("--patience_ss", required=False, dest="patience_ss", type=int)
     parser.add_argument("-opt_sup", "--optimizer_sup", required=False, dest="optimizer_sup", type=str)
     parser.add_argument("-sch_sup", "--scheduler_sup", required=False, dest="scheduler_sup", type=str)
     parser.add_argument("-lr_sup", "--learning_rate_sup", required=False, dest="lr_sup", type=float)
+    parser.add_argument("--patience_sup_terminate", required=False, dest="patience_sup_terminate", type=int)
+    parser.add_argument("--patience_sup", required=False, dest="patience_sup", type=int)
     # model argument?
     args = parser.parse_args()
 
