@@ -38,7 +38,7 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         setattr(config_object, key, value)
 
 
-dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
+dataset_map = {"lidc": "/work1/s182312/lidc_idri/np_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
 def build_dataset(dataset_list: list, split: tuple, mode: str):
