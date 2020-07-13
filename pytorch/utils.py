@@ -129,7 +129,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["patience_sup"] = args_object.patience_sup
         if isinstance(args_object.patience_sup_terminate, int):
             kwargs_dict["patience_sup_terminate"] = args_object.patience_sup_terminate
-        if isinstance(args_object.loss_function_sup, str)
+        if isinstance(args_object.loss_function_sup, str):
             kwargs_dict["loss_function_sup"] = args_object.loss_function_sup
 
     return kwargs_dict
