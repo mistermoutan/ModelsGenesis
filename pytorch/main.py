@@ -576,6 +576,7 @@ if __name__ == "__main__":
     parser.add_argument("-lr_sup", "--learning_rate_sup", required=False, dest="lr_sup", type=float)
     parser.add_argument("--patience_sup_terminate", required=False, dest="patience_sup_terminate", type=int)
     parser.add_argument("--patience_sup", required=False, dest="patience_sup", type=int)
+    parser.add_argument("--loss_function_sup", required=False, dest="loss_function_sup", type=float)
     # model argument?
     args = parser.parse_args()
 
