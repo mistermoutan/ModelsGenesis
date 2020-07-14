@@ -129,9 +129,9 @@ class Trainer:
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
 
             try:
-                print("CURRNT SS LR: {}".format(self.scheduler_ss.get_last_lr()))
+                print("CURRENT SS LR: {}, SCHEDULER: {}".format(self.scheduler_ss.get_last_lr(), self.config.scheduler_ss))
             except AttributeError:
-                print("CURRENT SS LR: {}".format(self.optimizer_ss.param_groups[0]["lr"]))
+                print("CURRENT SS LR: {}, SCHEDULER: {}".format(self.optimizer_ss.param_groups[0]["lr"], self.config.scheduler_ss))
 
             if avg_validation_loss_of_epoch < self.best_loss_ss:
                 print("Validation loss decreased from {:.4f} to {:.4f}".format(self.best_loss_ss, avg_validation_loss_of_epoch))
@@ -171,9 +171,9 @@ class Trainer:
             print("RESUMING SUP TRAINING FROM EPOCH {} out of max {}".format(self.epoch_sup_check, self.config.nb_epoch_sup))
             print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup))
             try:
-                print("CURRNT SUP LR: {}".format(self.scheduler_sup.get_last_lr()))
+                print("CURRNT SUP LR: {}, SCHEDULER: {}".format(self.scheduler_sup.get_last_lr(), self.config.scheduler_sup))
             except AttributeError:
-                print("CURRNT SUP LR: {}".format(self.optimizer_sup.param_groups[0]["lr"]))
+                print("CURRNT SUP LR: {}, SCHEDULER: {}".format(self.optimizer_sup.param_groups[0]["lr"], self.config.scheduler_sup))
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
 
