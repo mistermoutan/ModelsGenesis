@@ -17,7 +17,7 @@ class Datasets:
 
         assert mode == "alternate" or mode == "sequential"
         if mode == "alternate":
-            assert kwargs.get("stop_criteria_alternate", None) == "first_exhausted" or "all_exhausted"
+            assert kwargs.get("stop_criteria_alternate", None) == "first_exhausted" or kwargs.get("stop_criteria_alternate", None) == "all_exhausted"
         elif mode == "sequential":
             self.max_samples_each = kwargs.get("max_samples_each", None)
             assert type(self.max_samples_each) == int or type(None)

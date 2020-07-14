@@ -14,7 +14,7 @@ class DatasetPytorch(DatasetP):
 
         Args:
             dataset ([type]): dataset.py class
-            config ([type]): config.py class
+            config ([type]): config class
             type_ (str): "train", "val" or "ts"
             apply_mg_transforms (bool) True for self supervision
         """
