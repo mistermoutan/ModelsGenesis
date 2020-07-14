@@ -224,7 +224,6 @@ class Trainer:
                     self.stats.validation_losses_sup.append(loss.item())
 
             self.dataset.reset()
-            self.scheduler_sup.step(self.epoch_sup_current)
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_sup)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Supervised", avg_training_loss_of_epoch, self.epoch_sup_current + 1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_sup)
@@ -233,6 +232,11 @@ class Trainer:
             self.stats.avg_training_loss_per_epoch_sup.append(avg_training_loss_of_epoch)
             self.stats.avg_validation_loss_per_epoch_sup.append(avg_validation_loss_of_epoch)
             self.stats.iterations_sup.append(iteration)
+
+            if self.config.scheduler_sup.lower() == "reducelronplateau":
+                self.scheduler_sup.step(avg_validation_loss_of_epoch)
+            else:
+                self.scheduler_sup.step(self.epoch_sup_current)
 
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_sup_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
 
