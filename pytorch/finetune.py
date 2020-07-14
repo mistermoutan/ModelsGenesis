@@ -77,7 +77,7 @@ class Trainer:
 
             for iteration, (x_transform, y) in enumerate(train_data_loader):
 
-                if iteration == 0:
+                if iteration == 0 and ((self.epoch_ss_current + 1) % 20 == 0):
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
@@ -92,7 +92,7 @@ class Trainer:
 
                 if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
-                if iteration == 0:
+                if iteration == 0 and ((self.epoch_ss_current + 1) % 20 == 0):
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
                 sys.stdout.flush()
@@ -124,7 +124,7 @@ class Trainer:
             else:
                 self.scheduler_ss.step(self.epoch_ss_current)
 
-            print("\n###### SELF SUPERVISED#######")
+            print("###### SELF SUPERVISED#######")
             print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
 
             try:
@@ -184,7 +184,7 @@ class Trainer:
             iteration = 0
             while True:  # go through all examples
 
-                if (iteration + 1) % 200 == 0:
+                if iteration == 0 and ((self.epoch_sup_current + 1) % 20 == 0):
                     start_time = time.time()
                 x, y = self.dataset.get_train(batch_size=self.config.batch_size_sup)
                 if x is None:
@@ -201,9 +201,10 @@ class Trainer:
 
                 if (iteration + 1) % 200 == 0:
                     print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)))
+                if iteration == 0 and ((self.epoch_sup_current + 1) % 20 == 0):
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
-                    sys.stdout.flush()
+                sys.stdout.flush()
                 iteration += 1
 
             with torch.no_grad():
@@ -497,7 +498,7 @@ class Trainer:
                 },
                 os.path.join(self.config.model_path_save, "weights_ss{}.pt".format(suffix)),
             )
-            print("Model Saved in {}".format(os.path.join(self.config.model_path_save, "weights_ss{}.pt".format(suffix))))
+            print("Model Saved in {} \n".format(os.path.join(self.config.model_path_save, "weights_ss{}.pt".format(suffix))))
 
         elif phase == "sup":
             torch.save(
@@ -511,7 +512,7 @@ class Trainer:
                 },
                 os.path.join(self.config.model_path_save, "weights_sup{}.pt".format(suffix)),
             )
-            print("Model Saved in {}".format(os.path.join(self.config.model_path_save, "weights_sup{}.pt".format(suffix))))
+            print("Model Saved in {} \n".format(os.path.join(self.config.model_path_save, "weights_sup{}.pt".format(suffix))))
 
     def _loadparams(self, phase: str, **kwargs):
         """
