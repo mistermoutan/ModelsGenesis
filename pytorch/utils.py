@@ -26,7 +26,7 @@ def load_object(location):
 def replace_config_param_attributes(config_object, kwargs_dict):
 
     #!!!
-    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate, loss_function_sup"}
+    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate", "loss_function_sup"}
     for key, value in kwargs_dict.items():
         assert isinstance(key, str)
         if key not in possible_keys:
