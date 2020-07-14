@@ -26,7 +26,7 @@ def load_object(location):
 def replace_config_param_attributes(config_object, kwargs_dict):
 
     #!!!
-    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate"}
+    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate, loss_function_sup"}
     for key, value in kwargs_dict.items():
         assert isinstance(key, str)
         if key not in possible_keys:
@@ -38,7 +38,7 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         setattr(config_object, key, value)
 
 
-dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
+dataset_map = {"lidc": "/work1/s182312/lidc_idri/np_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
 def build_dataset(dataset_list: list, split: tuple, mode: str):
@@ -129,6 +129,8 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["patience_sup"] = args_object.patience_sup
         if isinstance(args_object.patience_sup_terminate, int):
             kwargs_dict["patience_sup_terminate"] = args_object.patience_sup_terminate
+        if isinstance(args_object.loss_function_sup, str):
+            kwargs_dict["loss_function_sup"] = args_object.loss_function_sup
 
     return kwargs_dict
 

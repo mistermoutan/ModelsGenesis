@@ -1,4 +1,5 @@
 from os import listdir, path
+import os
 from random import shuffle, sample
 from math import ceil, floor
 from copy import deepcopy
@@ -36,6 +37,9 @@ class Dataset:
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
         self.cube_dimensions = deepcopy(self.x_train_filenames[0][-14:-6])
         self.reseted = False
+        self.nr_samples_train = None
+        self.nr_samples_val = None
+        self.nr_samples_test = None
 
     def _load_data(self, tr_vl_ts_prop: tuple, force_load=(False, False, False)):
         """
@@ -155,6 +159,39 @@ class Dataset:
         self.x_val_filenames = deepcopy(self.x_val_filenames_original)
         self.x_test_filenames = deepcopy(self.x_test_filenames_original)
         self.reseted = True
+
+    def get_len_train(self):
+
+        if self.nr_samples_train is None:
+            self.nr_samples_train = 0
+            for f in self.x_train_filenames_original:
+                a = np.load(os.path.join(self.x_data_dir, f))
+                self.nr_samples_train += a.shape[0]
+            return self.nr_samples_train
+        else:
+            return self.nr_samples_train
+
+    def get_len_val(self):
+
+        if self.nr_samples_val is None:
+            self.nr_samples_val = 0
+            for f in self.x_val_filenames_original:
+                a = np.load(os.path.join(self.x_data_dir, f))
+                self.nr_samples_val += a.shape[0]
+            return self.nr_samples_val
+        else:
+            return self.nr_samples_val
+
+    def get_len_test(self):
+
+        if self.nr_samples_test is None:
+            self.nr_samples_test = 0
+            for f in self.x_test_filenames_original:
+                a = np.load(os.path.join(self.x_data_dir, f))
+                self.nr_samples_test += a.shape[0]
+            return self.nr_samples_test
+        else:
+            return self.nr_samples_test
 
     @staticmethod
     def do_file_split(file_names: list, proportions: tuple) -> ([], [], []):

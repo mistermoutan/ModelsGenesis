@@ -44,14 +44,14 @@ class FineTuneConfig:
         self.flip_rate = 0.4
 
         # self supervision finetuning
-        self.batch_size_ss = 6 if self.self_supervised else False
-        self.optimizer_ss = "sgd" if self.self_supervised else False
-        self.loss_function_ss = "MSE" if self.self_supervised else False
-        self.nb_epoch_ss = 1000 if self.self_supervised else False
-        self.patience_ss_terminate = 30 if self.self_supervised else False
-        self.patience_ss = int(self.patience_ss_terminate * 0.7) if self.self_supervised else False
-        self.lr_ss = 1e-3 if self.self_supervised else False
-        self.scheduler_ss = "StepLR" if self.self_supervised else False
+        self.batch_size_ss = 6  # if self.self_supervised else False
+        self.optimizer_ss = "sgd"  # if self.self_supervised else False
+        self.loss_function_ss = "MSE"  # if self.self_supervised else False
+        self.nb_epoch_ss = 1000  # if self.self_supervised else False
+        self.patience_ss_terminate = 30  # if self.self_supervised else False
+        self.patience_ss = int(self.patience_ss_terminate * 0.7)  # if self.self_supervised else False
+        self.lr_ss = 1e-3  # if self.self_supervised else False
+        self.scheduler_ss = "StepLR"  # if self.self_supervised else False
 
         # supervised finetuning
         self.batch_size_sup = 6
