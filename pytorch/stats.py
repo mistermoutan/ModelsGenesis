@@ -35,14 +35,14 @@ class Statistics:
         self.save_directory = config.stats_dir
         make_dir(self.save_directory)
 
-        if self.config.self_supervised:
-            self.training_losses_ss = []
-            self.validation_losses_ss = []
-            self.avg_training_loss_per_epoch_ss = []
-            self.avg_validation_loss_per_epoch_ss = []
-            self.iterations_ss = []
-            self.stopped_early_ss = False
-            self.comment_ss = None
+        # if self.config.self_supervised:
+        self.training_losses_ss = []
+        self.validation_losses_ss = []
+        self.avg_training_loss_per_epoch_ss = []
+        self.avg_validation_loss_per_epoch_ss = []
+        self.iterations_ss = []
+        self.stopped_early_ss = False
+        self.comment_ss = None
 
         # self.threshold = config.threshold
         self.training_losses_sup = []
