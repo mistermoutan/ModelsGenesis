@@ -158,10 +158,10 @@ class Trainer:
 
         self.start_time = time.time()
 
-        if self.config.loss_function_sup == "binary_cross_entropy":
+        if self.config.loss_function_sup.lower() == "binary_cross_entropy":
             criterion = nn.BCELoss()  # #model outputs sigmoid so no use of BCEwithLogits
             criterion.to(self.device)
-        elif self.config.loss_function_sup == "dice":
+        elif self.config.loss_function_sup.lower() == "dice":
             criterion = DiceLoss.dice_loss
         elif self.config.loss_function_sup == "mix_dice_bce":
             # https://discuss.pytorch.org/t/dice-loss-cross-entropy/53194
