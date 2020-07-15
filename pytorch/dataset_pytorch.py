@@ -31,39 +31,12 @@ class DatasetPytorch(DatasetP):
 
         if self.type == "train":
             return self.dataset.get_len_train()
-            # if self.nr_samples_train is None:
-            #    np_array_names = self.dataset.x_train_filenames_original
-            #    self.nr_samples_train = 0
-            #    for f in np_array_names:
-            #        a = np.load(os.path.join(self.dataset.x_data_dir, f))
-            #        self.nr_samples_train += a.shape[0]
-            #    return self.nr_samples_train
-            # else:
-            #    return self.nr_samples_train
 
         if self.type == "val":
             return self.dataset.get_len_val()
-            # if self.nr_samples_val is None:
-            #    np_array_names = self.dataset.x_val_filenames_original
-            #    self.nr_samples_val = 0
-            #    for f in np_array_names:
-            #        a = np.load(os.path.join(self.dataset.x_data_dir, f))
-            #        self.nr_samples_val += a.shape[0]
-            #    return self.nr_samples_val
-            # else:
-            #    return self.nr_samples_val
 
-        if self.type == "ts":
+        if self.type == "test":
             return self.dataset.get_len_test()
-            # if self.nr_samples_test is None:
-            #    np_array_names = self.dataset.x_test_filenames_original
-            #    self.nr_samples_test = 0
-            #    for f in np_array_names:
-            #        a = np.load(os.path.join(self.dataset.x_data_dir, f))
-            #        self.nr_samples_test += a.shape[0]
-            #    return self.nr_samples_test
-            # else:
-            #    return self.nr_samples_test
 
     def __getitem__(self, idx):
 
@@ -83,13 +56,16 @@ class DatasetPytorch(DatasetP):
                     return (x_transform, y)
                 return (x, y)
 
-        if self.type == "ts":
+        if self.type == "test":
             x, y = self.dataset.get_test(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_test(batch_size=1, return_tensor=True)
             if x is not None:
                 if self.apply_mg_transforms:
                     x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
                 return (x, y)
+
+    def reset(self):
+        self.dataset.reset()
 
     @staticmethod
     def custom_collate(batch):
@@ -111,16 +87,34 @@ if __name__ == "__main__":
     from config import models_genesis_config
     from torch.utils.data import DataLoader
     from dataset import Dataset
+    from datasets import Datasets
 
-    config = models_genesis_config()
+    # config = models_genesis_config()
+    # x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
+    # x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
+    # x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
+    # files = [x_train_filenames, x_val_filenames, x_test_filenames]
+    # dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files
+
+    config = models_genesis_config(False)
     x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
     x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
     x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
     files = [x_train_filenames, x_val_filenames, x_test_filenames]
-    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files
+    dataset_luna = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)
 
-    PD = DatasetPytorch(dataset, config, type_="val", apply_mg_transforms=False)
-    DL = DataLoader(PD, batch_size=6, num_workers=0, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+    x_train_filenames = ["tr_cubes_64x64x32.npy"]
+    x_val_filenames = ["val_cubes_64x64x32.npy"]
+    x_test_filenames = ["ts_cubes_64x64x32.npy"]
+    files = [x_train_filenames, x_val_filenames, x_test_filenames]
+    dataset_lidc = Dataset(data_dir="pytorch/datasets/lidc_idri_cubes", train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritte
+
+    d1 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.3, 0.2))
+    d2 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.5, 0))
+
+    PD = DatasetPytorch(dataset_lidc, config, type_="train", apply_mg_transforms=False)
+
+    DL = DataLoader(PD, batch_size=6, num_workers=0, pin_memory=True)
     n_samples = PD.__len__()
     sample_count = 0
     print(n_samples)
@@ -132,5 +126,5 @@ if __name__ == "__main__":
                 print(iteration, type(x), type(y))
             if sample_count == n_samples:
                 print("exhausted dataset")
-        dataset.reset()  # works
+        PD.reset()  # works
 
