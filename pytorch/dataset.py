@@ -164,33 +164,45 @@ class Dataset:
 
         if self.nr_samples_train is None:
             self.nr_samples_train = 0
+            training_samples_dict = {}
             for f in self.x_train_filenames_original:
                 a = np.load(os.path.join(self.x_data_dir, f))
+                training_samples_dict[f] = a.shape[0]
                 self.nr_samples_train += a.shape[0]
+            print("TRAINING: ", training_samples_dict)
             return self.nr_samples_train
         else:
+            print("TRAINING: ", training_samples_dict)
             return self.nr_samples_train
 
     def get_len_val(self):
 
         if self.nr_samples_val is None:
             self.nr_samples_val = 0
+            val_samples_dict = {}
             for f in self.x_val_filenames_original:
                 a = np.load(os.path.join(self.x_data_dir, f))
+                val_samples_dict[f] = a.shape[0]
                 self.nr_samples_val += a.shape[0]
+            print("VALIDATION: ", val_samples_dict)
             return self.nr_samples_val
         else:
+            print("VALIDATION: ", val_samples_dict)
             return self.nr_samples_val
 
     def get_len_test(self):
 
         if self.nr_samples_test is None:
             self.nr_samples_test = 0
+            test_samples_dict = {}
             for f in self.x_test_filenames_original:
                 a = np.load(os.path.join(self.x_data_dir, f))
+                test_samples_dict[f] = a.shape[0]
                 self.nr_samples_test += a.shape[0]
+            print("TESTING: ", test_samples_dict)
             return self.nr_samples_test
         else:
+            print("TESTING: ", test_samples_dict)
             return self.nr_samples_test
 
     @staticmethod
