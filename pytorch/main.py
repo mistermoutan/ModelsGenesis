@@ -8,6 +8,7 @@ from config import models_genesis_config
 from dataset import Dataset
 from datasets import Datasets
 from finetune import Trainer
+from evaluate import Tester
 from utils import *
 
 # script to run experiments
@@ -87,7 +88,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
@@ -148,7 +149,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
@@ -210,7 +211,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
 
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
@@ -287,7 +288,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -351,7 +352,7 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -428,7 +429,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
 
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -490,7 +491,7 @@ def train_from_scratch_on_dataset_with_ss(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.65, 0.15, 0.1))
+    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -553,6 +554,27 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
         trainer.add_hparams_to_writer()
         trainer.get_stats()
 
+    def test(**kwargs):
+
+        kwargs_dict_ = kwargs["kwargs_dict"]
+        task_dirs = get_task_dirs()
+        test_config = TestConfig()
+
+        for task_dir in task_dirs:
+            config_object = get_config_object_of_task_dir(task_dir)
+            dataset_object = get_dataset_object_of_task_dir(task_dir)
+            tester = Tester(config, dataset)
+            tester.test_segmentation()
+
+        # if not files:
+        #    continue
+        # else:
+        #    print("ROOT ", root)
+        #    print("DIRS", dirs)
+        #    print(files)
+
+        tester = Tester()
+
 
 if __name__ == "__main__":
 
@@ -578,6 +600,8 @@ if __name__ == "__main__":
     parser.add_argument("--patience_sup", required=False, dest="patience_sup", type=int)
     parser.add_argument("--loss_function_sup", required=False, dest="loss_function_sup", type=str)
     # model argument?
+    parser.add_argument("--task_name", required=False, dest="task_name", type=str, default=None)
+
     args = parser.parse_args()
 
     # TODO: Add optim and scheduler handling, initial lr, model change
@@ -693,6 +717,10 @@ if __name__ == "__main__":
         assert args.run is not None, "You have to specify which --run to resume (int)"
         kwargs_dict = build_kwargs_dict(args, get_dataset=True)
         resume_train_from_scratch_on_dataset_with_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
+
+    elif args.command == "test":
+        kwargs_dict = build_kwargs_dict(test=True, search_for_params=False)
+        test(kwargs_dict=kwargs_dict)
 
     else:
         raise ValueError("Input a valid command")

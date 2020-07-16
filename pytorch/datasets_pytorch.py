@@ -45,10 +45,10 @@ class DatasetsPytorch(DatasetP):
         # dataset_to_sample_from = self.datasets[self.sampling_idx]
         # samples_used = self.samples_used[self.sampling_idx]
 
-        for i, j in zip(self.samples_used, self.len_datasets):
-            if i == j:
-                print(self.samples_used)
-                break
+        # for i, j in zip(self.samples_used, self.len_datasets):
+        #    if i == j:
+        # print(self.samples_used)
+        #        break
 
         if self.mode == "sequential":
             len_dataset_to_sample_from = len(self.datasets[self.sampling_idx])

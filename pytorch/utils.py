@@ -23,6 +23,24 @@ def load_object(location):
     return o
 
 
+def get_config_object_of_task_dir(task_dir):
+
+    if os.path.isfile(os.path.join("objects/", task_dir, "config.pkl")):
+        o = load_object(os.path.join("objects/", task_dir, "config.pkl"))
+    else:
+        o = None
+    return o
+
+
+def get_dataset_object_of_task_dir(task_dir):
+
+    if os.path.isfile(os.path.join("objects/", task_dir, "dataset.pkl")):
+        o = load_object(os.path.join("objects/", task_dir, "dataset.pkl"))
+    else:
+        o = None
+    return o
+
+
 def replace_config_param_attributes(config_object, kwargs_dict):
 
     #!!!
@@ -38,20 +56,21 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         setattr(config_object, key, value)
 
 
-dataset_map = {"lidc": "/work1/s182312/lidc_idri/np_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
+dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes", "task_02": "pytorch/datasets/task02/extracted_cubes", "luna": "pytorch/datasets/luna16_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
 def build_dataset(dataset_list: list, split: tuple):
 
     from dataset import Dataset
 
+    # dataset come as [] from CLI
     if len(dataset_list) == 1:
         if dataset_list[0] == "lidc":
             x_train_filenames = ["tr_cubes_64x64x32.npy"]
             x_val_filenames = ["val_cubes_64x64x32.npy"]
             x_test_filenames = ["ts_cubes_64x64x32.npy"]
             files = [x_train_filenames, x_val_filenames, x_test_filenames]
-            dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritte
+            dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0, 0, 1), file_names=files)  # train_val_test is non relevant as is overwritte
         else:
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
 
@@ -65,7 +84,7 @@ def build_dataset(dataset_list: list, split: tuple):
                 x_val_filenames = ["val_cubes_64x64x32.npy"]
                 x_test_filenames = ["ts_cubes_64x64x32.npy"]
                 files = [x_train_filenames, x_val_filenames, x_test_filenames]
-                dataset = Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritte
+                dataset = Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=(0, 0, 1), file_names=files)  # train_val_test is non relevant as is overwritte
                 datasets.append(dataset)
             else:
                 datasets.append(Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None))
@@ -106,6 +125,14 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             raise NotADirectoryError("Make sure directory exists")
         kwargs_dict["directory"] = args_object.directory
 
+    if kwargs.get("test", False):
+        if isinstance(args_object.task_name, str):
+            kwargs_dict["task_name"] = args_object.directory
+        if isinstance(args_object.directory, str):
+            kwargs_dict["directory"] = args_object.directory
+        if args_object.dataset != []:
+            kwargs_dict["dataset"] = args_object.dataset
+
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):
@@ -132,6 +159,18 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["loss_function_sup"] = args_object.loss_function_sup
 
     return kwargs_dict
+
+    def get_task_dirs():
+
+        task_dirs = []
+        for root, dirs, files in os.walk("pretrained_weights"):
+            if not files:
+                continue
+            else:
+                root_split = root.split("/")
+                task_dir = "/".join(i for i in root_split[1:])
+                task_dirs.append(task_dir)
+        return task_dirs
 
 
 if __name__ == "__main__":
