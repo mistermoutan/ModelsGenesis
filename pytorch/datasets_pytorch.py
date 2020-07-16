@@ -45,6 +45,11 @@ class DatasetsPytorch(DatasetP):
         # dataset_to_sample_from = self.datasets[self.sampling_idx]
         # samples_used = self.samples_used[self.sampling_idx]
 
+        for i, j in zip(self.samples_used, self.len_datasets):
+            if i == j:
+                print(self.samples_used)
+                break
+
         if self.mode == "sequential":
             len_dataset_to_sample_from = len(self.datasets[self.sampling_idx])
             if self.samples_used[self.sampling_idx] < len_dataset_to_sample_from:
@@ -53,8 +58,9 @@ class DatasetsPytorch(DatasetP):
                 if self.samples_used[self.sampling_idx] == len_dataset_to_sample_from:
                     self._advance_index()
             else:
-                raise RuntimeError("Can't Get HERE")
+                raise RuntimeError("Can't Get HERE SEQUENTIAL")
 
+            self._check_reset()
             return return_tuple
 
         if self.mode == "alternate":
@@ -77,10 +83,10 @@ class DatasetsPytorch(DatasetP):
                         self.exhausted_datasets[i] = True
 
             else:
+                print("SHOULD NOT GET HERE ALTERNATE SAMPLING")
                 self._advance_index()
-                print(self.sampling_idx)
-                # raise RuntimeError("Can't Get HERE")
 
+            self._check_reset()
             return return_tuple
 
     def _advance_index(self):
@@ -91,7 +97,8 @@ class DatasetsPytorch(DatasetP):
         except IndexError:
             self.sampling_idx = 0
 
-        # automatic reset, MP safety check
+    def _check_reset(self):
+        # automatic reset, MP safety check, do it automatically in instance as you can't access it
         cnt = 0
         for i, j in zip(self.samples_used, self.len_datasets):
             if i < j:
@@ -103,6 +110,9 @@ class DatasetsPytorch(DatasetP):
 
     def reset(self):
 
+        # print("DATASETS IS THE REASON")
+        # Can only get here when num workers <= 1 if you need to increase this
+        # will just need to add a check to which dataset you're sampling from in sequentail mode I think
         for idx in range(len(self.datasets)):
             self.datasets[idx].reset()
 
@@ -117,13 +127,37 @@ class DatasetsPytorch(DatasetP):
         dims = batch[0][0].shape
         x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
         y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        dataset_idxs = []
         for idx, (x, y, dataset_idx) in enumerate(batch):  # y can be none in ss case
 
+            dataset_idxs.append(dataset_idx)
             x_tensor[idx] = x
             if y is None:
                 y_tensor = None
             else:
                 y_tensor[idx] = y
+
+        # purify batches
+        if len(set(dataset_idxs)) != 1:
+            # print("PURIFYING BATCH")
+            # print(dataset_idxs)
+            cut_off_idx = 0
+            for idx, i in enumerate(dataset_idxs):
+                if idx == 0:
+                    current_idx = i
+                else:
+                    if i != current_idx:
+                        cut_off_idx = i
+                        break
+                    else:
+                        current_idx = i
+
+            # print("CUT OFF IDX ", cut_off_idx)
+            # print("shape before ", x_tensor.shape)
+            x_tensor = x_tensor[:cut_off_idx]
+            # print("shape after", x_tensor.shape)
+            if y_tensor is not None:
+                y_tensor = y_tensor[:cut_off_idx]
 
         return (x_tensor, y_tensor)
 
