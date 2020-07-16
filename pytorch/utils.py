@@ -26,7 +26,7 @@ def load_object(location):
 def replace_config_param_attributes(config_object, kwargs_dict):
 
     #!!!
-    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate", "loss_function_sup"}
+    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate", "loss_function_sup", "mode"}
     for key, value in kwargs_dict.items():
         assert isinstance(key, str)
         if key not in possible_keys:
@@ -41,10 +41,9 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 dataset_map = {"lidc": "/work1/s182312/lidc_idri/np_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
-def build_dataset(dataset_list: list, split: tuple, mode: str):
+def build_dataset(dataset_list: list, split: tuple):
 
     from dataset import Dataset
-    from datasets import Datasets
 
     if len(dataset_list) == 1:
         if dataset_list[0] == "lidc":
@@ -59,10 +58,8 @@ def build_dataset(dataset_list: list, split: tuple, mode: str):
         return dataset
 
     else:
-        assert mode != "" and (mode == "alternate" or mode == "sequential")
         datasets = []
         for idx in range(len(dataset_list)):
-
             if dataset_list[idx] == "lidc":
                 x_train_filenames = ["tr_cubes_64x64x32.npy"]
                 x_val_filenames = ["val_cubes_64x64x32.npy"]
@@ -94,6 +91,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         kwargs_dict["dataset"] = args_object.dataset
         if len(args_object.dataset) > 1:
             assert args_object.mode is not None, "Specify how sampling should be done with --mode: sequential or alternate"
+            assert args_object.mode in ("alternate", "sequential")
             kwargs_dict["mode"] = args_object.mode
         else:
             assert args_object.mode is None, "Don't Specify mode if you are only using 1 dataset"
