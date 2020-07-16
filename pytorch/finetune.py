@@ -7,11 +7,13 @@ import os
 import numpy as np
 import time
 from datetime import timedelta
+from copy import deepcopy
 
 
 from unet3d import UNet3D
 from dataset import Dataset
 from dataset_pytorch import DatasetPytorch
+from datasets_pytorch import DatasetsPytorch
 from finetune_config import FineTuneConfig
 from config import models_genesis_config
 from stats import Statistics
@@ -48,14 +50,32 @@ class Trainer:
 
         self.start_time = time.time()
 
-        train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
-        train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+        if isinstance(self.dataset, list):
 
-        val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
-        val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+            copy1 = deepcopy(self.dataset)
+            copy2 = deepcopy(self.dataset)
+            for i in range(len(copy1)):
+                copy1[i] = DatasetPytorch(copy1[i], self.config, type_="train", apply_mg_transforms=True)
+                copy2[i] = DatasetPytorch(copy2[i], self.config, type_="val", apply_mg_transforms=True)
 
-        print("{} TRAINING EXAMPLES".format(train_dataset.__len__()))
-        print("{} VALIDATION EXAMPLES".format(val_dataset.__len__()))
+            train_dataset = DatasetsPytorch(datasets=copy1, type_="train", mode=self.config.mode, batch_size=self.config.batch_size_ss, apply_mg_transforms=True)
+            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+
+            val_dataset = DatasetsPytorch(datasets=copy2, type_="val", mode=self.config.mode, batch_size=self.config.batch_size_ss, apply_mg_transforms=True)
+            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+
+        else:
+
+            train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
+            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+
+            val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
+            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+
+        num_train_samples = train_dataset.__len__()
+        num_val_samples = val_dataset.__len__()
+        print("{} TRAINING EXAMPLES".format(num_train_samples))
+        print("{} VALIDATION EXAMPLES".format(num_val_samples))
 
         criterion = nn.MSELoss()
         criterion.to(self.device)
@@ -102,15 +122,24 @@ class Trainer:
                 self.model.eval()
                 for iteration, (x_transform, y) in enumerate(val_data_loader):
                     if x_transform is None:
-                        print("THIS SHOULD NOT HAPPEN ANYMORE")
-                        break
+                        raise RuntimeError("THIS SHOULD NOT HAPPEN")
+
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
 
-            self.dataset.reset()
+            # a bunch of checks but think its pointless in an MP context
+            train_dataset.reset()
+            val_dataset.reset()
+
+            if isinstance(self.dataset, list):
+                for i in range(len(self.dataset)):
+                    self.dataset[i].reset()
+            else:
+                self.dataset.reset()
+
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Self Supervised", avg_training_loss_of_epoch, self.epoch_ss_current + 1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_ss)
@@ -158,6 +187,29 @@ class Trainer:
 
         self.start_time = time.time()
 
+        if isinstance(self.dataset, list):
+
+            copy1 = deepcopy(self.dataset)
+            copy2 = deepcopy(self.dataset)
+
+            for i in range(len(copy1)):
+                copy1[i] = DatasetPytorch(copy1[i], self.config, type_="train", apply_mg_transforms=False)
+                copy2[i] = DatasetPytorch(copy2[i], self.config, type_="val", apply_mg_transforms=False)
+
+            train_dataset = DatasetsPytorch(datasets=copy1, type_="train", mode=self.config.mode, batch_size=self.config.batch_size_sup, apply_mg_transforms=False)
+            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_sup, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+
+            val_dataset = DatasetsPytorch(datasets=copy2, type_="val", mode=self.config.mode, batch_size=self.config.batch_size_sup, apply_mg_transforms=False)
+            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_sup, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+
+        else:
+
+            train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
+            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+
+            val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
+            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+
         if self.config.loss_function_sup.lower() == "binary_cross_entropy":
             criterion = nn.BCELoss()  # #model outputs sigmoid so no use of BCEwithLogits
             criterion.to(self.device)
@@ -185,14 +237,15 @@ class Trainer:
             self.stats.training_losses_sup = []
             self.stats.validation_losses_sup = []
             self.model.train()
-            iteration = 0
-            while True:  # go through all examples
+
+            for iteration, (x, y) in enumerate(train_data_loader):
 
                 if iteration == 0 and ((self.epoch_sup_current + 1) % 20 == 0):
                     start_time = time.time()
-                x, y = self.dataset.get_train(batch_size=self.config.batch_size_sup)
+
                 if x is None:
-                    break
+                    raise RuntimeError
+
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 pred = self.model(x)
                 loss = criterion(pred, y)
@@ -213,7 +266,7 @@ class Trainer:
 
             with torch.no_grad():
                 self.model.eval()
-                while True:
+                for iteration, (x, y) in enumerate(val_data_loader):
                     x, y = self.dataset.get_val(batch_size=self.config.batch_size_sup)
                     if x is None:
                         break
@@ -223,7 +276,16 @@ class Trainer:
                     self.tb_writer.add_scalar("Loss/Validation : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                     self.stats.validation_losses_sup.append(loss.item())
 
-            self.dataset.reset()
+            # a bunch of checks but think its pointless in an MP context there is an automatic mechanims in place
+            train_dataset.reset()
+            val_dataset.reset()
+
+            if isinstance(self.dataset, list):
+                for i in range(len(self.dataset)):
+                    self.dataset[i].reset()
+            else:
+                self.dataset.reset()
+
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_sup)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Supervised", avg_training_loss_of_epoch, self.epoch_sup_current + 1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_sup)
