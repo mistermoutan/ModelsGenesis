@@ -31,11 +31,6 @@ class DatasetsPytorch(DatasetP):
         self.samples_used = [0 for i in range(len(self.datasets))]
         self.len_datasets = [len(d) for d in self.datasets]
 
-        self.break_time = False  # DATALOADER IS NOT EXITING BY ITSELF
-
-        self.blah = 10
-        self.wait = False
-
     def __len__(self):
 
         if self.nr_samples is None:
@@ -53,23 +48,14 @@ class DatasetsPytorch(DatasetP):
         if self.mode == "sequential":
             len_dataset_to_sample_from = len(self.datasets[self.sampling_idx])
             if self.samples_used[self.sampling_idx] < len_dataset_to_sample_from:
-                i = 0
-                return_list = []
-                while i < self.batch_size and self.samples_used[self.sampling_idx] < len_dataset_to_sample_from:
-                    return_list.append(self.datasets[self.sampling_idx].__getitem__(idx))
-                    self.samples_used[self.sampling_idx] += 1
-                    i += 1
-
+                return_tuple = self.datasets[self.sampling_idx].__getitem__(idx) + (self.sampling_idx,)
+                self.samples_used[self.sampling_idx] += 1
                 if self.samples_used[self.sampling_idx] == len_dataset_to_sample_from:
                     self._advance_index()
-
-            # elif self.samples_used[self.sampling_idx] == len_dataset_to_sample_from:
-            #    self._advance_index()
-            #    return_list = self.__getitem__(idx)
             else:
                 raise RuntimeError("Can't Get HERE")
 
-            return return_list
+            return return_tuple
 
         if self.mode == "alternate":
 
@@ -77,25 +63,35 @@ class DatasetsPytorch(DatasetP):
                 self._advance_index()
 
             len_dataset_to_sample_from = len(self.datasets[self.sampling_idx])
-            if self.samples_used[self.sampling_idx] < len_dataset_to_sample_from:
-                i = 0
-                return_list = []
-                while i < self.batch_size and self.samples_used[self.sampling_idx] < len_dataset_to_sample_from:
-                    return_list.append(self.datasets[self.sampling_idx].__getitem__(idx))
-                    self.samples_used[self.sampling_idx] += 1
-                    i += 1
-                if self.samples_used[self.sampling_idx] == len_dataset_to_sample_from:
-                    self.exhausted_datasets[self.sampling_idx] = True
 
-                self._advance_index()
+            if self.samples_used[self.sampling_idx] < len_dataset_to_sample_from:
+                return_tuple = self.datasets[self.sampling_idx].__getitem__(idx) + (self.sampling_idx,)
+                self.samples_used[self.sampling_idx] += 1
+
+                if (sum(self.samples_used) != 0) and (sum(self.samples_used) % self.batch_size) == 0:
+                    self._advance_index()
+
+                # shitty fix, ideally: if self.samples_used[self.sampling_idx] == len(self.datasets[self.sampling_idx]):
+                for i in range(len(self.datasets)):
+                    if self.samples_used[i] == len(self.datasets[i]):
+                        self.exhausted_datasets[i] = True
 
             else:
-                raise RuntimeError("Can't Get HERE")
+                self._advance_index()
+                print(self.sampling_idx)
+                # raise RuntimeError("Can't Get HERE")
 
-            return return_list
+            return return_tuple
 
     def _advance_index(self):
 
+        self.sampling_idx += 1
+        try:
+            self.datasets[self.sampling_idx]
+        except IndexError:
+            self.sampling_idx = 0
+
+        # automatic reset, MP safety check
         cnt = 0
         for i, j in zip(self.samples_used, self.len_datasets):
             if i < j:
@@ -103,24 +99,7 @@ class DatasetsPytorch(DatasetP):
             cnt += 1
 
         if cnt == len(self.datasets):
-            self.break_time = True
             self.reset()
-        # if self.samples_used == self.len_datasets:
-        #    self.break_time = True
-
-        self.sampling_idx += 1
-        try:
-            self.datasets[self.sampling_idx]
-        except IndexError:
-            self.sampling_idx = 0
-        # if self.sampling_idx < len(self.datasets) - 1:
-        #    self.sampling_idx += 1
-        # else:
-        #    self.sampling_idx = 0
-
-        # rint("SELF:SAMPLES USED", self.samples_used)
-        # rint([len(d) for d in self.datasets])
-        # print(self.exhausted_datasets, "\n")
 
     def reset(self):
 
@@ -132,20 +111,14 @@ class DatasetsPytorch(DatasetP):
         if self.mode == "alternate":
             self.exhausted_datasets = [False for i in range(len(self.datasets))]
 
-        # MULTI PROCSSING SCREWED THIS UP
-        # if self.break_time is not True:
-        #    raise RuntimeError("SHOULD BE TRUE to call reset")
-        self.break_time = False
-
     @staticmethod
     def custom_collate(batch):
 
-        import torch
+        dims = batch[0][0].shape
+        x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        for idx, (x, y, dataset_idx) in enumerate(batch):  # y can be none in ss case
 
-        dims = batch[0][0][0].shape
-        x_tensor = torch.zeros(len(batch[0]), 1, dims[2], dims[3], dims[4])
-        y_tensor = torch.zeros(len(batch[0]), 1, dims[2], dims[3], dims[4])
-        for idx, (x, y) in enumerate(batch[0]):  # y can be none in ss case
             x_tensor[idx] = x
             if y is None:
                 y_tensor = None
@@ -181,31 +154,32 @@ if __name__ == "__main__":
     d1 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.3, 0.2))
     d2 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.5, 0))
 
-    lista = [d1]
+    lista = [d1, dataset_lidc, d2]
     for i in range(len(lista)):
-        lista[i] = DatasetPytorch(lista[i], config, type_="train", apply_mg_transforms=True)
+        lista[i] = DatasetPytorch(lista[i], config, type_="train", apply_mg_transforms=False)
     print(lista)
 
-    num_workers = 3
-    PDS = DatasetsPytorch(lista, type_="train", mode="sequential", batch_size=config.batch_size_ss, apply_mg_transforms=True)
-    DL = DataLoader(PDS, batch_size=1, num_workers=num_workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+    num_workers = 2
+
+    PDS = DatasetsPytorch(lista, type_="train", mode="alternate", batch_size=4, apply_mg_transforms=False)
+    DL = DataLoader(PDS, batch_size=4, num_workers=num_workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
 
     n_samples = PDS.__len__()
     sample_count = 0
     print(n_samples)
+    # exit(0)
 
     while True:
         print("new epoch")
         sample_count = 0
         for iteration, (x, y) in enumerate(DL):
+            print(PDS.samples_used)
+            # print(PDS.len_datasets)
             sample_count += x.shape[0]
+            # print(x.shape)
             if sample_count >= n_samples:
                 print("exhausted dataset")
                 print(PDS.__len__(), sample_count)
-            if sample_count >= len(PDS):
-                print("BREAK TIME")
-                DL = DataLoader(PDS, batch_size=1, num_workers=num_workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
-                break
-            print(sample_count)
-        # PDS.reset()
+
+        PDS.reset()
 
