@@ -15,10 +15,11 @@ class DatasetPytorch(DatasetP):
         Args:
             dataset ([type]): dataset.py class
             config ([type]): config class
-            type_ (str): "train", "val" or "ts"
+            type_ (str): "train", "val" or "test"
             apply_mg_transforms (bool) True for self supervision
         """
 
+        assert type_ in ("train", "val", "test")
         self.dataset = dataset
         self.config = config
         self.type = type_
