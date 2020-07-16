@@ -91,7 +91,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
     replace_config_param_attributes(config, kwargs_dict_)
     config.display()
@@ -152,7 +152,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
 
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
@@ -214,7 +214,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
 
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
@@ -291,7 +291,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
 
     config = FineTuneConfig(data_dir="", task="FROM_{}_SUP_ONLY{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
@@ -355,7 +355,7 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
 
     config = FineTuneConfig(data_dir="", task="FROM_{}_SS_AND_SUP{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
@@ -433,7 +433,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH_NO_SS{}".format(datasets_used_str), self_supervised=False, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
@@ -494,7 +494,7 @@ def train_from_scratch_on_dataset_with_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    dataset = build_dataset(dataset_list=dataset_list, split=split, mode=mode)
+    dataset = build_dataset(dataset_list=dataset_list, split=split)
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH_WITH_SS{}".format(datasets_used_str), self_supervised=True, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
