@@ -37,7 +37,7 @@ class models_genesis_config:
         # self.data_dir = "pytorch/datasets/luna16_cubes"
         # self.train_fold = [0]
         # self.valid_fold = [0]
-        # elf.test_fold = [0]
+        # self.test_fold = [0]
         self.data_dir = "/work1/s182312/luna16_extracted_cubes/scale_32"
         self.train_fold = [0, 1, 2, 3, 4]
         self.valid_fold = [5, 6]
@@ -78,6 +78,8 @@ class models_genesis_config:
         self.beta1_sup = 0.9
         self.beta2_sup = 0.999
         self.eps_sup = 1e-8
+
+        self.mode = "DEFINE ME"
 
         # logs
         self.model_path = "pretrained_weights"

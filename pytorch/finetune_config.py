@@ -68,6 +68,7 @@ class FineTuneConfig:
 
         # testing
         self.threshold = 0.5  # above is considered part of mask
+        self.mode = "DEFINE ME"
 
     def display(self):
         """Display Configuration values."""
