@@ -23,9 +23,7 @@ class DatasetPytorch(DatasetP):
         self.config = config
         self.type = type_
         self.apply_mg_transforms = apply_mg_transforms
-        self.nr_samples_train = None
-        self.nr_samples_val = None
-        self.nr_samples_test = None
+        self.nr_samples_used = 0
 
     def __len__(self):
 
@@ -43,6 +41,8 @@ class DatasetPytorch(DatasetP):
         if self.type == "train":
             x, y = self.dataset.get_train(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_train(batch_size=1, return_tensor=True)
             if x is not None:
+                self.nr_samples_used += 1
+                self._check_reset()
                 if self.apply_mg_transforms:
                     x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
@@ -51,6 +51,8 @@ class DatasetPytorch(DatasetP):
         if self.type == "val":
             x, y = self.dataset.get_val(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_val(batch_size=1, return_tensor=True)
             if x is not None:
+                self.nr_samples_used += 1
+                self._check_reset()
                 if self.apply_mg_transforms:
                     x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
@@ -59,10 +61,17 @@ class DatasetPytorch(DatasetP):
         if self.type == "test":
             x, y = self.dataset.get_test(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_test(batch_size=1, return_tensor=True)
             if x is not None:
+                self.nr_samples_used += 1
+                self._check_reset()
                 if self.apply_mg_transforms:
                     x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
                     return (x_transform, y)
                 return (x, y)
+
+    def _check_reset(self):
+        if self.nr_samples_used == self.__len__():
+            self.nr_samples_used = 0
+            self.reset()
 
     def reset(self):
         self.dataset.reset()
@@ -112,19 +121,22 @@ if __name__ == "__main__":
     d1 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.3, 0.2))
     d2 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.5, 0))
 
-    PD = DatasetPytorch(dataset_lidc, config, type_="train", apply_mg_transforms=False)
+    PD = DatasetPytorch(d1, config, type_="train", apply_mg_transforms=False)
 
     DL = DataLoader(PD, batch_size=6, num_workers=0, pin_memory=True)
     n_samples = PD.__len__()
-    sample_count = 0
     print(n_samples)
     while True:
+        sample_count = 0
         print("new epoch")
         for iteration, (x, y) in enumerate(DL):
             sample_count += x.shape[0]
             if (iteration + 1) % 200 == 0:
                 print(iteration, type(x), type(y))
             if sample_count == n_samples:
+                print(sample_count, "/", n_samples)
                 print("exhausted dataset")
+            if sample_count > n_samples:
+                print("OVERDOING")
         PD.reset()  # works
 
