@@ -55,6 +55,9 @@ def build_dataset(dataset_list: list, split: tuple, mode: str):
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritte
         else:
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
+
+        return dataset
+
     else:
         assert mode != "" and (mode == "alternate" or mode == "sequential")
         datasets = []
@@ -70,9 +73,7 @@ def build_dataset(dataset_list: list, split: tuple, mode: str):
             else:
                 datasets.append(Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None))
 
-        dataset = Datasets(datasets=datasets, mode=mode)
-
-    return dataset
+        return datasets
 
 
 def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
