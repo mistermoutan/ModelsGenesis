@@ -544,9 +544,9 @@ class Trainer:
 
     def sup_has_been_completed(self):
 
-        weight_dir_ss = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
-        checkpoint = torch.load(weight_dir_ss, map_location=self.device)
-        return checkpoint.get("completed_ss", False)
+        weight_dir_sup = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+        checkpoint = torch.load(weight_dir_sup, map_location=self.device)
+        return checkpoint.get("completed_sup", False)
 
     def _save_model(self, phase: str, suffix=""):
         """
