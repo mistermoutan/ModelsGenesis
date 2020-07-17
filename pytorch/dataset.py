@@ -33,7 +33,11 @@ class Dataset:
         else:
             self.x_train_filenames, self.x_val_filenames, self.x_test_filenames = file_names[0], file_names[1], file_names[2]
 
-        self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
+        self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = (
+            deepcopy(self.x_train_filenames),
+            deepcopy(self.x_val_filenames),
+            deepcopy(self.x_test_filenames),
+        )
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
         self.cube_dimensions = deepcopy(self.x_train_filenames[0][-14:-6])
         self.reseted = False
@@ -56,7 +60,9 @@ class Dataset:
             x_train_file_name = self.x_train_filenames[0]
             # print("SAMPLING FROM", x_train_file_name)
             del self.x_train_filenames[0]
-            self.x_array_tr = np.expand_dims(np.load(path.join(self.x_data_dir, x_train_file_name)), axis=1)  # (N, x, y, z) -> (N, 1-Channel, x, y, z)
+            self.x_array_tr = np.expand_dims(
+                np.load(path.join(self.x_data_dir, x_train_file_name)), axis=1
+            )  # (N, x, y, z) -> (N, 1-Channel, x, y, z)
             if self.has_target:
                 self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name[:-4] + "_target.npy")), axis=1)
                 assert self.x_array_tr.shape == self.y_array_tr.shape
@@ -67,7 +73,9 @@ class Dataset:
 
             x_val_file_name = self.x_val_filenames[0]
             del self.x_val_filenames[0]
-            self.x_array_val = np.expand_dims(np.load(path.join(self.x_data_dir, x_val_file_name)), axis=1)  # (N, x, y, z) -> (N, 1, x, y, z)
+            self.x_array_val = np.expand_dims(
+                np.load(path.join(self.x_data_dir, x_val_file_name)), axis=1
+            )  # (N, x, y, z) -> (N, 1, x, y, z)
             if self.has_target:
                 self.y_array_val = np.expand_dims(np.load(path.join(self.y_data_dir, x_val_file_name[:-4] + "_target.npy")), axis=1)
                 assert self.x_array_val.shape == self.y_array_val.shape
@@ -78,7 +86,9 @@ class Dataset:
 
             x_test_file_name = self.x_test_filenames[0]
             del self.x_test_filenames[0]
-            self.x_array_test = np.expand_dims(np.load(path.join(self.x_data_dir, x_test_file_name)), axis=1)  # (N, x, y, z) -> (N, 1, x, y, z)
+            self.x_array_test = np.expand_dims(
+                np.load(path.join(self.x_data_dir, x_test_file_name)), axis=1
+            )  # (N, x, y, z) -> (N, 1, x, y, z)
             if self.has_target:
                 self.y_array_test = np.expand_dims(np.load(path.join(self.y_data_dir, x_test_file_name[:-4] + "_target.npy")), axis=1)
                 assert self.x_array_test.shape == self.y_array_test.shape
@@ -93,8 +103,12 @@ class Dataset:
         self.reseted = False
         self._load_data((True, False, False))
         if self.has_target:
-            x, y = self.x_array_tr[self.train_idxs[:batch_size]], self.y_array_tr[self.train_idxs[:batch_size]]  # (batch_size ,1, x, y, z)
+            x, y = (
+                self.x_array_tr[self.train_idxs[:batch_size]],
+                self.y_array_tr[self.train_idxs[:batch_size]],
+            )  # (batch_size ,1, x, y, z)
             assert x.shape == y.shape
+            assert ((y == 0) | (y == 1)).all(), "Target array is not binary"
             del self.train_idxs[:batch_size]
             if return_tensor:
                 return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None)
@@ -118,8 +132,12 @@ class Dataset:
         self.reseted = False
         self._load_data((False, True, False))
         if self.has_target:
-            x, y = self.x_array_val[self.val_idxs[:batch_size]], self.y_array_val[self.val_idxs[:batch_size]]  # (batch_size ,1, x, y, z)
+            x, y = (
+                self.x_array_val[self.val_idxs[:batch_size]],
+                self.y_array_val[self.val_idxs[:batch_size]],
+            )  # (batch_size ,1, x, y, z)
             assert x.shape == y.shape
+            assert ((y == 0) | (y == 1)).all(), "Target array is not binary"
             del self.val_idxs[:batch_size]
             if return_tensor:
                 return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None)
@@ -138,8 +156,12 @@ class Dataset:
         self.reseted = False
         self._load_data((False, False, True))
         if self.has_target:
-            x, y = self.x_array_test[self.test_idxs[:batch_size]], self.y_array_test[self.test_idxs[:batch_size]]  # (batch_size, 1, x , y, z)
+            x, y = (
+                self.x_array_test[self.test_idxs[:batch_size]],
+                self.y_array_test[self.test_idxs[:batch_size]],
+            )  # (batch_size, 1, x , y, z)
             assert x.shape == y.shape
+            assert ((y == 0) | (y == 1)).all(), "Target array is not binary"
             del self.test_idxs[:batch_size]
             if return_tensor:
                 return (Tensor(x), Tensor(y)) if x.shape[0] != 0 else (None, None)
