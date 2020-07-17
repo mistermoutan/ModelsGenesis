@@ -190,12 +190,14 @@ if __name__ == "__main__":
 
     lista = [d1, dataset_lidc, d2]
     for i in range(len(lista)):
-        lista[i] = DatasetPytorch(lista[i], config, type_="train", apply_mg_transforms=False)
+        print(lista[i].x_test_filenames)
+        lista[i] = DatasetPytorch(lista[i], config, type_="test", apply_mg_transforms=False)
+
     print(lista)
 
-    num_workers = 2
+    num_workers = 0
 
-    PDS = DatasetsPytorch(lista, type_="train", mode="alternate", batch_size=4, apply_mg_transforms=False)
+    PDS = DatasetsPytorch(lista, type_="test", mode="sequential", batch_size=4, apply_mg_transforms=False)
     DL = DataLoader(PDS, batch_size=4, num_workers=num_workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
 
     n_samples = PDS.__len__()
@@ -208,6 +210,7 @@ if __name__ == "__main__":
         sample_count = 0
         for iteration, (x, y) in enumerate(DL):
             print(PDS.samples_used)
+            print(y)
             # print(PDS.len_datasets)
             sample_count += x.shape[0]
             # print(x.shape)
