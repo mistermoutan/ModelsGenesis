@@ -211,7 +211,7 @@ if __name__ == "__main__":
                 slice_set_val_target.extend(y)
             else:
                 slice_set_ts.extend(x)
-                slice_set_ts_target.extend(x)
+                slice_set_ts_target.extend(y)
 
         if i % 50 == 0:
             print(i)
