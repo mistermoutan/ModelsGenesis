@@ -35,7 +35,7 @@ class Dataset:
 
         self.x_train_filenames_original, self.x_val_filenames_original, self.x_test_filenames_original = deepcopy(self.x_train_filenames), deepcopy(self.x_val_filenames), deepcopy(self.x_test_filenames)
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
-        self.cube_dimensions = deepcopy(self.x_train_filenames[0][-14:-6])
+        self.cube_dimensions = deepcopy(self.x_filenames[0][-14:-6])
         self.reseted = False
         self.nr_samples_train = None
         self.nr_samples_val = None
