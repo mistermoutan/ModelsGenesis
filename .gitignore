@@ -12,6 +12,7 @@ pretrained_weights/
 *.vscode
 *.pt
 *.ipynb
+*.json
 objects/
 runs/
 stats/
