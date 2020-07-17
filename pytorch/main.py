@@ -36,7 +36,9 @@ def replication_of_results_pretrain(**kwargs):
     x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
     x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
     files = [x_train_filenames, x_val_filenames, x_test_filenames]
-    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files
+    dataset = Dataset(
+        config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
+    )  # train_val_test is non relevant as is overwritten by files
 
     trainer_mg_replication = Trainer(config, dataset)
     trainer_mg_replication.load_model(from_scratch=True)
@@ -69,10 +71,14 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.valid_fold]
     x_test_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.test_fold]  # Dont know in what sense they use this for
     files = [x_train_filenames, x_val_filenames, x_test_filenames]
-    dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritten by files
+    dataset = Dataset(
+        config.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
+    )  # train_val_test is non relevant as is overwritten by files
 
     trainer_mg_replication = Trainer(config, dataset)
-    trainer_mg_replication.load_model(from_latest_checkpoint=True)  # still requires override dirs to find the specific checkpoint to resume from
+    trainer_mg_replication.load_model(
+        from_latest_checkpoint=True
+    )  # still requires override dirs to find the specific checkpoint to resume from
     trainer_mg_replication.finetune_self_supervised()
     trainer_mg_replication.add_hparams_to_writer()
     trainer_mg_replication.get_stats()
@@ -155,7 +161,9 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
     config.display()
@@ -178,7 +186,9 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_PROVIDED_WEIGHTS_SUP_ONLY{}".format(datasets_used_str), self_supervised=False, supervised=True
+    )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -217,7 +227,9 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
     config.display()
@@ -242,7 +254,9 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_PROVIDED_WEIGHTS_SS_AND_SUP{}".format(datasets_used_str), self_supervised=True, supervised=True
+    )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -294,7 +308,9 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_{}_SUP_ONLY{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_{}_SUP_ONLY{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
     config.display()
@@ -318,7 +334,9 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    config = FineTuneConfig(data_dir="", task="FROM_{}_SUP_ONLY{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_{}_SUP_ONLY{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True
+    )
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -358,7 +376,9 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_{}_SS_AND_SUP{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_{}_SS_AND_SUP{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
     config.display()
@@ -384,7 +404,9 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
-    config = FineTuneConfig(data_dir="", task="FROM_{}_SS_AND_SUP{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_{}_SS_AND_SUP{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True
+    )
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -559,10 +581,26 @@ def test(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
     task_dirs = get_task_dirs()
-
+    # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
+        print("\n\n TASK DIR ", task_dir)
+
         config_object = get_config_object_of_task_dir(task_dir)
+        if config_object is None:
+            config_object = models_genesis_config(add_model_to_task=False)
+            config_object.override_dirs(int(task_dir[-1]))
+
         dataset_object = get_dataset_object_of_task_dir(task_dir)
+        if dataset_object is None:
+            x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config_object.train_fold]
+            x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config_object.valid_fold]
+            x_test_filenames = [
+                "bat_32_s_64x64x32_" + str(i) + ".npy" for i in config_object.test_fold
+            ]  # Dont know in what sense they use this for
+            files = [x_train_filenames, x_val_filenames, x_test_filenames]
+            dataset_object = Dataset(
+                config_object.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
+            )  # train_val_test is non relevant as is overwritten by files
         tester = Tester(config_object, dataset_object)
         tester.test_segmentation()
 

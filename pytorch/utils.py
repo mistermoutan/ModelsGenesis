@@ -44,19 +44,38 @@ def get_dataset_object_of_task_dir(task_dir):
 def replace_config_param_attributes(config_object, kwargs_dict):
 
     #!!!
-    possible_keys = {"optimizer_ss", "scheduler_ss", "lr_ss", "optimizer_sup", "scheduler_sup", "lr_sup", "patience_sup", "patience_sup_terminate", "patience_ss", "patience_ss_terminate", "loss_function_sup", "mode"}
+    possible_keys = {
+        "optimizer_ss",
+        "scheduler_ss",
+        "lr_ss",
+        "optimizer_sup",
+        "scheduler_sup",
+        "lr_sup",
+        "patience_sup",
+        "patience_sup_terminate",
+        "patience_ss",
+        "patience_ss_terminate",
+        "loss_function_sup",
+        "mode",
+    }
     for key, value in kwargs_dict.items():
         assert isinstance(key, str)
         if key not in possible_keys:
             continue
         if not hasattr(config_object, key):
             raise AttributeError("Config does not have this attribute")
-        assert type(value) == type(getattr(config_object, key)), "{}: Trying to replace a {} attribute by a {}".format(key, str(type(getattr(config_object, key))), str(type(value)))
+        assert type(value) == type(getattr(config_object, key)), "{}: Trying to replace a {} attribute by a {}".format(
+            key, str(type(getattr(config_object, key))), str(type(value))
+        )
         print("REPLACING {} from {} to {} in Config".format(key, getattr(config_object, key), value))
         setattr(config_object, key, value)
 
 
-dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes", "task_02": "pytorch/datasets/task02/extracted_cubes", "luna": "pytorch/datasets/luna16_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
+dataset_map = {
+    "lidc": "pytorch/datasets/lidc_idri_cubes",
+    "task_02": "pytorch/datasets/task02/extracted_cubes",
+    "luna": "pytorch/datasets/luna16_cubes",
+}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
 def get_unused_datasets(dataset):
@@ -78,14 +97,16 @@ def build_dataset(dataset_list: list, split: tuple):
 
     from dataset import Dataset
 
-    # dataset come as [] from CLI
+    #  dataset come as [] from CLI
     if len(dataset_list) == 1:
         if dataset_list[0] == "lidc":
             x_train_filenames = ["tr_cubes_64x64x32.npy"]
             x_val_filenames = ["val_cubes_64x64x32.npy"]
             x_test_filenames = ["ts_cubes_64x64x32.npy"]
             files = [x_train_filenames, x_val_filenames, x_test_filenames]
-            dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0, 0, 1), file_names=files)  # train_val_test is non relevant as is overwritte
+            dataset = Dataset(
+                data_dir=dataset_map[dataset_list[0]], train_val_test=(0, 0, 1), file_names=files
+            )  # train_val_test is non relevant as is overwritte
         else:
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
 
@@ -99,7 +120,9 @@ def build_dataset(dataset_list: list, split: tuple):
                 x_val_filenames = ["val_cubes_64x64x32.npy"]
                 x_test_filenames = ["ts_cubes_64x64x32.npy"]
                 files = [x_train_filenames, x_val_filenames, x_test_filenames]
-                dataset = Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=(0, 0, 1), file_names=files)  # train_val_test is non relevant as is overwritte
+                dataset = Dataset(
+                    data_dir=dataset_map[dataset_list[idx]], train_val_test=(0, 0, 1), file_names=files
+                )  # train_val_test is non relevant as is overwritte
                 datasets.append(dataset)
             else:
                 datasets.append(Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None))
@@ -185,6 +208,9 @@ def get_task_dirs():
         else:
             root_split = root.split("/")
             task_dir = "/".join(i for i in root_split[1:])
+            # if task_dir == "":
+            #    print("\n", "ROOT", root, "\n", "DIRS ", dirs, "\n", "FILES", files, "\n")
+            #    continue
             task_dirs.append(task_dir)
     return task_dirs
 

@@ -6,7 +6,7 @@ from unet3d import UNet3D
 import json
 
 from dataset import Dataset
-from utils import get_unused_datasets
+from utils import get_unused_datasets, make_dir
 
 from collections import defaultdict
 
@@ -23,7 +23,7 @@ class Tester:
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.test_results_dir = os.path.join("test_results/", self.config.task_dir)
-
+        make_dir(self.test_results_dir)
         self.test_all = test_all
 
         if self.config.model == "VNET_MG":
@@ -41,9 +41,14 @@ class Tester:
             for dataset in self.dataset:
                 self._test_dataset(dataset)
         else:
-            self._test_dataset(dataset)
+            self._test_dataset(self.dataset)
 
-        with open(self.test_results_dir + "test_results.json", "w") as f:
+        file_nr = 0
+        while os.path.isfile(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr))):
+            file_nr += 1
+
+        # to check if testing remains consistent
+        with open(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr)), "w") as f:
             json.dump(self.metric_dict, f)
 
         if self.test_all:
@@ -51,10 +56,13 @@ class Tester:
             remaining_datasets = get_unused_datasets(self.dataset)
             if len(remaining_datasets) > 0:
                 for dataset in remaining_datasets:
+                    # test on all other unseen datasets
                     full_test_ds = Dataset(data_dir=dataset, train_val_test=(0, 0, 1), file_names=None)
+                    if not full_test_ds.has_target:
+                        continue
                     self._test_dataset(full_test_ds, unused=True)
 
-                with open(self.test_results_dir + "test_results.json", "w") as f:
+                with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr)) as f:
                     json.dump(self.metric_dict_unused, f)
 
     def _test_dataset(self, dataset, unused=False):
@@ -62,30 +70,42 @@ class Tester:
         jaccard = []
         dice = []
         dataset_dict = dict()
-
         for model_file in self.model_weights_saved:
             dataset_dict.setdefault(model_file, {})
             self._load_model(model_file)
             if self.continue_to_testing is False:
                 continue
+
             jaccard = []
             dice = []
+
             with torch.no_grad():
                 self.model.eval()
+                iteration = 0
                 while True:
-                    x, y = dataset.get_test(batch_size=6)
+                    # if dataset.x_test_filenames:
+                    #    print("USINGdataset.x_test_filenames)
+                    x, y = dataset.get_test(batch_size=6, return_tensor=True)
                     if x is None:
                         break
+                    x, y = x.float().to(self.device), y.float().to(self.device)
                     pred = self.model(x)
                     x = self._make_pred_mask_from_pred(pred)
+
+                    dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
+
                     x_flat = x[:, 0].contiguous().view(-1)
                     y_flat = y[:, 0].contiguous().view(-1)
-
+                    x_flat = x_flat.cpu()
+                    y_flat = y_flat.cpu()
                     jaccard.append(jaccard_score(y_flat, x_flat))
-                    dice.append(float(DiceLoss.dice_loss(x_flat, y_flat, return_loss=False)))
+                    iteration += 1
+                dataset.reset()
 
             avg_jaccard = sum(jaccard) / len(jaccard)
             avg_dice = sum(dice) / len(dice)
+            # print("AVG JACCARD ", str(avg_jaccard))
+            # print("AVG DICE ", str(avg_dice))
             dataset_dict[model_file]["jaccard"] = avg_jaccard
             dataset_dict[model_file]["dice"] = avg_dice
 
@@ -103,11 +123,14 @@ class Tester:
             completed_ss = checkpoint.get("completed_ss", False)
             if completed_ss is False:
                 self.continue_to_testing = False
+                # print("TRAINING NOT COMPLETED FOR {}. NOT TESTING".format(checkpoint_name))
             state_dict = checkpoint["model_state_dict_ss"]
         elif "sup" in checkpoint_name:
             completed_sup = checkpoint.get("completed_sup", False)
             if completed_sup is False:
                 self.continue_to_testing = False
+                # print("TRAINING NOT COMPLETED FOR {}. NOT TESTING".format(checkpoint_name))
+
             state_dict = checkpoint["model_state_dict_sup"]
         else:
             state_dict = checkpoint["state_dict"]
@@ -117,9 +140,9 @@ class Tester:
             unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
         self.model.load_state_dict(unParalled_state_dict)
 
-    def _make_pred_mask_from_pred(self, pred):
-        pred_mask_idxs = pred >= self.config.threshold
-        pred_non_mask_idxs = pred < self.config.threshold
+    def _make_pred_mask_from_pred(self, pred, threshold=0.5):
+        pred_mask_idxs = pred >= threshold
+        pred_non_mask_idxs = pred < threshold
         pred[pred_mask_idxs] = float(1)
         pred[pred_non_mask_idxs] = float(0)
         return pred
