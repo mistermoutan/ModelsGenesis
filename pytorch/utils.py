@@ -59,6 +59,21 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 dataset_map = {"lidc": "pytorch/datasets/lidc_idri_cubes", "task_02": "pytorch/datasets/task02/extracted_cubes", "luna": "pytorch/datasets/luna16_cubes"}  # /work1/s182312/lidc_idri/np_cubes"}
 
 
+def get_unused_datasets(dataset):
+
+    all_datasets = set(dataset_map.values())
+    print("ALL DATASETS ", all_datasets)
+    if isinstance(dataset, list):
+        for d in dataset:
+            if d.x_data_dir[:-3] in all_datasets:
+                all_datasets.remove(d.x_data_dir[:-3])
+    else:
+        if dataset.x_data_dir[:-3] in all_datasets:
+            all_datasets.remove(dataset.x_data_dir[:-3])
+    print("UNUSED DATASETS ", all_datasets)
+    return all_datasets
+
+
 def build_dataset(dataset_list: list, split: tuple):
 
     from dataset import Dataset
@@ -160,17 +175,18 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
 
     return kwargs_dict
 
-    def get_task_dirs():
 
-        task_dirs = []
-        for root, dirs, files in os.walk("pretrained_weights"):
-            if not files:
-                continue
-            else:
-                root_split = root.split("/")
-                task_dir = "/".join(i for i in root_split[1:])
-                task_dirs.append(task_dir)
-        return task_dirs
+def get_task_dirs():
+
+    task_dirs = []
+    for root, dirs, files in os.walk("pretrained_weights"):
+        if not files:
+            continue
+        else:
+            root_split = root.split("/")
+            task_dir = "/".join(i for i in root_split[1:])
+            task_dirs.append(task_dir)
+    return task_dirs
 
 
 if __name__ == "__main__":

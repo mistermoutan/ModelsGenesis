@@ -554,26 +554,17 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
         trainer.add_hparams_to_writer()
         trainer.get_stats()
 
-    def test(**kwargs):
 
-        kwargs_dict_ = kwargs["kwargs_dict"]
-        task_dirs = get_task_dirs()
-        test_config = TestConfig()
+def test(**kwargs):
 
-        for task_dir in task_dirs:
-            config_object = get_config_object_of_task_dir(task_dir)
-            dataset_object = get_dataset_object_of_task_dir(task_dir)
-            tester = Tester(config, dataset)
-            tester.test_segmentation()
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    task_dirs = get_task_dirs()
 
-        # if not files:
-        #    continue
-        # else:
-        #    print("ROOT ", root)
-        #    print("DIRS", dirs)
-        #    print(files)
-
-        tester = Tester()
+    for task_dir in task_dirs:
+        config_object = get_config_object_of_task_dir(task_dir)
+        dataset_object = get_dataset_object_of_task_dir(task_dir)
+        tester = Tester(config_object, dataset_object)
+        tester.test_segmentation()
 
 
 if __name__ == "__main__":
@@ -719,7 +710,7 @@ if __name__ == "__main__":
         resume_train_from_scratch_on_dataset_with_ss(run_nr=args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "test":
-        kwargs_dict = build_kwargs_dict(test=True, search_for_params=False)
+        kwargs_dict = build_kwargs_dict(args, test=True, search_for_params=False)
         test(kwargs_dict=kwargs_dict)
 
     else:
