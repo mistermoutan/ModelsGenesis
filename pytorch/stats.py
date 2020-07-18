@@ -10,7 +10,8 @@ import json
 from finetune_config import FineTuneConfig
 from config import models_genesis_config
 from dataset import Dataset
-from datasets import Datasets
+
+from datasets_pytorch import DatasetsPytorch
 
 """
 Class to benchmark performance of methods
@@ -22,14 +23,14 @@ HOW TO USE:
 
 
 class Statistics:
-    def __init__(self, config: FineTuneConfig or models_genesis_config, dataset: Dataset or Datasets):
+    def __init__(self, config: FineTuneConfig or models_genesis_config, dataset: Dataset or DatasetsPytorch):
         """
         save_directory: directory where you want to save the stats
         """
 
         self.config = config
         self.dataset = dataset
-        self.multiple_datasets = True if isinstance(self.dataset, Datasets) else False
+        self.multiple_datasets = True if isinstance(self.dataset, list) else False
 
         self.start_time = time.time()
         self.save_directory = config.stats_dir
