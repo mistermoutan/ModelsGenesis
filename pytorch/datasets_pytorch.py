@@ -168,7 +168,6 @@ if __name__ == "__main__":
     from config import models_genesis_config
     from torch.utils.data import DataLoader
     from dataset import Dataset
-    from datasets import Datasets
     from dataset_pytorch import DatasetPytorch
 
     config = models_genesis_config(False)
@@ -183,12 +182,14 @@ if __name__ == "__main__":
     x_val_filenames = ["val_cubes_64x64x32.npy"]
     x_test_filenames = ["ts_cubes_64x64x32.npy"]
     files = [x_train_filenames, x_val_filenames, x_test_filenames]
-    dataset_lidc = Dataset(data_dir="pytorch/datasets/lidc_idri_cubes", train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritte
+    dataset_lidc = Dataset(
+        data_dir="pytorch/datasets/lidc_idri_cubes", train_val_test=(0.8, 0.2, 0), file_names=files
+    )  # train_val_test is non relevant as is overwritte
 
     d1 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.3, 0.2))
     d2 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.5, 0))
 
-    lista = [d1, dataset_lidc, d2]
+    lista = [dataset_lidc, d1, d2]
     for i in range(len(lista)):
         print(lista[i].x_test_filenames)
         lista[i] = DatasetPytorch(lista[i], config, type_="test", apply_mg_transforms=False)
@@ -197,7 +198,7 @@ if __name__ == "__main__":
 
     num_workers = 0
 
-    PDS = DatasetsPytorch(lista, type_="test", mode="sequential", batch_size=4, apply_mg_transforms=False)
+    PDS = DatasetsPytorch(lista, type_="test", mode="alternate", batch_size=4, apply_mg_transforms=False)
     DL = DataLoader(PDS, batch_size=4, num_workers=num_workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
 
     n_samples = PDS.__len__()
@@ -209,14 +210,13 @@ if __name__ == "__main__":
         print("new epoch")
         sample_count = 0
         for iteration, (x, y) in enumerate(DL):
-            print(PDS.samples_used)
-            print(y)
-            # print(PDS.len_datasets)
             sample_count += x.shape[0]
-            # print(x.shape)
+            print(PDS.samples_used)
+
             if sample_count >= n_samples:
                 print("exhausted dataset")
                 print(PDS.__len__(), sample_count)
+            print(PDS.datasets[0].dataset.y_array_test.shape)
 
         PDS.reset()
 

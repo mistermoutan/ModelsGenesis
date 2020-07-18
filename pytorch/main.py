@@ -6,7 +6,6 @@ import os
 from finetune_config import FineTuneConfig
 from config import models_genesis_config
 from dataset import Dataset
-from datasets import Datasets
 from finetune import Trainer
 from evaluate import Tester
 from utils import *

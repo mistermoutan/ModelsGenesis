@@ -94,6 +94,11 @@ def get_unused_datasets(dataset):
 
 
 def build_dataset(dataset_list: list, split: tuple):
+    """[summary]
+
+    Returns:
+        Dataset or [Dataset, Dataset]:
+    """
 
     from dataset import Dataset
 

@@ -40,7 +40,11 @@ class DatasetPytorch(DatasetP):
     def __getitem__(self, idx):
 
         if self.type == "train":
-            x, y = self.dataset.get_train(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_train(batch_size=1, return_tensor=True)
+            x, y = (
+                self.dataset.get_train(batch_size=1, return_tensor=False)
+                if self.apply_mg_transforms
+                else self.dataset.get_train(batch_size=1, return_tensor=True)
+            )
             if x is not None:
                 self.nr_samples_used += 1
                 self._check_reset()
@@ -50,7 +54,11 @@ class DatasetPytorch(DatasetP):
                 return (x, y)
 
         if self.type == "val":
-            x, y = self.dataset.get_val(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_val(batch_size=1, return_tensor=True)
+            x, y = (
+                self.dataset.get_val(batch_size=1, return_tensor=False)
+                if self.apply_mg_transforms
+                else self.dataset.get_val(batch_size=1, return_tensor=True)
+            )
             if x is not None:
                 self.nr_samples_used += 1
                 self._check_reset()
@@ -60,7 +68,11 @@ class DatasetPytorch(DatasetP):
                 return (x, y)
 
         if self.type == "test":
-            x, y = self.dataset.get_test(batch_size=1, return_tensor=False) if self.apply_mg_transforms else self.dataset.get_test(batch_size=1, return_tensor=True)
+            x, y = (
+                self.dataset.get_test(batch_size=1, return_tensor=False)
+                if self.apply_mg_transforms
+                else self.dataset.get_test(batch_size=1, return_tensor=True)
+            )
             if x is not None:
                 self.nr_samples_used += 1
                 self._check_reset()
@@ -97,7 +109,6 @@ if __name__ == "__main__":
     from config import models_genesis_config
     from torch.utils.data import DataLoader
     from dataset import Dataset
-    from datasets import Datasets
 
     # config = models_genesis_config()
     # x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
@@ -117,7 +128,9 @@ if __name__ == "__main__":
     x_val_filenames = ["val_cubes_64x64x32.npy"]
     x_test_filenames = ["ts_cubes_64x64x32.npy"]
     files = [x_train_filenames, x_val_filenames, x_test_filenames]
-    dataset_lidc = Dataset(data_dir="pytorch/datasets/lidc_idri_cubes", train_val_test=(0.8, 0.2, 0), file_names=files)  # train_val_test is non relevant as is overwritte
+    dataset_lidc = Dataset(
+        data_dir="pytorch/datasets/lidc_idri_cubes", train_val_test=(0.8, 0.2, 0), file_names=files
+    )  # train_val_test is non relevant as is overwritte
 
     d1 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.3, 0.2))
     d2 = Dataset("pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", (0.5, 0.5, 0))
