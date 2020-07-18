@@ -56,7 +56,6 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
     cnt = 0
 
     while True:
-        cnt += 1
         if cnt > 50 * config.scale and num_pair == 0:
             return None
         elif cnt > 50 * config.scale and num_pair > 0:
@@ -133,6 +132,7 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                 start_y : start_y + config.crop_cols,
                 start_z : start_z + config.input_deps + config.len_depth,
             ]
+            assert ((crop_window_target == 0) | (crop_window_target == 1)).all(), "Target array is not binary"
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
             crop_window = resize(
@@ -140,16 +140,25 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
             )
             if target_array:
                 crop_window_target = resize(
-                    crop_window_target,
-                    (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
-                    preserve_range=True,
+                    crop_window_target, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
                 )
+
+        # skip "full" tissues
+        if np.count_nonzero(crop_window) > (0.99 * crop_window.size):
+            print("SKIPPING FULL TISSUE")
+            continue
+        # skip "air" cubes
+        elif np.count_nonzero(crop_window) < (0.01 * crop_window.wize):
+            print("SKIPPING AIR CUBE")
+            continue
+        else:
+            cnt += 1
+            num_pair += 1
 
         slice_set[num_pair] = crop_window[:, :, : config.input_deps]
         if target_array is not None:
             slice_set_target[num_pair] = crop_window_target[:, :, : config.input_deps]
 
-        num_pair += 1
         if num_pair == config.scale:
             break
 
