@@ -10,7 +10,7 @@ import numpy as np
 from pytorch.utils import make_dir
 
 """
-python cube_generator.py --data "pytorch/datasets/Task02_Heart/imagesTr/" --modality "mri" --scale 100 --target_dir "pytorch/datasets/Task02_Heart/labelsTr/" 
+python cube_generator.py --data "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr/" --modality "mri" --scale 100 --target_dir "/work1/s182312/medical_decathlon/Task03_Liver/labelsTr/" 
 """
 
 sys.setrecursionlimit(40000)
@@ -261,6 +261,7 @@ def get_self_learning_data(config):
                 np.save(
                     os.path.join(
                         cubes_dir,
+                        "x",
                         volume
                         + "_"
                         + str(config.scale)
