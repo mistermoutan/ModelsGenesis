@@ -201,27 +201,34 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                 )
 
         # skip "full" tissues
-        if np.count_nonzero(crop_window) > (0.99 * crop_window.size):
-            print("SKIPPING FULL TISSUE")
-            continue
+        # if np.count_nonzero(crop_window) > (0.999999 * crop_window.size):
+        # print(crop_window[:30])
+        # exit(0)
+        #    print("SKIPPING FULL TISSUE")
+        #    continue
+
         # skip "air" cubes
-        elif np.count_nonzero(crop_window) < (0.01 * crop_window.wize):
+        if np.count_nonzero(crop_window) < (0.01 * crop_window.size):
             print("SKIPPING AIR CUBE")
             continue
 
         if target_array is not None:
-            if np.count_nonzero(crop_window_target) > (0.99 * crop_window_target.size):
+            if np.count_nonzero(crop_window_target) > (0.9999999 * crop_window_target.size):
+                print("SKIPPING MOSTLY 1's TARGET ARRAY")
                 continue
-            elif np.count_nonzero(crop_window_target) < (0.01 * crop_window_target.size):
+            elif np.count_nonzero(crop_window_target) == 0:
+                print(str(np.count_nonzero(crop_window_target)), " NON ZEROS OUT OF ", str(crop_window_target.size))
+                print("SKIPPING ONLY 0's TARGET ARRAY")
                 continue
 
-        else:
-            cnt += 1
-            num_pair += 1
+        # print("USING IT")
 
         slice_set[num_pair] = crop_window[:, :, : config.input_deps]
         if target_array is not None:
             slice_set_target[num_pair] = crop_window_target[:, :, : config.input_deps]
+
+        cnt += 1
+        num_pair += 1
 
         if num_pair == config.scale:
             break
@@ -234,6 +241,7 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
 def get_self_learning_data(config):
 
+    print("### ", config.DATA_DIR, " ###")
     cubes_dir = os.path.join(config.DATA_DIR, "extracted_cubes")  # where to save cubes
     make_dir(os.path.join(cubes_dir, "x/"))
     make_dir(os.path.join(cubes_dir, "y/"))
@@ -318,3 +326,6 @@ def get_self_learning_data(config):
 
 
 get_self_learning_data(config)
+
+if __name__ == "__main__":
+    pass
