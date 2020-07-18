@@ -13,8 +13,6 @@ from collections import defaultdict
 import os
 import torch
 
-# TODO: check sup and ss has been completed flag
-
 
 class Tester:
     def __init__(self, config, dataset, test_all=True):
@@ -62,7 +60,7 @@ class Tester:
                         continue
                     self._test_dataset(full_test_ds, unused=True)
 
-                with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr)) as f:
+                with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr))) as f:
                     json.dump(self.metric_dict_unused, f)
 
     def _test_dataset(self, dataset, unused=False):
