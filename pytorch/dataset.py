@@ -93,7 +93,7 @@ class Dataset:
                 self.y_array_test = np.expand_dims(np.load(path.join(self.y_data_dir, x_test_file_name[:-4] + "_target.npy")), axis=1)
                 assert self.x_array_test.shape == self.y_array_test.shape
             self.test_idxs = [i for i in range(self.x_array_test.shape[0])]
-            shuffle(self.test_idxs)
+            # shuffle(self.test_idxs)
 
     def get_train(self, batch_size: int, return_tensor=True) -> tuple():
         """
