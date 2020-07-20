@@ -60,13 +60,11 @@ class Tester:
                         continue
                     self._test_dataset(full_test_ds, unused=True)
 
-                with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr))) as f:
+                with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr)), "w") as f:
                     json.dump(self.metric_dict_unused, f)
 
     def _test_dataset(self, dataset, unused=False):
 
-        jaccard = []
-        dice = []
         dataset_dict = dict()
         for model_file in self.model_weights_saved:
             dataset_dict.setdefault(model_file, {})
@@ -83,7 +81,11 @@ class Tester:
                 while True:
                     # if dataset.x_test_filenames:
                     #    print("USINGdataset.x_test_filenames)
-                    x, y = dataset.get_test(batch_size=6, return_tensor=True)
+
+                    # batch size > 1 plus random shuffle of indexes in Dataset results in no having the exact same
+                    # testins result each time as batches are flattened and act "as one"
+                    # so you would be giving the metrics different tensors to work with
+                    x, y = dataset.get_test(batch_size=1, return_tensor=True)
                     if x is None:
                         break
                     x, y = x.float().to(self.device), y.float().to(self.device)
