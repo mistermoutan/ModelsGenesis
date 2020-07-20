@@ -346,7 +346,6 @@ class Trainer:
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
                 sys.stdout.flush()
-                iteration += 1
 
             with torch.no_grad():
                 self.model.eval()
