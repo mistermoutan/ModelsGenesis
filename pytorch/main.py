@@ -582,7 +582,7 @@ def test(**kwargs):
     task_dirs = get_task_dirs()
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
-        print("\n\n TASK DIR ", task_dir)
+        print("\n\n TESTING WEIGHTS FROM: ", task_dir)
 
         config_object = get_config_object_of_task_dir(task_dir)
         if config_object is None:
@@ -613,7 +613,14 @@ if __name__ == "__main__":
     parser.add_argument("--run", required=False, dest="run", default=None, type=int)
     parser.add_argument("-d", "--dataset", nargs="+", required=False, dest="dataset", default=[])  # python arg.py -l 1234 2345 3456 4567
     parser.add_argument("--mode", required=False, dest="mode", default=None, type=str)
-    parser.add_argument("--directory", required=False, dest="directory", type=str, default=None)
+    parser.add_argument(
+        "--directory",
+        required=False,
+        dest="directory",
+        type=str,
+        default=None,
+        help="Path to Model weights folder. E.g: pretrained_weights/GENESIS_REPLICATION_PRETRAIN_MODEL/run_5",
+    )
     parser.add_argument("--split", nargs="+", required=False, dest="tr_val_ts_split", default=None, type=str)
 
     parser.add_argument("-opt_ss", "--optimizer_ss", required=False, dest="optimizer_ss", type=str)
