@@ -58,19 +58,47 @@ class Trainer:
                 copy1[i] = DatasetPytorch(copy1[i], self.config, type_="train", apply_mg_transforms=True)
                 copy2[i] = DatasetPytorch(copy2[i], self.config, type_="val", apply_mg_transforms=True)
 
-            train_dataset = DatasetsPytorch(datasets=copy1, type_="train", mode=self.config.mode, batch_size=self.config.batch_size_ss, apply_mg_transforms=True)
-            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+            train_dataset = DatasetsPytorch(
+                datasets=copy1, type_="train", mode=self.config.mode, batch_size=self.config.batch_size_ss, apply_mg_transforms=True
+            )
+            train_data_loader = DataLoader(
+                train_dataset,
+                batch_size=self.config.batch_size_ss,
+                num_workers=self.config.workers,
+                collate_fn=DatasetsPytorch.custom_collate,
+                pin_memory=True,
+            )
 
-            val_dataset = DatasetsPytorch(datasets=copy2, type_="val", mode=self.config.mode, batch_size=self.config.batch_size_ss, apply_mg_transforms=True)
-            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+            val_dataset = DatasetsPytorch(
+                datasets=copy2, type_="val", mode=self.config.mode, batch_size=self.config.batch_size_ss, apply_mg_transforms=True
+            )
+            val_data_loader = DataLoader(
+                val_dataset,
+                batch_size=self.config.batch_size_ss,
+                num_workers=self.config.workers,
+                collate_fn=DatasetsPytorch.custom_collate,
+                pin_memory=True,
+            )
 
         else:
 
             train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
-            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+            train_data_loader = DataLoader(
+                train_dataset,
+                batch_size=self.config.batch_size_ss,
+                num_workers=self.config.workers,
+                collate_fn=DatasetPytorch.custom_collate,
+                pin_memory=True,
+            )
 
             val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
-            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+            val_data_loader = DataLoader(
+                val_dataset,
+                batch_size=self.config.batch_size_ss,
+                num_workers=self.config.workers,
+                collate_fn=DatasetPytorch.custom_collate,
+                pin_memory=True,
+            )
 
         num_train_samples = train_dataset.__len__()
         num_val_samples = val_dataset.__len__()
@@ -82,7 +110,11 @@ class Trainer:
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
-            print("PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {}".format(self.best_loss_ss, self.num_epoch_no_improvement_ss))
+            print(
+                "PREVIOUS BEST SS LOSS: {} // NUM SS EPOCH WITH NO IMPROVEMENT: {}".format(
+                    self.best_loss_ss, self.num_epoch_no_improvement_ss
+                )
+            )
             try:
                 print("CURRNT SS LR: {}".format(self.scheduler_ss.get_last_lr()))
             except AttributeError:
@@ -112,7 +144,11 @@ class Trainer:
                 self.stats.training_losses_ss.append(loss.item())
 
                 if (iteration + 1) % 200 == 0:
-                    print("Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)))
+                    print(
+                        "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(
+                            self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
+                        )
+                    )
                 if iteration == 0 and ((self.epoch_ss_current + 1) % 20 == 0):
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
@@ -143,7 +179,9 @@ class Trainer:
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_ss)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Self Supervised", avg_training_loss_of_epoch, self.epoch_ss_current + 1)
             avg_validation_loss_of_epoch = np.average(self.stats.validation_losses_ss)
-            self.tb_writer.add_scalar("Avg Loss Epoch/Validation : Self Supervised", avg_validation_loss_of_epoch, self.epoch_ss_current + 1)
+            self.tb_writer.add_scalar(
+                "Avg Loss Epoch/Validation : Self Supervised", avg_validation_loss_of_epoch, self.epoch_ss_current + 1
+            )
 
             self.stats.avg_training_loss_per_epoch_ss.append(avg_training_loss_of_epoch)
             self.stats.avg_validation_loss_per_epoch_ss.append(avg_validation_loss_of_epoch)
@@ -155,7 +193,11 @@ class Trainer:
                 self.scheduler_ss.step(self.epoch_ss_current)
 
             print("###### SELF SUPERVISED#######")
-            print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
+            print(
+                "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
+                    self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
+                )
+            )
 
             try:
                 print("CURRENT SS LR: {}, SCHEDULER: {}".format(self.scheduler_ss.get_last_lr(), self.config.scheduler_ss))
@@ -168,7 +210,11 @@ class Trainer:
                 self.num_epoch_no_improvement_ss = 0
                 self._save_model("ss")
             else:
-                print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_ss, self.num_epoch_no_improvement_ss + 1))
+                print(
+                    "Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(
+                        self.best_loss_ss, self.num_epoch_no_improvement_ss + 1
+                    )
+                )
                 self.num_epoch_no_improvement_ss += 1
                 self._save_model("ss", suffix="_no_decrease")
                 # self._save_num_epochs_no_improvement("ss")
@@ -177,7 +223,9 @@ class Trainer:
                 self.stats.stopped_early_ss = True
                 break
             sys.stdout.flush()
-            self.tb_writer.add_scalar("Num epochs w/ no improvement: Self Supervised", self.num_epoch_no_improvement_ss, self.epoch_ss_current + 1)
+            self.tb_writer.add_scalar(
+                "Num epochs w/ no improvement: Self Supervised", self.num_epoch_no_improvement_ss, self.epoch_ss_current + 1
+            )
 
         self.ss_timedelta = timedelta(seconds=time.time() - self.start_time)
         self._add_completed_flag_to_last_checkpoint_saved(phase="ss")
@@ -196,19 +244,47 @@ class Trainer:
                 copy1[i] = DatasetPytorch(copy1[i], self.config, type_="train", apply_mg_transforms=False)
                 copy2[i] = DatasetPytorch(copy2[i], self.config, type_="val", apply_mg_transforms=False)
 
-            train_dataset = DatasetsPytorch(datasets=copy1, type_="train", mode=self.config.mode, batch_size=self.config.batch_size_sup, apply_mg_transforms=False)
-            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_sup, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+            train_dataset = DatasetsPytorch(
+                datasets=copy1, type_="train", mode=self.config.mode, batch_size=self.config.batch_size_sup, apply_mg_transforms=False
+            )
+            train_data_loader = DataLoader(
+                train_dataset,
+                batch_size=self.config.batch_size_sup,
+                num_workers=self.config.workers,
+                collate_fn=DatasetsPytorch.custom_collate,
+                pin_memory=True,
+            )
 
-            val_dataset = DatasetsPytorch(datasets=copy2, type_="val", mode=self.config.mode, batch_size=self.config.batch_size_sup, apply_mg_transforms=False)
-            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_sup, num_workers=self.config.workers, collate_fn=DatasetsPytorch.custom_collate, pin_memory=True)
+            val_dataset = DatasetsPytorch(
+                datasets=copy2, type_="val", mode=self.config.mode, batch_size=self.config.batch_size_sup, apply_mg_transforms=False
+            )
+            val_data_loader = DataLoader(
+                val_dataset,
+                batch_size=self.config.batch_size_sup,
+                num_workers=self.config.workers,
+                collate_fn=DatasetsPytorch.custom_collate,
+                pin_memory=True,
+            )
 
         else:
 
             train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=False)
-            train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+            train_data_loader = DataLoader(
+                train_dataset,
+                batch_size=self.config.batch_size_ss,
+                num_workers=self.config.workers,
+                collate_fn=DatasetPytorch.custom_collate,
+                pin_memory=True,
+            )
 
             val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=False)
-            val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
+            val_data_loader = DataLoader(
+                val_dataset,
+                batch_size=self.config.batch_size_ss,
+                num_workers=self.config.workers,
+                collate_fn=DatasetPytorch.custom_collate,
+                pin_memory=True,
+            )
 
         if self.config.loss_function_sup.lower() == "binary_cross_entropy":
             criterion = nn.BCELoss()  # #model outputs sigmoid so no use of BCEwithLogits
@@ -221,7 +297,11 @@ class Trainer:
 
         if self.epoch_sup_check > 0:
             print("RESUMING SUP TRAINING FROM EPOCH {} out of max {}".format(self.epoch_sup_check, self.config.nb_epoch_sup))
-            print("PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup))
+            print(
+                "PREVIOUS BEST SUP LOSS: {} // NUM SUP EPOCHS WITH NO IMPROVEMENT {}".format(
+                    self.best_loss_sup, self.num_epoch_no_improvement_sup
+                )
+            )
             try:
                 print("CURRNT SUP LR: {}, SCHEDULER: {}".format(self.scheduler_sup.get_last_lr(), self.config.scheduler_sup))
             except AttributeError:
@@ -257,7 +337,11 @@ class Trainer:
                 self.stats.training_losses_sup.append(loss.item())
 
                 if (iteration + 1) % 200 == 0:
-                    print("Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)))
+                    print(
+                        "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
+                            self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)
+                        )
+                    )
                 if iteration == 0 and ((self.epoch_sup_current + 1) % 20 == 0):
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
@@ -300,7 +384,11 @@ class Trainer:
             else:
                 self.scheduler_sup.step(self.epoch_sup_current)
 
-            print("Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(self.epoch_sup_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch))
+            print(
+                "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
+                    self.epoch_sup_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
+                )
+            )
 
             try:
                 print("CURRNT SUP LR: {}".format(self.scheduler_sup.get_last_lr()))
@@ -313,7 +401,11 @@ class Trainer:
                 self.num_epoch_no_improvement_sup = 0
                 self._save_model("sup")
             else:
-                print("Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(self.best_loss_sup, self.num_epoch_no_improvement_sup + 1))
+                print(
+                    "Validation loss did not decrease from {:.4f}, num_epoch_no_improvement {}".format(
+                        self.best_loss_sup, self.num_epoch_no_improvement_sup + 1
+                    )
+                )
                 self.num_epoch_no_improvement_sup += 1
                 self._save_model("sup", suffix="_no_decrease")
                 # self._save_num_epochs_no_improvement("sup")
@@ -322,7 +414,9 @@ class Trainer:
                 self.stats.stopped_early_sup = True
                 break
             sys.stdout.flush()
-            self.tb_writer.add_scalar("Num epochs w/ no improvement: Supervised", self.num_epoch_no_improvement_sup, self.epoch_sup_current + 1)
+            self.tb_writer.add_scalar(
+                "Num epochs w/ no improvement: Supervised", self.num_epoch_no_improvement_sup, self.epoch_sup_current + 1
+            )
 
         self.sup_timedelta = timedelta(seconds=time.time() - self.start_time)
         self._add_completed_flag_to_last_checkpoint_saved(phase="sup")
@@ -354,10 +448,18 @@ class Trainer:
 
         self.ss_timedelta = 0 if (not hasattr(self, "ss_timedelta")) else (self.ss_timedelta.seconds // 60 % 60)  # conversion to minutes
         self.sup_timedelta = 0 if (not hasattr(self, "sup_timedelta")) else (self.sup_timedelta.seconds // 60 % 60)
-        self.stats.last_avg_training_loss_per_epoch_ss = 0 if not self.stats.avg_training_loss_per_epoch_ss else self.stats.avg_training_loss_per_epoch_ss[-1]
-        self.stats.last_avg_validation_loss_per_epoch_ss = 0 if not self.stats.avg_validation_loss_per_epoch_ss else self.stats.avg_validation_loss_per_epoch_ss[-1]
-        self.stats.last_avg_training_loss_per_epoch_sup = 0 if not self.stats.avg_training_loss_per_epoch_sup else self.stats.avg_training_loss_per_epoch_sup[-1]
-        self.stats.last_avg_validation_loss_per_epoch_sup = 0 if not self.stats.avg_validation_loss_per_epoch_sup else self.stats.avg_validation_loss_per_epoch_sup[-1]
+        self.stats.last_avg_training_loss_per_epoch_ss = (
+            0 if not self.stats.avg_training_loss_per_epoch_ss else self.stats.avg_training_loss_per_epoch_ss[-1]
+        )
+        self.stats.last_avg_validation_loss_per_epoch_ss = (
+            0 if not self.stats.avg_validation_loss_per_epoch_ss else self.stats.avg_validation_loss_per_epoch_ss[-1]
+        )
+        self.stats.last_avg_training_loss_per_epoch_sup = (
+            0 if not self.stats.avg_training_loss_per_epoch_sup else self.stats.avg_training_loss_per_epoch_sup[-1]
+        )
+        self.stats.last_avg_validation_loss_per_epoch_sup = (
+            0 if not self.stats.avg_validation_loss_per_epoch_sup else self.stats.avg_validation_loss_per_epoch_sup[-1]
+        )
 
         met_dict = {
             "final_train_loss_ss": self.stats.last_avg_training_loss_per_epoch_ss,
@@ -406,15 +508,31 @@ class Trainer:
                 completed_ss = self.ss_has_been_completed()
 
                 if completed_ss is False:
-                    weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")) else None
-                    weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+                    weight_dir_no_decrease = (
+                        os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")
+                        if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
+                        else None
+                    )
+                    weight_dir = (
+                        os.path.join(self.config.model_path_save, "weights_ss.pt")
+                        if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+                        else None
+                    )
                     if weight_dir_no_decrease is not None:
                         weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="ss")
                     self._loadparams(dir=weight_dir, phase="ss")
 
                 else:
-                    weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
-                    weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
+                    weight_dir_no_decrease = (
+                        os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")
+                        if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
+                        else None
+                    )
+                    weight_dir = (
+                        os.path.join(self.config.model_path_save, "weights_sup.pt")
+                        if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt"))
+                        else None
+                    )
                     if weight_dir_no_decrease is not None and weight_dir is not None:
                         weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="sup")
                         self._loadparams(dir=weight_dir, phase="sup")
@@ -423,15 +541,27 @@ class Trainer:
                         # if it didnt have time to do a full sup epoch
                         DEFAULTING_TO_LAST_SS = True
                         print("IT SEEMS SS COMPLETED BUT NO SUP EPOCH WAS COMPLETED, RESUMING FROM LATEST SS CHECKPOINT")
-                        weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+                        weight_dir = (
+                            os.path.join(self.config.model_path_save, "weights_ss.pt")
+                            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+                            else None
+                        )
                         if weight_dir is None:
                             raise FileNotFoundError("Could not find weights to load")
                         self._loadparams(fresh_params=True, phase="sup")
 
             elif self.config.resume_ss:
                 # weight_dir will always exist from the 1st epoch
-                weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")) else None
-                weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+                weight_dir_no_decrease = (
+                    os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")
+                    if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
+                    else None
+                )
+                weight_dir = (
+                    os.path.join(self.config.model_path_save, "weights_ss.pt")
+                    if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+                    else None
+                )
                 if weight_dir_no_decrease is not None:
                     weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="ss")
                 if weight_dir is None:
@@ -439,8 +569,16 @@ class Trainer:
                 self._loadparams(dir=weight_dir, phase="ss")
 
             elif self.config.resume_sup:
-                weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
-                weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
+                weight_dir_no_decrease = (
+                    os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")
+                    if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
+                    else None
+                )
+                weight_dir = (
+                    os.path.join(self.config.model_path_save, "weights_sup.pt")
+                    if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt"))
+                    else None
+                )
                 if weight_dir_no_decrease is not None:
                     weight_dir = self._get_dir_with_more_advanced_epoch(weight_dir, weight_dir_no_decrease, phase="sup")
                 if weight_dir is None:
@@ -448,7 +586,11 @@ class Trainer:
                 self._loadparams(dir=weight_dir, phase="sup")
 
         if from_latest_improvement_ss:  # Transition
-            weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+            weight_dir = (
+                os.path.join(self.config.model_path_save, "weights_ss.pt")
+                if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+                else None
+            )
             if weight_dir is None:
                 raise FileNotFoundError("Could not find latest SS Improvement checkpoint to start from")
             self._loadparams(fresh_params=True, phase="sup")
@@ -509,12 +651,20 @@ class Trainer:
     def _add_completed_flag_to_last_checkpoint_saved(self, phase: str):
 
         if phase == "ss":
-            weight_dir = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+            weight_dir = (
+                os.path.join(self.config.model_path_save, "weights_ss.pt")
+                if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+                else None
+            )
             checkpoint = torch.load(weight_dir, map_location=self.device)
             checkpoint["completed_ss"] = True
             torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss.pt"))
 
-            weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")) else None
+            weight_dir_no_decrease = (
+                os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt")
+                if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
+                else None
+            )
             checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
             checkpoint["completed_ss"] = True
             torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
@@ -522,12 +672,20 @@ class Trainer:
             print("ADDED COMPLETED SS FLAG TO CHECKPOINT")
 
         elif phase == "sup":
-            weight_dir = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt")) else None
+            weight_dir = (
+                os.path.join(self.config.model_path_save, "weights_sup.pt")
+                if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup.pt"))
+                else None
+            )
             checkpoint = torch.load(weight_dir, map_location=self.device)
             checkpoint["completed_sup"] = True
             torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup.pt"))
 
-            weight_dir_no_decrease = os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")) else None
+            weight_dir_no_decrease = (
+                os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt")
+                if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
+                else None
+            )
             checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
             checkpoint["completed_sup"] = True
             torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
@@ -538,13 +696,21 @@ class Trainer:
 
     def ss_has_been_completed(self):
 
-        weight_dir_ss = os.path.join(self.config.model_path_save, "weights_ss.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+        weight_dir_ss = (
+            os.path.join(self.config.model_path_save, "weights_ss.pt")
+            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+            else None
+        )
         checkpoint = torch.load(weight_dir_ss, map_location=self.device)
         return checkpoint.get("completed_ss", False)
 
     def sup_has_been_completed(self):
 
-        weight_dir_sup = os.path.join(self.config.model_path_save, "weights_sup.pt") if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt")) else None
+        weight_dir_sup = (
+            os.path.join(self.config.model_path_save, "weights_sup.pt")
+            if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss.pt"))
+            else None
+        )
         checkpoint = torch.load(weight_dir_sup, map_location=self.device)
         return checkpoint.get("completed_sup", False)
 
@@ -595,29 +761,41 @@ class Trainer:
         if phase == "ss" or phase == "both":
 
             if self.config.optimizer_ss.lower() == "sgd":
-                self.optimizer_ss = torch.optim.SGD(self.model.parameters(), self.config.lr_ss, momentum=0.9, weight_decay=0.0, nesterov=False)
+                self.optimizer_ss = torch.optim.SGD(
+                    self.model.parameters(), self.config.lr_ss, momentum=0.9, weight_decay=0.0, nesterov=False
+                )
             elif self.config.optimizer_ss.lower() == "adam":
                 self.optimizer_ss = torch.optim.Adam(self.model.parameters(), self.config.lr_ss)
 
             if self.config.scheduler_ss.lower() == "reducelronplateau":
-                self.scheduler_ss = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_ss, mode="min", factor=0.5, patience=self.config.patience_ss)
+                self.scheduler_ss = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer_ss, mode="min", factor=0.5, patience=self.config.patience_ss
+                )
             elif self.config.scheduler_ss.lower() == "steplr":
                 self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss), gamma=0.5)
 
         if phase == "sup" or phase == "both":
 
             if self.config.optimizer_sup.lower() == "sgd":
-                self.optimizer_sup = torch.optim.SGD(self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False)
+                self.optimizer_sup = torch.optim.SGD(
+                    self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False
+                )
             elif self.config.optimizer_sup.lower() == "adam":
-                self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup, betas=(self.config.beta1_sup, self.config.beta2_sup), eps=self.config.eps_sup)
+                self.optimizer_sup = torch.optim.Adam(
+                    self.model.parameters(),
+                    self.config.lr_sup,
+                    betas=(self.config.beta1_sup, self.config.beta2_sup),
+                    eps=self.config.eps_sup,
+                )
             else:
                 raise NotImplementedError
 
             if self.config.scheduler_sup.lower() == "reducelronplateau":
-                self.scheduler_sup = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_sup, mode="min", factor=0.5, patience=self.config.patience_sup)
+                self.scheduler_sup = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer_sup, mode="min", factor=0.5, patience=self.config.patience_sup
+                )
             elif self.config.scheduler_sup.lower() == "steplr":
                 self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
-            self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
             else:
                 raise NotImplementedError
 
