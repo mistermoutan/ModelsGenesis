@@ -204,10 +204,10 @@ class Trainer:
 
         else:
 
-            train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=True)
+            train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=False)
             train_data_loader = DataLoader(train_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
-            val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=True)
+            val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=False)
             val_data_loader = DataLoader(val_dataset, batch_size=self.config.batch_size_ss, num_workers=self.config.workers, collate_fn=DatasetPytorch.custom_collate, pin_memory=True)
 
         if self.config.loss_function_sup.lower() == "binary_cross_entropy":
@@ -610,12 +610,16 @@ class Trainer:
                 self.optimizer_sup = torch.optim.SGD(self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False)
             elif self.config.optimizer_sup.lower() == "adam":
                 self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup, betas=(self.config.beta1_sup, self.config.beta2_sup), eps=self.config.eps_sup)
+            else:
+                raise NotImplementedError
 
             if self.config.scheduler_sup.lower() == "reducelronplateau":
                 self.scheduler_sup = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer_sup, mode="min", factor=0.5, patience=self.config.patience_sup)
             elif self.config.scheduler_sup.lower() == "steplr":
                 self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
             self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
+            else:
+                raise NotImplementedError
 
         if fresh_params:
             print("LOADING FRESH PARAMS")
