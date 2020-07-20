@@ -72,10 +72,11 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 
 
 dataset_map = {
-    "lidc": "pytorch/datasets/lidc_idri_cubes",
-    "task_02": "pytorch/datasets/task02/extracted_cubes",
-    "luna": "pytorch/datasets/luna16_cubes",
-}  # /work1/s182312/lidc_idri/np_cubes"}
+    "lidc": "/work1/s182312/lidc_idri/np_cubes",
+}  # "task_02": "pytorch/datasets/task02/extracted_cubes",
+# "luna": "pytorch/datasets/luna16_cubes",
+# /work1/s182312/lidc_idri/np_cubes"}
+# pytorch/datasets/lidc_idri_cubes
 
 
 def get_unused_datasets(dataset):
