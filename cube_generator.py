@@ -190,7 +190,7 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                 start_y : start_y + config.crop_cols,
                 start_z : start_z + config.input_deps + config.len_depth,
             ]
-            assert ((crop_window_target == 0) | (crop_window_target == 1)).all(), "Target array is not binary"
+            assert ((crop_window_target == 0) | (crop_window_target == 1)).all(), "Target array is not binary {}".format(config.DATA_DIR)
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
             crop_window = resize(
@@ -258,9 +258,10 @@ def get_self_learning_data(config):
         if img_array.shape == 4:
             assert img_array.shape[0] == 4
             img_array = img_array[1]
-
-        img_array = img_array.transpose(2, 1, 0)
-
+        try:
+            img_array = img_array.transpose(2, 1, 0)
+        except ValueError:
+            print("AXES DONT MATCH {}".format(config.DATA_DIR))
         # handle small cubes dataset
         while img_array.shape[0] < config.input_rows:
             if config.input_rows == 16:
