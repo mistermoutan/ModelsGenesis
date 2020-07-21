@@ -284,13 +284,6 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 def get_self_learning_data(config):
 
     print("### ", config.DATA_DIR, " ###")
-    cubes_dir = (
-        os.path.join(config.DATA_DIR, "extracted_cubes_{}_{}_{}_ss")
-        if not config.target_dir
-        else os.path.join(config.DATA_DIR, "extracted_cubes_{}_{}_{}_sup")
-    )  # where to save cubes
-    make_dir(os.path.join(cubes_dir, "x/"))
-    make_dir(os.path.join(cubes_dir, "y/"))
 
     volumes_file_names = [i for i in os.listdir(config.DATA_DIR) if "." != i[0] and i.endswith(".nii.gz") or i.endswith(".mhd")]
 
@@ -332,6 +325,11 @@ def get_self_learning_data(config):
         if not config.target_dir:
             x = infinite_generator_from_one_volume(config, img_array)
             if x is not None:
+                cubes_dir = os.path.join(
+                    config.DATA_DIR, "extracted_cubes_{}_{}_{}_ss".format(config.input_rows, config.input_cols, config.input_deps)
+                )
+                make_dir(os.path.join(cubes_dir, "x/"))
+                make_dir(os.path.join(cubes_dir, "y/"))
                 print("Saving cubes of volume {}.  Dimensions: {} | {:.2f} ~ {:.2f}".format(volume, x.shape, np.min(x), np.max(x)))
                 np.save(
                     os.path.join(
@@ -361,6 +359,12 @@ def get_self_learning_data(config):
                 x, y = res
                 if y is None or x is None:
                     assert x is None or y is None
+
+                cubes_dir = os.path.join(
+                    config.DATA_DIR, "extracted_cubes_{}_{}_{}_sup".format(config.input_rows, config.input_cols, config.input_deps)
+                )
+                make_dir(os.path.join(cubes_dir, "x/"))
+                make_dir(os.path.join(cubes_dir, "y/"))
 
                 print(
                     "Saving cubes of volume {}.  Dimensions: {} {} | {:.2f} ~ {:.2f}".format(volume, x.shape, y.shape, np.min(x), np.max(x))
