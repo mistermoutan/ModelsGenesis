@@ -110,6 +110,7 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
     size_x, size_y, size_z = img_array.shape
 
     if size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < config.len_border_z:
+        print("NO CUBE FROM THIS VOLUME")
         return None
 
     # min-max normalization
