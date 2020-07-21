@@ -6,6 +6,7 @@ from optparse import OptionParser
 from skimage.transform import resize
 import SimpleITK as sitk
 import numpy as np
+import json
 
 from pytorch.utils import make_dir
 
@@ -347,6 +348,18 @@ def get_self_learning_data(config):
                     ),
                     y,
                 )
+        # log nr samples
+        if x is not None:
+            if not os.path.isfile(os.path.join(cubes_dir, "nr_samples.json")):
+                samples = {"nr_samples": x.shape[0]}
+                with open(os.path.join(cubes_dir, "nr_samples.json", "w")) as f:
+                    json.dump(samples, f)
+            else:
+                with open(os.path.join(cubes_dir, "nr_samples.json", "r")) as f:
+                    d = json.load(f)
+                d["nr_samples"] += x.shape[0]
+                with open(os.path.join(cubes_dir, "nr_samples.json", "w")) as f:
+                    json.dump(d, f)
 
 
 get_self_learning_data(config)
