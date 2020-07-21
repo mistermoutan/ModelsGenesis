@@ -267,6 +267,8 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                 skipped_only_zeros_target += 1
                 if (skipped_only_zeros_target + 1) % 1000 == 0:
                     print("Skipped {} only 0 target arrays".format(skipped_only_zeros_target))
+                if skipped_only_zeros_target >= 10000:
+                    return None
                 continue
 
         slice_set[num_pair] = crop_window[:, :, : config.input_deps]
