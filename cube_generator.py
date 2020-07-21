@@ -252,21 +252,24 @@ def get_self_learning_data(config):
 
         itk_img = sitk.ReadImage(os.path.join(config.DATA_DIR, volume))
         img_array = sitk.GetArrayFromImage(itk_img)
+
+        # HACK use one modality only if 4d MRI
         if img_array.shape == 4:
-            raise NotImplementedError
-            # img_array = img_array[]
+            assert img_array.shape[0] == 4
+            img_array = img_array[1]
+
         img_array = img_array.transpose(2, 1, 0)
 
         # handle small cubes dataset
-        while img.array.shape[0] < config.input_rows:
+        while img_array.shape[0] < config.input_rows:
             if config.input_rows == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
             config.input_rows /= 2
-        while img.array.shape[1] < config.input_cols:
+        while img_array.shape[1] < config.input_cols:
             if config.input_cols == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
             config.input_cols /= 2
-        while img.array.shape[2] < config.input_deps:
+        while img_array.shape[2] < config.input_deps:
             if config.input_deps == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
             config.input_deps /= 2
