@@ -116,6 +116,11 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
     size_x, size_y, size_z = img_array.shape
 
+    while size_x - (2 * config.len_border) < (size_x / 3) and config.len_border > 0:
+        config.len_border -= 10
+    while size_z - (2 * config.len_border_z) < (size_z / 3) and config.len_border_z > 0:
+        config.len_border_z -= 10
+
     if size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < config.len_border_z:
         print("NO CUBE FROM THIS VOLUME")
         return None
@@ -180,10 +185,11 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         else:
 
-            # print(config.len_border)
-            while size_x - (2 * config.len_border) < (size_x / 3):
+            while size_x - (2 * config.len_border) < (size_x / 3) and config.len_border > 0:
                 config.len_border -= 10
-            # print(config.len_border)
+            while size_z - (2 * config.len_border_z) < (size_z / 3) and config.len_border_z > 0:
+                config.len_border_z -= 10
+
             start_x = random.randint(0 + config.len_border, size_x - config.crop_rows - 1 - config.len_border)
             start_y = random.randint(0 + config.len_border, size_y - config.crop_cols - 1 - config.len_border)
             start_z = random.randint(0 + config.len_border_z, size_z - config.input_deps - config.len_depth - 1 - config.len_border_z)
@@ -207,8 +213,23 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                 above_0_idxs = crop_window_target >= 1
                 crop_window_target[above_0_idxs] = float(1)
             elif "Task02_Liver" in config.DATA_DIR:
+                # use mask for liver only
                 non_liver_idxs = crop_window_target != 1
                 crop_window_target[non_liver_idxs] = float(0)
+            elif "Task04_Hippocampus" in config.DATA_DIR:
+                strucutures_idxs = crop_window_target >= 1
+                crop_window_target[strucutures_idxs] = float(1)
+            elif "Task05_Prostate" in config.DATA_DIR:
+                strucutures_idxs = crop_window_target >= 1
+                crop_window_target[strucutures_idxs] = float(1)
+            elif "Task07_Pancreas" in config.DATA_DIR:
+                # use mask for pancreas only
+                non_pancreas_idxs = crop_window_target != 1
+                crop_window_target[non_pancreas_idxs] = float(0)
+            elif "Task08_HepaticVessel" in config.DATA_DIR:
+                # use mask for vessel only
+                non_vessel_idxs = crop_window_target != 1
+                crop_window_target[non_vessel_idxs] = float(0)
 
             assert ((crop_window_target == 0) | (crop_window_target == 1)).all(), "Target array is not binary {}".format(config.DATA_DIR)
 
@@ -263,7 +284,11 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 def get_self_learning_data(config):
 
     print("### ", config.DATA_DIR, " ###")
-    cubes_dir = os.path.join(config.DATA_DIR, "extracted_cubes")  # where to save cubes
+    cubes_dir = (
+        os.path.join(config.DATA_DIR, "extracted_cubes_{}_{}_{}_ss")
+        if not config.target_dir
+        else os.path.join(config.DATA_DIR, "extracted_cubes_{}_{}_{}_sup")
+    )  # where to save cubes
     make_dir(os.path.join(cubes_dir, "x/"))
     make_dir(os.path.join(cubes_dir, "y/"))
 
@@ -276,24 +301,28 @@ def get_self_learning_data(config):
 
         # HACK use one modality only if 4d MRI
         if len(img_array.shape) == 4:
-            assert img_array.shape[0] == 4
-            img_array = img_array[1]
-        try:
-            img_array = img_array.transpose(2, 1, 0)
-        except ValueError:
-            print("AXES DONT MATCH {}".format(config.DATA_DIR))
+            if "Task01_BrainTumour" in config.DATA_DIR:
+                img_array = img_array[1]
+            elif "Task05_Prostate" in config.DATA_DIR:
+                img_array = img_array[0]
+
+        img_array = img_array.transpose(2, 1, 0)
+
         # handle small cubes dataset
         while img_array.shape[0] < config.input_rows:
             if config.input_rows == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
+                exit(0)
             config.input_rows /= 2
         while img_array.shape[1] < config.input_cols:
             if config.input_cols == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
+                exit(0)
             config.input_cols /= 2
         while img_array.shape[2] < config.input_deps:
             if config.input_deps == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
+                exit(0)
             config.input_deps /= 2
 
         config.crop_rows = config.input_rows
