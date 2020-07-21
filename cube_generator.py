@@ -102,6 +102,13 @@ config = setup_config(
     target_dir=options.target_dir,
     modality=options.modality,
 )
+if "Task02_Liver" in config.DATA_DIR:
+    config.input_rows = 128
+    config.crop_rows = 128
+    config.input_cols = 128
+    config.crop_cols = 128
+    config.input_deps = 64
+
 config.display()
 
 
@@ -199,6 +206,9 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
             if "Task01_BrainTumour" in config.DATA_DIR:
                 above_0_idxs = crop_window_target >= 1
                 crop_window_target[above_0_idxs] = float(1)
+            elif "Task02_Liver" in config.DATA_DIR:
+                non_liver_idxs = crop_window_target != 1
+                crop_window_target[non_liver_idxs] = float(0)
 
             assert ((crop_window_target == 0) | (crop_window_target == 1)).all(), "Target array is not binary {}".format(config.DATA_DIR)
 
