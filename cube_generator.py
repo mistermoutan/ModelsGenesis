@@ -114,6 +114,9 @@ config.display()
 
 def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
+    skipped_only_zeros_target = 0
+    skipped_mostly_ones_target = 0
+
     size_x, size_y, size_z = img_array.shape
 
     while size_x - (2 * config.len_border) < (size_x / 3) and config.len_border > 0:
@@ -256,14 +259,15 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         if target_array is not None:
             if np.count_nonzero(crop_window_target) > (0.9999999 * crop_window_target.size):
-                print("SKIPPING MOSTLY 1's TARGET ARRAY")
+                skipped_mostly_ones_target += 1
+                if (skipped_mostly_ones_target + 1) % 200 == 0:
+                    print("Skipped {} mostly ones target arrays".format(skipped_only_zeros_target))
                 continue
             elif np.count_nonzero(crop_window_target) == 0:
-                print(str(np.count_nonzero(crop_window_target)), " NON ZEROS OUT OF ", str(crop_window_target.size))
-                print("SKIPPING ONLY 0's TARGET ARRAY")
+                skipped_only_zeros_target += 1
+                if (skipped_only_zeros_target + 1) % 1000 == 0:
+                    print("Skipped {} only 0 target arrays".format(skipped_only_zeros_target))
                 continue
-
-        # print("USING IT")
 
         slice_set[num_pair] = crop_window[:, :, : config.input_deps]
         if target_array is not None:
