@@ -172,6 +172,10 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         else:
 
+            # print(config.len_border)
+            while size_x - (2 * config.len_border) < (size_x / 3):
+                config.len_border -= 10
+            # print(config.len_border)
             start_x = random.randint(0 + config.len_border, size_x - config.crop_rows - 1 - config.len_border)
             start_y = random.randint(0 + config.len_border, size_y - config.crop_cols - 1 - config.len_border)
             start_z = random.randint(0 + config.len_border_z, size_z - config.input_deps - config.len_depth - 1 - config.len_border_z)
@@ -190,6 +194,11 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                 start_y : start_y + config.crop_cols,
                 start_z : start_z + config.input_deps + config.len_depth,
             ]
+
+            if "Task01_BrainTumour" in config.DATA_DIR:
+                above_0_idxs = crop_window_target >= 1
+                crop_window_target[above_0_idxs] = float(1)
+
             assert ((crop_window_target == 0) | (crop_window_target == 1)).all(), "Target array is not binary {}".format(config.DATA_DIR)
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
@@ -255,7 +264,7 @@ def get_self_learning_data(config):
         img_array = sitk.GetArrayFromImage(itk_img)
 
         # HACK use one modality only if 4d MRI
-        if img_array.shape == 4:
+        if len(img_array.shape) == 4:
             assert img_array.shape[0] == 4
             img_array = img_array[1]
         try:
@@ -305,6 +314,7 @@ def get_self_learning_data(config):
             itk_img_tr = sitk.ReadImage(os.path.join(config.target_dir, volume))
             img_array_tr = sitk.GetArrayFromImage(itk_img_tr)
             img_array_tr = img_array_tr.transpose(2, 1, 0)
+            print("TARGET SHAPE", img_array_tr.shape)
             assert img_array_tr.shape == img_array.shape
             res = infinite_generator_from_one_volume(config, img_array, target_array=img_array_tr)
             if res is not None:
