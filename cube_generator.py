@@ -277,6 +277,7 @@ def get_self_learning_data(config):
 
         config.crop_rows = config.input_rows
         config.crop_cols = config.input_cols
+        x = None
 
         if not config.target_dir:
             x = infinite_generator_from_one_volume(config, img_array)
@@ -352,13 +353,13 @@ def get_self_learning_data(config):
         if x is not None:
             if not os.path.isfile(os.path.join(cubes_dir, "nr_samples.json")):
                 samples = {"nr_samples": x.shape[0]}
-                with open(os.path.join(cubes_dir, "nr_samples.json", "w")) as f:
+                with open(os.path.join(cubes_dir, "nr_samples.json"), "w") as f:
                     json.dump(samples, f)
             else:
-                with open(os.path.join(cubes_dir, "nr_samples.json", "r")) as f:
+                with open(os.path.join(cubes_dir, "nr_samples.json"), "r") as f:
                     d = json.load(f)
                 d["nr_samples"] += x.shape[0]
-                with open(os.path.join(cubes_dir, "nr_samples.json", "w")) as f:
+                with open(os.path.join(cubes_dir, "nr_samples.json"), "w") as f:
                     json.dump(d, f)
 
 
