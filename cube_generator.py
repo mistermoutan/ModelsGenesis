@@ -73,6 +73,7 @@ class setup_config:
         self.scale = scale
         self.DATA_DIR = DATA_DIR
         self.len_depth = len_depth
+        self.modality = modality
         if modality == "ct":
             self.hu_max, self.hu_min = 1000, -1000
         if modality == "mri":
@@ -102,7 +103,8 @@ config = setup_config(
     target_dir=options.target_dir,
     modality=options.modality,
 )
-if "Task02_Liver" in config.DATA_DIR:
+
+if "Task03_Liver" in config.DATA_DIR:
     config.input_rows = 128
     config.crop_rows = 128
     config.input_cols = 128
@@ -124,14 +126,31 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
     while size_z - (2 * config.len_border_z) < (size_z / 3) and config.len_border_z > 0:
         config.len_border_z -= 10
 
-    if size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < config.len_border_z:
+    if (
+        ("task04" not in config.DATA_DIR.lower())
+        and ("task08" not in config.DATA_DIR.lower())
+        and (size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < config.len_border_z)
+    ):
         print("NO CUBE FROM THIS VOLUME")
         return None
 
+    if config.modality == "ct":
+        config.hu_max, config.hu_min = 1000, -1000
+    if config.modality == "mri":
+        config.hu_max, config.hu_min = 4000, 0
+
     # min-max normalization
+    while np.max(img_array) < config.hu_max:
+        config.hu_max -= 10
+        # print("ADJUSTING MAX")
+    while np.min(img_array) > config.hu_min:
+        config.hu_min += 10
+        # print("ADJUSTING MIN")
+
     img_array[img_array < config.hu_min] = config.hu_min
     img_array[img_array > config.hu_max] = config.hu_max
     img_array = 1.0 * (img_array - config.hu_min) / (config.hu_max - config.hu_min)
+    print(config.scale, config.input_rows, config.input_cols, config.input_deps)
     slice_set = np.zeros((config.scale, config.input_rows, config.input_cols, config.input_deps), dtype=float)
     slice_set_target = np.zeros((config.scale, config.input_rows, config.input_cols, config.input_deps), dtype=float)
 
@@ -188,14 +207,35 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         else:
 
-            while size_x - (2 * config.len_border) < (size_x / 3) and config.len_border > 0:
+            while (config.len_border > size_x - config.crop_rows - 1 - config.len_border) and config.len_border > 0:
                 config.len_border -= 10
+
+            while (
+                config.len_border_z < size_z - config.input_deps - config.len_depth - 1 - config.len_border_z
+            ) and config.len_border_z > 0:
+                config.len_border_z -= 10
+
+            while size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < 0 and config.len_border_z > 0:
+                config.len_border_z -= 10
+
             while size_z - (2 * config.len_border_z) < (size_z / 3) and config.len_border_z > 0:
                 config.len_border_z -= 10
 
-            start_x = random.randint(0 + config.len_border, size_x - config.crop_rows - 1 - config.len_border)
-            start_y = random.randint(0 + config.len_border, size_y - config.crop_cols - 1 - config.len_border)
-            start_z = random.randint(0 + config.len_border_z, size_z - config.input_deps - config.len_depth - 1 - config.len_border_z)
+            if size_x - config.crop_rows - 1 - config.len_border <= 0:
+                start_x = 0
+            else:
+                start_x = random.randint(0 + config.len_border, size_x - config.crop_rows - 1 - config.len_border)
+
+            if size_y - config.crop_cols - 1 - config.len_border <= 0:
+                start_y = 0
+            else:
+                start_y = random.randint(0 + config.len_border, size_y - config.crop_cols - 1 - config.len_border)
+
+            if size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < 0:
+                assert config.len_border_z == 0
+                start_z = random.randint(0 + config.len_border_z, size_z - config.input_deps - config.len_border_z)
+            else:
+                start_z = random.randint(0 + config.len_border_z, size_z - config.input_deps - config.len_depth - 1 - config.len_border_z)
 
         # get the cube
         crop_window = img_array[
@@ -215,14 +255,14 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
             if "Task01_BrainTumour" in config.DATA_DIR:
                 above_0_idxs = crop_window_target >= 1
                 crop_window_target[above_0_idxs] = float(1)
-            elif "Task02_Liver" in config.DATA_DIR:
+            elif "Task03_Liver" in config.DATA_DIR:
                 # use mask for liver only
                 non_liver_idxs = crop_window_target != 1
                 crop_window_target[non_liver_idxs] = float(0)
-            elif "Task04_Hippocampus" in config.DATA_DIR:
+            elif "task04" in config.DATA_DIR.lower():
                 strucutures_idxs = crop_window_target >= 1
                 crop_window_target[strucutures_idxs] = float(1)
-            elif "Task05_Prostate" in config.DATA_DIR:
+            elif "task05" in config.DATA_DIR.lower():
                 strucutures_idxs = crop_window_target >= 1
                 crop_window_target[strucutures_idxs] = float(1)
             elif "Task07_Pancreas" in config.DATA_DIR:
@@ -302,27 +342,34 @@ def get_self_learning_data(config):
         if len(img_array.shape) == 4:
             if "Task01_BrainTumour" in config.DATA_DIR:
                 img_array = img_array[1]
-            elif "Task05_Prostate" in config.DATA_DIR:
+            elif "task05" in config.DATA_DIR.lower():
                 img_array = img_array[0]
 
         img_array = img_array.transpose(2, 1, 0)
 
-        # handle small cubes dataset
+        if img_array.shape[0] < config.input_rows or img_array.shape[1] < config.input_cols or img_array.shape[2] < config.input_deps:
+            # print(img_array.shape)
+            continue
+
+        """ # handle small cubes dataset
         while img_array.shape[0] < config.input_rows:
             if config.input_rows == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
                 exit(0)
             config.input_rows /= 2
+            config.input_rows = int(config.input_rows)
         while img_array.shape[1] < config.input_cols:
             if config.input_cols == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
                 exit(0)
             config.input_cols /= 2
+            config.input_cols = int(config.input_cols)
         while img_array.shape[2] < config.input_deps:
             if config.input_deps == 16:
                 print("DATAST DIMENSIONS TOO SMALL")
                 exit(0)
             config.input_deps /= 2
+            config.input_deps = int(config.input_deps) """
 
         config.crop_rows = config.input_rows
         config.crop_cols = config.input_cols
