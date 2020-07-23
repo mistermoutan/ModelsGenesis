@@ -94,7 +94,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.8, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
