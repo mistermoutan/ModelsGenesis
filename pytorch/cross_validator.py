@@ -8,7 +8,7 @@ from dataset import Dataset
 
 
 class CrossValidator:
-    def __init__(self, config, dataset, nr_splits=3):
+    def __init__(self, config, dataset, nr_splits=5):
 
         self.config = config
         self.dataset = dataset
