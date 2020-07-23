@@ -1,5 +1,6 @@
 import os
 import dill
+from copy import deepcopy
 
 
 def make_dir(dir: str):
@@ -36,6 +37,28 @@ def get_dataset_object_of_task_dir(task_dir):
 
     if os.path.isfile(os.path.join("objects/", task_dir, "dataset.pkl")):
         o = load_object(os.path.join("objects/", task_dir, "dataset.pkl"))
+    else:
+        o = None
+    return o
+
+
+def save_cross_validator_object_of_task_dir(cv, task_dir):
+
+    tmp = task_dir.split("_")
+    tmp[-1] = "1/"
+    task_dir_run_1 = "_".join(i for i in tmp)
+    save_object(cv, "cross_validator", os.path.join("objects/", task_dir_run_1))
+
+
+def get_cross_validator_object_of_task_dir(task_dir):
+
+    tmp = task_dir.split("_")
+    tmp[-1] = "1/"
+    task_dir_run_1 = "_".join(i for i in tmp)
+    # print(task_dir_run_1)
+
+    if os.path.isfile(os.path.join("objects/", task_dir_run_1, "cross_validator.pkl")):
+        o = load_object(os.path.join("objects/", task_dir_run_1, "cross_validator.pkl"))
     else:
         o = None
     return o
@@ -94,6 +117,11 @@ dataset_map = {
     "task10_ss": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_ss",
     "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_sup",
 }
+
+""" dataset_map = {
+    "task01_ss": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
+    "task01_sup": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
+} """
 
 # "task_02": "pytorch/datasets/task02/extracted_cubes",
 # "luna": "pytorch/datasets/luna16_cubes",
