@@ -90,14 +90,16 @@ class models_genesis_config:
         # get dir corresponding to next numerical experiment
         task_dir = self.task + "/run"
         if exp_nr is None:
-            experiment_nr = 1
-            while os.path.isdir(os.path.join("runs/", self.task + "/run_{}/".format(str(experiment_nr)))):  # meaning the experiment has not been run
-                experiment_nr += 1
+            self.experiment_nr = 1
+            while os.path.isdir(
+                os.path.join("runs/", self.task + "/run_{}/".format(str(self.experiment_nr)))
+            ):  # meaning the experiment has not been run
+                self.experiment_nr += 1
         else:
-            experiment_nr = exp_nr
+            self.experiment_nr = exp_nr
 
-        print("!==RUN_DIR==!", task_dir + "_" + str(experiment_nr) + "/")
-        return task_dir + "_" + str(experiment_nr) + "/"
+        print("!==RUN_DIR==!", task_dir + "_" + str(self.experiment_nr) + "/")
+        return task_dir + "_" + str(self.experiment_nr) + "/"
 
     def override_dirs(self, run_nr):
 
