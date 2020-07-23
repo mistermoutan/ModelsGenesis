@@ -213,6 +213,9 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         if args_object.tr_val_ts_split is not None:
             kwargs_dict["split"] = tuple(args_object.tr_val_ts_split)
 
+    if args_object.num_cv_folds is not None:
+        kwargs_dict["num_cv_folds"] = args_object.num_cv_folds
+
     if kwargs.get("get_directory", False):
         assert args_object.directory is not None, "Specify --directory of model weights to load"
         if not os.path.isdir(args_object.directory):

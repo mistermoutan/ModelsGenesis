@@ -8,6 +8,7 @@ from config import models_genesis_config
 from dataset import Dataset
 from finetune import Trainer
 from evaluate import Tester
+from cross_validator import CrossValidator
 from utils import *
 
 # script to run experiments
@@ -93,7 +94,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
@@ -152,9 +153,10 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
 
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
@@ -163,6 +165,24 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -214,9 +234,10 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
 
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
 
@@ -225,6 +246,24 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=True, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -290,10 +329,12 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     # pass it the directory of the task that the model you want to resume from is
 
     kwargs_dict_ = kwargs["kwargs_dict"]
+
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -304,6 +345,24 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -358,10 +417,12 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
 def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
+
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -372,6 +433,24 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -440,9 +519,10 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
 
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
@@ -451,6 +531,24 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -502,16 +600,37 @@ def resume_train_from_scratch_on_dataset_no_ss(run_nr: int, **kwargs):
 def train_from_scratch_on_dataset_with_ss(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
+
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
-    split = kwargs_dict_.get("split", (0.7, 0.1, 0.2))
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     dataset = build_dataset(dataset_list=dataset_list, split=split)
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True)
+
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
     config.display()
 
     save_object(config, "config", config.object_dir)
@@ -628,6 +747,7 @@ if __name__ == "__main__":
     parser.add_argument("--loss_function_sup", required=False, dest="loss_function_sup", type=str)
     # model argument?
     parser.add_argument("--task_name", required=False, dest="task_name", type=str, default=None)
+    parser.add_argument("--num_cv_folds", dest="num_cv_folds", type=int, required=False, default=None)
 
     args = parser.parse_args()
 
