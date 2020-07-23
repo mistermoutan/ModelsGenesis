@@ -73,7 +73,29 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 
 dataset_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
-}  # "task_02": "pytorch/datasets/task02/extracted_cubes",
+    "task01_ss": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
+    "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
+    "task02_ss": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr/extracted_cubes_64_64_32_ss",
+    "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr/extracted_cubes_64_64_32_sup",
+    "task03_ss": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr/extracted_cubes_128_128_64_ss",
+    "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr/extracted_cubes_128_128_64_sup",
+    "task04_ss": "/work1/s182312/medical_decathlon/Task04_Hippocampus/imagesTr/extracted_cubes_32_32_32_ss",
+    "task04_sup": "/work1/s182312/medical_decathlon/Task04_Hippocampus/imagesTr/extracted_cubes_32_32_32_sup",
+    "task05_ss": "/work1/s182312/medical_decathlon/Task05_Prostate/imagesTr/extracted_cubes_64_64_16_ss",
+    "task05_sup": "/work1/s182312/medical_decathlon/Task05_Prostate/imagesTr/extracted_cubes_64_64_16_sup",
+    "task06_ss": "/work1/s182312/medical_decathlon/Task06_Lung/imagesTr/extracted_cubes_64_64_32_ss",
+    "task06_sup": "/work1/s182312/medical_decathlon/Task06_Lung/imagesTr/extracted_cubes_64_64_32_sup",
+    "task07_ss": "/work1/s182312/medical_decathlon/Task07_Pancreas/imagesTr/extracted_cubes_64_64_32_ss",
+    "task07_sup": "/work1/s182312/medical_decathlon/Task07_Pancreas/imagesTr/extracted_cubes_64_64_32_sup",
+    "task08_ss": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/imagesTr/extracted_cubes_64_64_32_ss",
+    "task08_sup": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/imagesTr/extracted_cubes_64_64_32_sup",
+    "task09_ss": "/work1/s182312/medical_decathlon/Task09_Spleen/imagesTr/extracted_cubes_64_64_32_ss",
+    "task09_sup": "/work1/s182312/medical_decathlon/Task09_Spleen/imagesTr/extracted_cubes_64_64_32_sup",
+    "task10_ss": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_ss",
+    "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_sup",
+}
+
+# "task_02": "pytorch/datasets/task02/extracted_cubes",
 # "luna": "pytorch/datasets/luna16_cubes",
 # /work1/s182312/lidc_idri/np_cubes"}
 # pytorch/datasets/lidc_idri_cubes
@@ -214,9 +236,10 @@ def get_task_dirs():
         else:
             root_split = root.split("/")
             task_dir = "/".join(i for i in root_split[1:])
-            # if task_dir == "":
-            #    print("\n", "ROOT", root, "\n", "DIRS ", dirs, "\n", "FILES", files, "\n")
-            #    continue
+            if task_dir == "":
+                print("SHOULD BE PRINTING THE PROVIDED WEIGHTS")
+                print("\n", "ROOT", root, "\n", "DIRS ", dirs, "\n", "FILES", files, "\n")
+                continue
             task_dirs.append(task_dir)
     return task_dirs
 
