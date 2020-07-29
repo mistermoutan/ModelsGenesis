@@ -30,6 +30,11 @@ class CrossValidator:
             self.dataset.x_val_filenames_original = val_split
             self.dataset.x_test_filenames_original = []
             self.dataset.reset()
+            print(
+                "OVERWROTE DATASET FILES WITH CROSS VALIDATOR // {} SPLITS LEFT FOR {}".format(
+                    len(self.splits[self.dataset.x_data_dir]), self.dataset.x_data_dir
+                )
+            )
         elif isinstance(self.dataset, list):
             for d in self.dataset:
                 assert isinstance(d, Dataset)
@@ -38,6 +43,11 @@ class CrossValidator:
                 d.dataset.x_val_filenames_origianl = val_split
                 d.x_test_filenames_original = []
                 d.dataset.reset()
+                print(
+                    "OVERWROTE DATASET FILES WITH CROSS VALIDATOR // {} SPLITS LEFT FOR {}".format(
+                        len(self.splits[d.dataset.x_data_dir]), d.dataset.x_data_dir
+                    )
+                )
 
     def _generate_splits(self):
 
