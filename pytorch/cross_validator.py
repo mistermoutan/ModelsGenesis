@@ -6,6 +6,9 @@ from sklearn.model_selection import KFold
 from utils import *
 from dataset import Dataset
 
+# FOR Deterministic Behavior this should be a dataset folder sort of component that is just read from and not a class generated
+# at each experimetn level
+
 
 class CrossValidator:
     def __init__(self, config, dataset, nr_splits=5):
