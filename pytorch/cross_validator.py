@@ -58,12 +58,14 @@ class CrossValidator:
         if current_run_nr == 1:
             self.splits = dict()  # {dataset_x_dir : [ (train_split1, val_split1), (train_split2, val_split2) ... ] }
             if isinstance(self.dataset, Dataset):
+                self.dataset.x_filenames.sort()
                 dataset_splits = self._generate_splits_from_filenames(self.dataset.x_filenames)
                 self.splits[self.dataset.x_data_dir] = dataset_splits
 
             elif isinstance(self.dataset, list):
                 for d in self.dataset:
                     assert isinstance(d, Dataset)
+                    d.x_filenames.sort()
                     dataset_splits = self._generate_splits_from_filenames(d.x_filenames)
                     self.splits[d.x_data_dir] = dataset_splits
 
@@ -73,7 +75,7 @@ class CrossValidator:
     def _generate_splits_from_filenames(self, dataset_filenames):
 
         dataset_splits = []
-        kf = KFold(n_splits=self.nr_splits)
+        kf = KFold(n_splits=self.nr_splits, random_state=1)
         for train_split, val_split in kf.split(dataset_filenames):
             train_filenames = [dataset_filenames[i] for i in train_split]
             val_filenames = [dataset_filenames[i] for i in val_split]
