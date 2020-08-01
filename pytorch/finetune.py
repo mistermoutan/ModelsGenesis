@@ -430,7 +430,7 @@ class Trainer:
     def add_hparams_to_writer(self):
 
         hpa_dict = {
-            "cube_dimensions": self.dataset.cube_dimensions,
+            "cube_dimensions": self.dataset.cube_dimensions if isinstance(self.dataset, Dataset) else self.dataset[0].cube_dimensions,
             "initial_lr_ss": self.config.lr_ss,
             "loss_ss": self.config.loss_function_ss,
             "optimizer_ss": self.config.optimizer_ss,
