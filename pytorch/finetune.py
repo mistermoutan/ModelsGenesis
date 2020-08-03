@@ -9,6 +9,8 @@ import time
 from datetime import timedelta
 from copy import deepcopy
 
+from unet_2d import UNet
+from unet_3d import UNet3D as Unet3D_Counterpart_to_2D
 
 from unet3d import UNet3D
 from dataset import Dataset
@@ -484,8 +486,12 @@ class Trainer:
 
     def load_model(self, **kwargs):
 
-        if self.config.model == "VNET_MG":
+        if self.config.model.lower() == "vnet_mg":
             self.model = UNet3D()
+        elif self.config.model.lower() == "unet_2d":
+            self.model = UNet(n_channels=1, n_classes=1, bilinear=True)
+        elif self.config.model.lower() == "unet_3d":
+            self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True)
 
         self.model.to(self.device)
 
