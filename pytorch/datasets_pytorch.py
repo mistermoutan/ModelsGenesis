@@ -8,7 +8,7 @@ class DatasetsPytorch(DatasetP):
         """[summary]
 
         Args:
-            dataset ([type]): list of DatasetsPytorch / Dataset? 
+            dataset ([type]): list of DatasetPytorch instances 
             config ([type]): config class
             type_ (str): "train", "val" or "ts"
             apply_mg_transforms (bool) True for self supervision
@@ -125,8 +125,14 @@ class DatasetsPytorch(DatasetP):
     def custom_collate(batch):
 
         dims = batch[0][0].shape
-        x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
-        y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        if len(dims) == 5:
+            x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+            y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        elif len(dims) == 4:
+            x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3])
+            y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3])
+        else:
+            raise ValueError
         dataset_idxs = []
         for idx, (x, y, dataset_idx) in enumerate(batch):  # y can be none in ss case
 

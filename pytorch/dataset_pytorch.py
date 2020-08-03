@@ -92,8 +92,15 @@ class DatasetPytorch(DatasetP):
     @staticmethod
     def custom_collate(batch):
         dims = batch[0][0].shape
-        x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
-        y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        if len(dims) == 5:
+            x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+            y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
+        elif len(dims) == 4:
+            x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3])
+            y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3])
+        else:
+            raise ValueError
+
         for idx, (x, y) in enumerate(batch):  # y can be none in ss case
             x_tensor[idx] = x
             if y is None:

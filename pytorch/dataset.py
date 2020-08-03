@@ -9,9 +9,6 @@ import numpy as np
 
 
 class Dataset:
-
-    # TODO: remove self.has_target logic
-
     def __init__(self, data_dir: str, train_val_test: tuple, file_names=None):
         """
         Arguments:
@@ -63,6 +60,7 @@ class Dataset:
             self.x_array_tr = np.expand_dims(
                 np.load(path.join(self.x_data_dir, x_train_file_name)), axis=1
             )  # (N, x, y, z) -> (N, 1-Channel, x, y, z)
+            # print(self.x_array_tr.shape)
             if self.has_target:
                 self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name[:-4] + "_target.npy")), axis=1)
                 assert self.x_array_tr.shape == self.y_array_tr.shape
@@ -221,6 +219,10 @@ class Dataset:
         else:
             return self.nr_samples_test
 
+    def get_nr_z_slices_per_cube(self):
+        self._load_data((True, False, False))
+        return self.x_array_tr[self.train_idxs[0]].shape[-1]
+
     @staticmethod
     def do_file_split(file_names: list, proportions: tuple) -> ([], [], []):
 
@@ -234,12 +236,17 @@ class Dataset:
 
 if __name__ == "__main__":
 
-    a = Dataset(data_dir="pytorch/datasets/Task02_Heart/imagesTr/extracted_cubes", train_val_test=(0.1, 0, 0.9))
-    print(a.x_train_filenames)
+    a = Dataset(data_dir="heart-mri-480-x-480,94 cellari/datasets", train_val_test=(0.8, 0.2, 0))
+    print(len(a.x_filenames))
+    print(len(a.x_train_filenames))
+    print(len(a.x_val_filenames))
+    print(len(a.x_test_filenames))
     for epoch in range(100):
         x = 0
         while x is not None:
-            x, y = a.get_train(batch_size=20)
+            x, y = a.get_train(batch_size=1)
+            print(x.shape)
+            exit(0)
             if type(x) == type(None):
                 print("X IS NONE")
             else:
