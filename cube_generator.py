@@ -27,7 +27,7 @@ parser.add_option("--data", dest="data", help="directory of dataset", default=No
 parser.add_option("--scale", dest="scale", help="number of cubes extracted from a single volume", default=32, type="int")
 parser.add_option("--modality", dest="modality", help="ct or mri", default="None", type="string")
 parser.add_option("--target_dir", dest="target_dir", help="target volume dir for label generation", default=None, type="string")
-
+parser.add_option("--is_numpy", dest="is_numpy", default="False", type="str")
 (options, args) = parser.parse_args()
 
 
@@ -37,7 +37,8 @@ seed = 1
 assert options.data is not None
 assert options.modality is not None, "input --modality , ct or mri"
 
-# TODO: dont generate cubes with only 0 or 1's in label
+
+options.is_numpy = True if options.is_numpy.lower() == "true" else False
 
 
 class setup_config:
@@ -62,6 +63,7 @@ class setup_config:
         len_depth=None,
         modality=None,
         target_dir=None,
+        is_numpy=False,
     ):
         self.input_rows = input_rows
         self.input_cols = input_cols
@@ -79,6 +81,7 @@ class setup_config:
         if modality == "mri":
             self.hu_max, self.hu_min = 4000, 0
         self.target_dir = target_dir
+        self.is_numpy = is_numpy
 
     def display(self):
         """Display Configuration values."""
@@ -102,6 +105,7 @@ config = setup_config(
     DATA_DIR=options.data,
     target_dir=options.target_dir,
     modality=options.modality,
+    is_numpy=options.is_numpy,
 )
 
 if "Task03_Liver" in config.DATA_DIR:
@@ -125,15 +129,16 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
         config.len_border -= 10
     while size_z - (2 * config.len_border_z) < (size_z / 3) and config.len_border_z > 0:
         config.len_border_z -= 10
-
+    """ 
     if (
         ("task04" not in config.DATA_DIR.lower())
         and ("task08" not in config.DATA_DIR.lower())
         and (size_z - config.input_deps - config.len_depth - 1 - config.len_border_z < config.len_border_z)
     ):
+        print(config.len_depth)
         print("NO CUBE FROM THIS VOLUME")
         return None
-
+    """
     if config.modality == "ct":
         config.hu_max, config.hu_min = 1000, -1000
     if config.modality == "mri":
@@ -147,9 +152,10 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
         config.hu_min += 10
         # print("ADJUSTING MIN")
 
-    img_array[img_array < config.hu_min] = config.hu_min
-    img_array[img_array > config.hu_max] = config.hu_max
-    img_array = 1.0 * (img_array - config.hu_min) / (config.hu_max - config.hu_min)
+    if config.hu_max != 0 and config.hu_min != 0:
+        img_array[img_array < config.hu_min] = config.hu_min
+        img_array[img_array > config.hu_max] = config.hu_max
+        img_array = 1.0 * (img_array - config.hu_min) / (config.hu_max - config.hu_min)
     print(config.scale, config.input_rows, config.input_cols, config.input_deps)
     slice_set = np.zeros((config.scale, config.input_rows, config.input_cols, config.input_deps), dtype=float)
     slice_set_target = np.zeros((config.scale, config.input_rows, config.input_cols, config.input_deps), dtype=float)
@@ -331,12 +337,19 @@ def get_self_learning_data(config):
 
     print("### ", config.DATA_DIR, " ###")
 
-    volumes_file_names = [i for i in os.listdir(config.DATA_DIR) if "." != i[0] and i.endswith(".nii.gz") or i.endswith(".mhd")]
+    volumes_file_names = [
+        i for i in os.listdir(config.DATA_DIR) if "." != i[0] and i.endswith(".nii.gz") or i.endswith(".mhd") or i.endswith(".npy")
+    ]
 
     for volume in tqdm(volumes_file_names):
 
-        itk_img = sitk.ReadImage(os.path.join(config.DATA_DIR, volume))
-        img_array = sitk.GetArrayFromImage(itk_img)
+        if config.is_numpy is False:
+            itk_img = sitk.ReadImage(os.path.join(config.DATA_DIR, volume))
+            img_array = sitk.GetArrayFromImage(itk_img)
+            img_array = img_array.transpose(2, 1, 0)
+
+        else:
+            img_array = np.load(os.path.join(config.DATA_DIR, volume))
 
         # HACK use one modality only if 4d MRI
         if len(img_array.shape) == 4:
@@ -345,10 +358,7 @@ def get_self_learning_data(config):
             elif "task05" in config.DATA_DIR.lower():
                 img_array = img_array[0]
 
-        img_array = img_array.transpose(2, 1, 0)
-
         if img_array.shape[0] < config.input_rows or img_array.shape[1] < config.input_cols or img_array.shape[2] < config.input_deps:
-            # print(img_array.shape)
             continue
 
         """ # handle small cubes dataset
@@ -402,9 +412,13 @@ def get_self_learning_data(config):
                     x,
                 )
         else:
-            itk_img_tr = sitk.ReadImage(os.path.join(config.target_dir, volume))
-            img_array_tr = sitk.GetArrayFromImage(itk_img_tr)
-            img_array_tr = img_array_tr.transpose(2, 1, 0)
+            if config.is_numpy is False:
+                itk_img_tr = sitk.ReadImage(os.path.join(config.target_dir, volume))
+                img_array_tr = sitk.GetArrayFromImage(itk_img_tr)
+                img_array_tr = img_array_tr.transpose(2, 1, 0)
+            else:
+                img_array_tr = np.load(os.path.join(config.target_dir, volume))
+
             print("TARGET SHAPE", img_array_tr.shape)
             assert img_array_tr.shape == img_array.shape
             res = infinite_generator_from_one_volume(config, img_array, target_array=img_array_tr)
