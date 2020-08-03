@@ -3,6 +3,17 @@ import dill
 from copy import deepcopy
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise ValueError("Boolean value expected.")
+
+
 def make_dir(dir: str):
     if not os.path.exists(dir):
         os.makedirs(dir)
@@ -80,6 +91,9 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         "patience_ss_terminate",
         "loss_function_sup",
         "mode",
+        "batch_size_ss",
+        "batch_size_sup",
+        "model",
     }
     for key, value in kwargs_dict.items():
         assert isinstance(key, str)
@@ -144,7 +158,7 @@ def get_unused_datasets(dataset):
     return all_datasets
 
 
-def build_dataset(dataset_list: list, split: tuple):
+def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False):
     """[summary]
 
     Returns:
@@ -152,6 +166,7 @@ def build_dataset(dataset_list: list, split: tuple):
     """
 
     from dataset import Dataset
+    from dataset_2d import Dataset2D
 
     #  dataset come as [] from CLI
     if len(dataset_list) == 1:
@@ -166,6 +181,9 @@ def build_dataset(dataset_list: list, split: tuple):
         else:
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
 
+        if two_dimensional_data is True:
+            dataset = Dataset2D(dataset)
+
         return dataset
 
     else:
@@ -179,11 +197,24 @@ def build_dataset(dataset_list: list, split: tuple):
                 dataset = Dataset(
                     data_dir=dataset_map[dataset_list[idx]], train_val_test=(0, 0, 1), file_names=files
                 )  # train_val_test is non relevant as is overwritte
+                if two_dimensional_data:
+                    dataset = Dataset2D(dataset)
                 datasets.append(dataset)
             else:
-                datasets.append(Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None))
+                dataset = Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None)
+                if two_dimensional_data:
+                    dataset = Dataset2D(dataset)
+                datasets.append(dataset)
 
         return datasets
+
+
+def get_datasets_used_str(dataset_list, mode, two_dim_data):
+
+    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    if two_dim_data is True:
+        datasets_used_str += "_2D"
+    return datasets_used_str
 
 
 def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
@@ -230,6 +261,11 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         if args_object.dataset != []:
             kwargs_dict["dataset"] = args_object.dataset
 
+    # model
+    assert args_object.model.lower() in ("vnet_mg", "unet_2d", "unet_3d")
+    kwargs_dict["model"] = args_object.model
+    kwargs_dict["two_dimensional_data"] = args_object.two_dimensional_data
+
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):
@@ -254,6 +290,10 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["patience_sup_terminate"] = args_object.patience_sup_terminate
         if isinstance(args_object.loss_function_sup, str):
             kwargs_dict["loss_function_sup"] = args_object.loss_function_sup
+        if isinstance(args_object.batch_size_ss, int):
+            kwargs_dict["batch_size_ss"] = args_object.batch_size_ss
+        if isinstance(args_object.batch_size_sup, int):
+            kwargs_dict["batch_size_sup"] = args_object.batch_size_sup
 
     return kwargs_dict
 

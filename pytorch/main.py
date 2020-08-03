@@ -96,7 +96,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
@@ -119,7 +119,7 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
     config.override_dirs(run_nr)
@@ -158,7 +158,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
@@ -202,7 +202,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True)
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
@@ -239,7 +239,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     dataset_list.sort()
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
@@ -285,7 +285,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=True, supervised=True)
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
@@ -337,8 +337,8 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    dataset = build_dataset(dataset_list=dataset_list, split=split)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
         data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True
@@ -382,7 +382,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]  # to find the task dir to resume from
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
         data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True
@@ -425,8 +425,8 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    dataset = build_dataset(dataset_list=dataset_list, split=split)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
         data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True
@@ -472,7 +472,7 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
         data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True
@@ -525,9 +525,9 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split)
+    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True)
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
@@ -568,7 +568,7 @@ def resume_train_from_scratch_on_dataset_no_ss(run_nr: int, **kwargs):
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True)
     config.override_dirs(run_nr)
 
@@ -607,8 +607,9 @@ def train_from_scratch_on_dataset_with_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
 
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
-    dataset = build_dataset(dataset_list=dataset_list, split=split)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+
+    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True)
 
     replace_config_param_attributes(config, kwargs_dict_)
@@ -651,7 +652,7 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True)
     config.override_dirs(run_nr)
 
@@ -737,17 +738,20 @@ if __name__ == "__main__":
     parser.add_argument("-opt_ss", "--optimizer_ss", required=False, dest="optimizer_ss", type=str)
     parser.add_argument("-sch_ss", "--scheduler_ss", required=False, dest="scheduler_ss", type=str)
     parser.add_argument("-lr_ss", "--learning_rate_ss", required=False, dest="lr_ss", type=float)
+    parser.add_argument("--batch_size_ss", required=False, dest="batch_size_ss", type=int)
     parser.add_argument("--patience_ss_terminate", required=False, dest="patience_ss_terminate", type=int)
     parser.add_argument("--patience_ss", required=False, dest="patience_ss", type=int)
     parser.add_argument("-opt_sup", "--optimizer_sup", required=False, dest="optimizer_sup", type=str)
     parser.add_argument("-sch_sup", "--scheduler_sup", required=False, dest="scheduler_sup", type=str)
     parser.add_argument("-lr_sup", "--learning_rate_sup", required=False, dest="lr_sup", type=float)
+    parser.add_argument("--batch_size_sup", required=False, dest="batch_size_sup", type=int)
     parser.add_argument("--patience_sup_terminate", required=False, dest="patience_sup_terminate", type=int)
     parser.add_argument("--patience_sup", required=False, dest="patience_sup", type=int)
     parser.add_argument("--loss_function_sup", required=False, dest="loss_function_sup", type=str)
-    # model argument?
+    parser.add_argument("--model", required=False, default="VNET_MG", dest="model", type=str)
     parser.add_argument("--task_name", required=False, dest="task_name", type=str, default=None)
     parser.add_argument("--num_cv_folds", dest="num_cv_folds", type=int, required=False, default=None)
+    parser.add_argument("--two_dimensional_data", dest="two_dimensional_data", default=False, required=False, type=str2bool)
 
     args = parser.parse_args()
 
