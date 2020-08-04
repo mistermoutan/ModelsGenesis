@@ -9,7 +9,19 @@ class Dataset2D:
     def __init__(self, dataset3d):
 
         self.dataset3d = dataset3d
+        # pointers
+        self.x_filenames = self.dataset3d.x_filenames
+        self.x_data_dir = self.dataset3d.x_data_dir
+        self.x_train_filenames_original = self.dataset3d.x_train_filenames_original
+        self.x_val_filenames_original = self.dataset3d.x_val_filenames_original
+        self.x_test_filenames_original = self.dataset3d.x_test_filenames_original
+        self.cube_dimensions = self.dataset3d.cube_dimensions
+        self.tr_val_ts_split = self.dataset3d.tr_val_ts_split
+
         self.train_idxs, self.val_idxs = [], []
+        self.nr_samples_train = None
+        self.nr_samples_val = None
+        self.nr_samples_test = None
 
     def get_train(self, batch_size: int, return_tensor=True) -> tuple():
 
@@ -70,18 +82,28 @@ class Dataset2D:
 
     def get_len_train(self):
         # ATTENTION: May result in fuck up if nr_z_slices are not all the same for all cubes as I think happened in soem cube extractions
-        nr_cubes_train = self.dataset3d.get_len_train()
-        nr_z_slices_per_cube = self.dataset3d.get_nr_z_slices_per_cube()
-        return nr_cubes_train * nr_z_slices_per_cube
+        if self.nr_samples_train is None:
+            self.nr_samples_train = 0
+            nr_cubes_train = self.dataset3d.get_len_train()
+            nr_z_slices_per_cube = self.dataset3d.get_nr_z_slices_per_cube()
+            self.nr_samples_train = nr_cubes_train * nr_z_slices_per_cube
+        return self.nr_samples_train
 
     def get_len_val(self):
         # ATTENTION: May result in fuck up if nr_z_slices are not all the same for all cubes as I think happened in soem cube extractions
-        nr_cubes_val = self.dataset3d.get_len_val()
-        nr_z_slices_per_cube = self.dataset3d.get_nr_z_slices_per_cube()
-        return nr_cubes_val * nr_z_slices_per_cube
+        if self.nr_samples_val is None:
+            nr_cubes_val = self.dataset3d.get_len_val()
+            nr_z_slices_per_cube = self.dataset3d.get_nr_z_slices_per_cube()
+            self.nr_samples_val = nr_cubes_val * nr_z_slices_per_cube
+        return self.nr_samples_val
 
     def reset(self):
         self.dataset3d.reset()
+        # update references
+        self.dataset3d.x_filenames = self.x_filenames
+        self.dataset3d.x_train_filenames_original = self.x_train_filenames_original
+        self.dataset3d.x_val_filenames_original = self.x_val_filenames_original
+        self.dataset3d.x_test_filenames_original = self.x_test_filenames_original
 
 
 if __name__ == "__main__":
