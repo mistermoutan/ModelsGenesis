@@ -162,7 +162,13 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+        model=kwargs_dict_["model"],
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
 
@@ -203,7 +209,13 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+        model=kwargs_dict_["model"],
+    )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -243,7 +255,13 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
+        self_supervised=True,
+        supervised=True,
+        model=kwargs_dict_["model"],
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
 
@@ -286,7 +304,13 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
+        self_supervised=True,
+        supervised=True,
+        model=kwargs_dict_["model"],
+    )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -341,7 +365,11 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
-        data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True
+        data_dir="",
+        task="FROM_{}_{}".format(model_weights_dir, datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+        model=kwargs_dict_["model"],
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
@@ -385,7 +413,11 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
-        data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=False, supervised=True
+        data_dir="",
+        task="FROM_{}_{}".format(model_weights_dir, datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+        model=kwargs_dict_["model"],
     )
     config.override_dirs(run_nr)
 
@@ -429,7 +461,11 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
-        data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True
+        data_dir="",
+        task="FROM_{}_{}".format(model_weights_dir, datasets_used_str),
+        self_supervised=True,
+        supervised=True,
+        model=kwargs_dict_["model"],
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
@@ -475,7 +511,11 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
-        data_dir="", task="FROM_{}_{}".format(model_weights_dir, datasets_used_str), self_supervised=True, supervised=True
+        data_dir="",
+        task="FROM_{}_{}".format(model_weights_dir, datasets_used_str),
+        self_supervised=True,
+        supervised=True,
+        model=kwargs_dict_["model"],
     )
     config.override_dirs(run_nr)
 
@@ -528,7 +568,9 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True, model=kwargs_dict_["model"]
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
 
@@ -569,7 +611,9 @@ def resume_train_from_scratch_on_dataset_no_ss(run_nr: int, **kwargs):
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True, model=kwargs_dict_["model"]
+    )
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -610,7 +654,9 @@ def train_from_scratch_on_dataset_with_ss(**kwargs):
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True, model=kwargs_dict_["model"]
+    )
 
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
@@ -653,7 +699,9 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True)
+    config = FineTuneConfig(
+        data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=True, supervised=True, model=kwargs_dict_["model"]
+    )
     config.override_dirs(run_nr)
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
