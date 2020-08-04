@@ -5,9 +5,9 @@ from utils import make_dir
 
 
 class FineTuneConfig:
-    def __init__(self, data_dir: str, task: str, self_supervised: bool, supervised: bool):
+    def __init__(self, data_dir: str, task: str, self_supervised: bool, supervised: bool, model="VNET_MG"):
 
-        self.model = "VNET_MG"
+        self.model = model
         self.self_supervised = self_supervised  # only for stats module
         self.supervised = supervised
 
@@ -47,7 +47,7 @@ class FineTuneConfig:
         self.batch_size_ss = 6  # if self.self_supervised else False
         self.optimizer_ss = "sgd"  # if self.self_supervised else False
         self.loss_function_ss = "MSE"  # if self.self_supervised else False
-        self.nb_epoch_ss = 1000  # if self.self_supervised else False
+        self.nb_epoch_ss = 1  # if self.self_supervised else False
         self.patience_ss_terminate = 30  # if self.self_supervised else False
         self.patience_ss = int(self.patience_ss_terminate * 0.7)  # if self.self_supervised else False
         self.lr_ss = 1e-3  # if self.self_supervised else False
@@ -57,7 +57,7 @@ class FineTuneConfig:
         self.batch_size_sup = 6
         self.optimizer_sup = "adam"
         self.loss_function_sup = "dice"  # binary_cross_entropy
-        self.nb_epoch_sup = 10000
+        self.nb_epoch_sup = 1
         self.patience_sup_terminate = 50
         self.patience_sup = int(self.patience_sup_terminate * 0.7)
         self.lr_sup = 1e-3
