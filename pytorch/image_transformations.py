@@ -99,7 +99,9 @@ def local_pixel_shuffling(x, prob=0.5):
         window = window.flatten()
         np.random.shuffle(window)
         window = window.reshape((block_noise_size_x, block_noise_size_y, block_noise_size_z))
-        image_temp[0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = window
+        image_temp[
+            0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z
+        ] = window
     local_shuffling_x = image_temp
 
     return local_shuffling_x
@@ -115,22 +117,37 @@ def image_in_painting(x):
         noise_x = random.randint(3, img_rows - block_noise_size_x - 3)
         noise_y = random.randint(3, img_cols - block_noise_size_y - 3)
         noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
-        x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = np.random.rand(block_noise_size_x, block_noise_size_y, block_noise_size_z,) * 1.0
+        x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = (
+            np.random.rand(block_noise_size_x, block_noise_size_y, block_noise_size_z,) * 1.0
+        )
         cnt -= 1
     return x
 
 
 def image_out_painting(x):
     _, img_rows, img_cols, img_deps = x.shape
+    # print(x.shape)
     image_temp = copy.deepcopy(x)
     x = np.random.rand(x.shape[0], x.shape[1], x.shape[2], x.shape[3],) * 1.0
     block_noise_size_x = img_rows - random.randint(3 * img_rows // 7, 4 * img_rows // 7)
     block_noise_size_y = img_cols - random.randint(3 * img_cols // 7, 4 * img_cols // 7)
     block_noise_size_z = img_deps - random.randint(3 * img_deps // 7, 4 * img_deps // 7)
+    if (block_noise_size_z + 3) >= img_deps:
+        print(img_deps, block_noise_size_z)
+        dif = (block_noise_size_z + 3) - img_deps
+        block_noise_size_z -= random.randint(dif, dif + 4)
+        print(block_noise_size_z)
     noise_x = random.randint(3, img_rows - block_noise_size_x - 3)
     noise_y = random.randint(3, img_cols - block_noise_size_y - 3)
-    noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
-    x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = image_temp[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z]
+    if img_deps - block_noise_size_z - 3 <= 3:
+        noise_z = random.randint(3, img_deps - 3)
+    else:
+        noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
+    x[
+        :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z
+    ] = image_temp[
+        :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z
+    ]
     cnt = 4
     while cnt > 0 and random.random() < 0.95:
         block_noise_size_x = img_rows - random.randint(3 * img_rows // 7, 4 * img_rows // 7)
@@ -138,8 +155,15 @@ def image_out_painting(x):
         block_noise_size_z = img_deps - random.randint(3 * img_deps // 7, 4 * img_deps // 7)
         noise_x = random.randint(3, img_rows - block_noise_size_x - 3)
         noise_y = random.randint(3, img_cols - block_noise_size_y - 3)
-        noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
-        x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = image_temp[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z]
+        if img_deps - block_noise_size_z - 3 <= 3:
+            noise_z = random.randint(3, img_deps - 3)
+        else:
+            noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
+        x[
+            :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z
+        ] = image_temp[
+            :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z
+        ]
         cnt -= 1
     return x
 
