@@ -14,6 +14,7 @@ from unet_3d import UNet3D as Unet3D_Counterpart_to_2D
 
 from unet3d import UNet3D
 from dataset import Dataset
+from dataset_2d import Dataset2D
 from dataset_pytorch import DatasetPytorch
 from datasets_pytorch import DatasetsPytorch
 from finetune_config import FineTuneConfig
@@ -22,6 +23,7 @@ from stats import Statistics
 
 from dice_loss import DiceLoss
 from image_transformations import generate_pair
+from utils import pad_if_necessary
 
 from dataset import Dataset
 
@@ -136,6 +138,8 @@ class Trainer:
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
+                if self.config.model.lower() == "vnet_mg":
+                    x_transform, y = pad_if_necessary(x_transform, y)
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
                 loss.to(self.device)
@@ -163,6 +167,8 @@ class Trainer:
                         raise RuntimeError("THIS SHOULD NOT HAPPEN")
 
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
+                    if self.config.model.lower() == "vnet_mg":
+                        x_transform, y = pad_if_necessary(x_transform, y)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
@@ -311,8 +317,8 @@ class Trainer:
         else:
             print("STARTING SUP TRAINING FROM SCRATCH")
 
-        print("{} TRAINING EXAMPLES".format(self.dataset.get_len_train()))
-        print("{} VALIDATION EXAMPLES".format(self.dataset.get_len_val()))
+        print("{} TRAINING EXAMPLES".format(train_dataset.__len__()))
+        print("{} VALIDATION EXAMPLES".format(val_dataset.__len__()))
 
         for self.epoch_sup_current in range(self.epoch_sup_check, self.config.nb_epoch_sup):
 
@@ -432,7 +438,9 @@ class Trainer:
     def add_hparams_to_writer(self):
 
         hpa_dict = {
-            "cube_dimensions": self.dataset.cube_dimensions if isinstance(self.dataset, Dataset) else self.dataset[0].cube_dimensions,
+            "cube_dimensions": self.dataset.cube_dimensions
+            if isinstance(self.dataset, Dataset) or isinstance(self.dataset, Dataset2D)
+            else self.dataset[0].cube_dimensions,
             "initial_lr_ss": self.config.lr_ss,
             "loss_ss": self.config.loss_function_ss,
             "optimizer_ss": self.config.optimizer_ss,
@@ -691,9 +699,10 @@ class Trainer:
                 if os.path.isfile(os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
                 else None
             )
-            checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
-            checkpoint["completed_sup"] = True
-            torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
+            if weight_dir_no_decrease is not None:
+                checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
+                checkpoint["completed_sup"] = True
+                torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_sup_no_decrease.pt"))
             print("ADDED COMPLETED SUP FLAG TO CHECKPOINT")
 
         else:
