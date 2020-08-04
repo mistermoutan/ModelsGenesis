@@ -5,6 +5,7 @@ from sklearn.model_selection import KFold
 
 from utils import *
 from dataset import Dataset
+from dataset_2d import Dataset2D
 
 # FOR Deterministic Behavior this should be a dataset folder sort of component that is just read from and not a class generated
 # at each experimetn level
@@ -27,7 +28,7 @@ class CrossValidator:
 
     def override_dataset_files_with_splits(self):
 
-        if isinstance(self.dataset, Dataset):
+        if isinstance(self.dataset, Dataset) or isinstance(self.dataset, Dataset2D):
             train_split, val_split = self.splits[self.dataset.x_data_dir].pop()
             self.dataset.x_train_filenames_original = train_split
             self.dataset.x_val_filenames_original = val_split
@@ -60,7 +61,7 @@ class CrossValidator:
             return
         if current_run_nr == 1:
             self.splits = dict()  # {dataset_x_dir : [ (train_split1, val_split1), (train_split2, val_split2) ... ] }
-            if isinstance(self.dataset, Dataset):
+            if isinstance(self.dataset, Dataset) or isinstance(self.dataset, Dataset2D):
                 self.dataset.x_filenames.sort()
                 dataset_splits = self._generate_splits_from_filenames(self.dataset.x_filenames)
                 self.splits[self.dataset.x_data_dir] = dataset_splits
@@ -78,9 +79,16 @@ class CrossValidator:
     def _generate_splits_from_filenames(self, dataset_filenames):
 
         dataset_splits = []
-        kf = KFold(n_splits=self.nr_splits, random_state=1)
+        kf = KFold(n_splits=self.nr_splits, random_state=1, shuffle=True)
         for train_split, val_split in kf.split(dataset_filenames):
             train_filenames = [dataset_filenames[i] for i in train_split]
             val_filenames = [dataset_filenames[i] for i in val_split]
             dataset_splits.append((train_filenames, val_filenames))
         return dataset_splits
+
+
+if __name__ == "__main__":
+    dataset_splits = []
+    kf = KFold(n_splits=3, random_state=1)
+    for train_split, val_split in kf.split([i for i in range(5)]):
+        print(train_split, val_split)
