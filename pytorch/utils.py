@@ -1,6 +1,7 @@
 import os
 import dill
 from copy import deepcopy
+import torch.nn.functional as F
 
 
 def str2bool(v):
@@ -135,6 +136,7 @@ dataset_map = {
 """ dataset_map = {
     "task01_ss": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
     "task01_sup": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
+    "cellari_heart": "pytorch/datasets/extracted_cubes_64_64_12_sup",
 } """
 
 # "task_02": "pytorch/datasets/task02/extracted_cubes",
@@ -313,6 +315,38 @@ def get_task_dirs():
                 continue
             task_dirs.append(task_dir)
     return task_dirs
+
+
+def pad_if_necessary(x, y):
+
+    pad = []
+    for idx, i in enumerate(x.shape):
+        if i < 16:
+            resto = 16 % i
+        else:
+            resto = i % 16
+        if resto != 0 and idx not in (0, 1):
+            if resto % 2 == 0:
+                pad.insert(0, int(resto / 2))
+                pad.insert(0, int(resto / 2))
+            else:
+                maior = int((resto - 1) / 2)
+                menor = int(resto - maior)
+                pad.insert(0, maior)
+                pad.insert(0, menor)
+        else:
+            pad.insert(0, 0)
+            pad.insert(0, 0)
+
+    if set(pad) == {0}:
+        return x, y
+    pad_tuple = tuple(pad)
+    # print(x.shape, y.shape)
+
+    x = F.pad(x, pad_tuple, "constant", 0)
+    y = F.pad(y, pad_tuple, "constant", 0)
+    # print(x.shape, y.shape)
+    return x, y
 
 
 if __name__ == "__main__":
