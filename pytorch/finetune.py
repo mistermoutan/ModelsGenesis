@@ -149,7 +149,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % 200 == 0:
+                if (iteration + 1) % (int(train_dataset.__len__() / 20)) == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(
                             self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
@@ -344,7 +344,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
-                if (iteration + 1) % 200 == 0:
+                if (iteration + 1) % (int(train_dataset.__len__() / 20)) == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)
@@ -494,16 +494,21 @@ class Trainer:
 
     def load_model(self, **kwargs):
 
+        from ACSConv.acsconv.converters import ACSConverter
+
         if self.config.model.lower() == "vnet_mg":
             self.model = UNet3D()
         elif self.config.model.lower() == "unet_2d":
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True)
+        elif self.config.model.lower() == "unet_acs":
+            self.model = UNet(n_channels=1, n_classes=1, bilinear=True)
+            self.model = ACSConverter(self.model)
         elif self.config.model.lower() == "unet_3d":
             self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True)
 
         self.model.to(self.device)
 
-        from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
+        from_latest_checkpoint = kwargs.get("from_latest_ch eckpoint", False)
         from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
         from_provided_weights = kwargs.get("from_provided_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
@@ -656,6 +661,16 @@ class Trainer:
             for key in state_dict.keys():
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
             self.model.load_state_dict(unParalled_state_dict)  ### TODO: WHY IS THIS UNPARALLELED NECESSARY?
+
+        convert_acs = kwargs.get("convert_acs", False)
+        if convert_acs is True:
+            # can only convert from 2D to ACS
+            assert isinstance(self.model, UNet)
+            self.model = ACSConverter(self.model)
+            print("CONVERTED MODEL FROM UNET 2D WITH ACS CONVERTER")
+            # override config for from now on to use ACS MODEL
+            self.config.model = "UNET_ACS"
+            save_object(self.config, "config", self.config.object_dir)
 
         nr_devices = len([i for i in range(torch.cuda.device_count())])
         print("FOUND {} CUDA DEVICES".format(nr_devices))

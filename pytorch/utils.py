@@ -211,11 +211,13 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False):
         return datasets
 
 
-def get_datasets_used_str(dataset_list, mode, two_dim_data):
+def get_datasets_used_str(dataset_list, mode, two_dim_data, convert_to_acs=False):
 
     datasets_used_str = "_" + "_".join(i for i in dataset_list) + "_" + mode if mode != "" else "_" + "_".join(i for i in dataset_list)
     if two_dim_data is True:
         datasets_used_str += "_2D"
+    if convert_to_acs is True:
+        datasets_used_str += "/ACS_Conversion/"
     return datasets_used_str
 
 
@@ -264,9 +266,16 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["dataset"] = args_object.dataset
 
     # model
-    assert args_object.model.lower() in ("vnet_mg", "unet_2d", "unet_3d")
+    assert args_object.model.lower() in ("vnet_mg", "unet_2d", "unet_acs" "unet_3d")
     kwargs_dict["model"] = args_object.model
+    if args_object.model.lower() == "unet_2d":
+        assert args_object.two_dimensional_data is True, "Need to work with 2d Data for Unet_2d"
+
     kwargs_dict["two_dimensional_data"] = args_object.two_dimensional_data
+    if args_object.convert_to_acs is True:
+        assert args_object.two_dimensional_data is False, "You are going to use 3D Data now"
+
+    kwargs_dict["convert_to_acs"] = args_object.convert_to_acs
 
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:

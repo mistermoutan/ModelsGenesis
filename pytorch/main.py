@@ -11,17 +11,6 @@ from evaluate import Tester
 from cross_validator import CrossValidator
 from utils import *
 
-# script to run experiments
-
-# TODO BUILD CLI:
-#       Their Replication:
-#           - Replicate model genesis
-#           - USe their pretrained weights to test on 5 datasets they provide
-#       Me:
-#           - Use their framework w/ different dataset (for scratch training)
-#           - Use the pretrrained models obtained to test on different datasets
-#           - Move into modality , CT and MRI
-
 
 def replication_of_results_pretrain(**kwargs):
 
@@ -88,14 +77,15 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     PRETRAIN MODEL ON DIFFERENT DATASET WITH MG FRAMEWORK
     """
 
-
 def pretrain_mg_framework_specific_dataset(**kwargs):
+    #TODO SUPPORT DIFFERENT MODELS, 2d and ACS conversion -> switch to finetuneconfig
 
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
+
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
@@ -119,6 +109,7 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     mode = kwargs_dict_.get("mode", "")
+
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
@@ -158,6 +149,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
+
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
@@ -167,8 +159,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
         task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
         self_supervised=False,
         supervised=True,
-        model=kwargs_dict_["model"],
-    )
+        )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
 
@@ -208,13 +199,13 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
+
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(
         data_dir="",
         task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
         self_supervised=False,
         supervised=True,
-        model=kwargs_dict_["model"],
     )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
@@ -360,8 +351,9 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     model_weights_dir = kwargs_dict["directory"]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
+    convert_acs = kwargs_dict_["convert_to_acs"]
 
-    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs)
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
@@ -397,10 +389,22 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     save_object(dataset, "dataset", config.object_dir)
 
     trainer = Trainer(config, dataset)
-    trainer.load_model(from_directory=True, directory=model_weights_dir)
+    trainer.load_model(from_directory=True, directory=model_weights_dir, convert_acs=convert_acs)
     trainer.finetune_supervised()
     trainer.add_hparams_to_writer()
     trainer.get_stats()
+
+
+
+# IF IT's ALREADY ACS THEM THE LOADING CANT BE WITH A STANDARD UNET, must be converted before so:
+ # add model name unet_2d_acs which is the 2d_unet with acs
+ #
+
+
+
+
+
+
 
 
 def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **kwargs):
@@ -410,7 +414,9 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]  # to find the task dir to resume from
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    convert_acs = kwargs_dict_["convert_to_acs"] #needs to be called on resume to find task dir
+
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs)
 
     config = FineTuneConfig(
         data_dir="",
@@ -436,7 +442,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     config.display()
 
     trainer = Trainer(config, dataset)
-    trainer.load_model(from_latest_checkpoint=True)
+    trainer.load_model(from_latest_checkpoint=True) # if convert ACS the resume should already hae unet_acs as model
     trainer.finetune_supervised()
     trainer.add_hparams_to_writer()
     trainer.get_stats()
@@ -456,8 +462,9 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     model_weights_dir = kwargs_dict["directory"]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
+    convert_acs = kwargs_dict_["convert_to_acs"] #needs to be called on resume to find task dir
 
-    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs)
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
 
     config = FineTuneConfig(
@@ -493,7 +500,7 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     save_object(dataset, "dataset", config.object_dir)
 
     trainer = Trainer(config, dataset)
-    trainer.load_model(from_directory=True, directory=model_weights_dir)
+    trainer.load_model(from_directory=True, directory=model_weights_dir, convert_acs=convert_acs)
     trainer.finetune_self_supervised()
     trainer.load_model(from_latest_improvement_ss=True)  # here it's already loading from the dir of the task
     trainer.finetune_supervised()
@@ -508,7 +515,9 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     dataset_list.sort()
     model_weights_dir = kwargs_dict["directory"]
     mode = kwargs_dict_.get("mode", "")
-    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    convert_acs = kwargs_dict_["convert_to_acs"] #needs to be called on resume to find task dir
+
+    datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs)
 
     config = FineTuneConfig(
         data_dir="",
@@ -537,6 +546,7 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     trainer = Trainer(config, dataset)
     completed_ss = trainer.ss_has_been_completed()
 
+    #acs resuming: if it's resuming config should already have unet_acs as model
     if not completed_ss:
         trainer.load_model(from_latest_checkpoint=True)
         trainer.finetune_self_supervised()
@@ -799,7 +809,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", required=False, default="VNET_MG", dest="model", type=str)
     parser.add_argument("--task_name", required=False, dest="task_name", type=str, default=None)
     parser.add_argument("--num_cv_folds", dest="num_cv_folds", type=int, required=False, default=None)
-    parser.add_argument("--two_dimensional_data", dest="two_dimensional_data", default=False, required=False, type=str2bool)
+    parser.add_argument("--two_dimensional_data", dest="two_dimensional_data", action="store_true", required=False)
+    parser.add_argument("--convert_to_acs" dest="convert_to_acs", action="store_true", required=False)
 
     args = parser.parse_args()
 
