@@ -6,7 +6,7 @@ from .unet_parts import *
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True):
+    def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False):
         super(UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -22,7 +22,7 @@ class UNet(nn.Module):
         self.up2 = Up(512, 256 // factor, bilinear)
         self.up3 = Up(256, 128 // factor, bilinear)
         self.up4 = Up(128, 64, bilinear)
-        self.outc = OutConv(64, n_classes)
+        self.outc = OutConv(64, n_classes) if apply_sigmoid_to_output is False else OutConv(64, n_classes, sigmoid=True)
 
     def forward(self, x):
         x1 = self.inc(x)

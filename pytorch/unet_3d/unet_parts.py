@@ -1,4 +1,4 @@
-""" Parts of the U-Net model """
+""" Parts of the U-Net 3D model """
 
 import torch
 import torch.nn as nn
@@ -66,9 +66,12 @@ class Up(nn.Module):
 
 
 class OutConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, sigmoid=False):
         super(OutConv, self).__init__()
         self.conv = nn.Conv3d(in_channels, out_channels, kernel_size=1)
+        self.apply_sigmoid = sigmoid
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        return self.conv(x)
+        return self.conv(x) if self.apply_sigmoid is False else self.sigmoid(self.conv(x))
+
