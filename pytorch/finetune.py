@@ -138,7 +138,7 @@ class Trainer:
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() == "vnet_mg":
+                if self.config.model.lower() in ("vnet_mg", "unet_3d"):
                     x_transform, y = pad_if_necessary(x_transform, y)
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
@@ -167,7 +167,7 @@ class Trainer:
                         raise RuntimeError("THIS SHOULD NOT HAPPEN")
 
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                    if self.config.model.lower() == "vnet_mg":
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d"):
                         x_transform, y = pad_if_necessary(x_transform, y)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
@@ -335,6 +335,9 @@ class Trainer:
                     raise RuntimeError
 
                 x, y = x.float().to(self.device), y.float().to(self.device)
+                if self.config.model.lower() in ("vnet_mg", "unet_3d"):
+                    x_transform, y = pad_if_necessary(x_transform, y)
+
                 pred = self.model(x)
                 loss = criterion(pred, y)
                 loss.to(self.device)
@@ -499,16 +502,16 @@ class Trainer:
         if self.config.model.lower() == "vnet_mg":
             self.model = UNet3D()
         elif self.config.model.lower() == "unet_2d":
-            self.model = UNet(n_channels=1, n_classes=1, bilinear=True)
+            self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
         elif self.config.model.lower() == "unet_acs":
-            self.model = UNet(n_channels=1, n_classes=1, bilinear=True)
+            self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model)
         elif self.config.model.lower() == "unet_3d":
-            self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True)
+            self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
 
         self.model.to(self.device)
 
-        from_latest_checkpoint = kwargs.get("from_latest_ch eckpoint", False)
+        from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
         from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
         from_provided_weights = kwargs.get("from_provided_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
