@@ -266,10 +266,10 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["dataset"] = args_object.dataset
 
     # model
-    assert args_object.model.lower() in ("vnet_mg", "unet_2d", "unet_acs" "unet_3d")
+    assert args_object.model.lower() in ("vnet_mg", "unet_2d", "unet_acs", "unet_3d")
     kwargs_dict["model"] = args_object.model
     if args_object.model.lower() == "unet_2d":
-        assert args_object.two_dimensional_data is True, "Need to work with 2d Data for Unet_2d"
+        assert args_object.two_dimensional_data is True, "Need to work with 2d Data for Unet_2d, pass --two_dimensional_data argument"
 
     kwargs_dict["two_dimensional_data"] = args_object.two_dimensional_data
     if args_object.convert_to_acs is True:
@@ -326,14 +326,15 @@ def get_task_dirs():
     return task_dirs
 
 
-def pad_if_necessary(x, y):
+def pad_if_necessary(x, y, min_size=16):
 
     pad = []
     for idx, i in enumerate(x.shape):
-        if i < 16:
-            resto = 16 % i
+        if i < min_size:
+            resto = min_size % i
         else:
-            resto = i % 16
+            resto = i % min_size
+        # not padding batch and channel dims
         if resto != 0 and idx not in (0, 1):
             if resto % 2 == 0:
                 pad.insert(0, int(resto / 2))
@@ -348,7 +349,9 @@ def pad_if_necessary(x, y):
             pad.insert(0, 0)
 
     if set(pad) == {0}:
+        # no padding necessary
         return x, y
+
     pad_tuple = tuple(pad)
     # print(x.shape, y.shape)
 
