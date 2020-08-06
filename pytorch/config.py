@@ -21,7 +21,7 @@ class models_genesis_config:
 
         self.task = "GENESIS_REPLICATION_PRETRAIN_MODEL" if task is None else task
         if add_model_to_task:
-            self.task += "_{}".format(self.model)
+            self.task += "_{}".format(self.model.upper())
         self.task_dir = self._get_task_dir(None)
         self.stats_dir = os.path.join("stats/", self.task_dir)
         self.model_path_save = os.path.join("pretrained_weights/", self.task_dir)
