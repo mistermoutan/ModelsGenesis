@@ -138,7 +138,7 @@ class Trainer:
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d"):
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x_transform, y = pad_if_necessary(x_transform, y)
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
@@ -167,7 +167,7 @@ class Trainer:
                         raise RuntimeError("THIS SHOULD NOT HAPPEN")
 
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                    if self.config.model.lower() in ("vnet_mg", "unet_3d"):
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                         x_transform, y = pad_if_necessary(x_transform, y)
                     pred = self.model(x_transform)
                     loss = criterion(pred, y)
@@ -335,8 +335,8 @@ class Trainer:
                     raise RuntimeError
 
                 x, y = x.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d"):
-                    x_transform, y = pad_if_necessary(x_transform, y)
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                    x, y = pad_if_necessary(x, y)
 
                 pred = self.model(x)
                 loss = criterion(pred, y)
@@ -365,6 +365,8 @@ class Trainer:
                     if x is None:
                         break
                     x, y = x.float().to(self.device), y.float().to(self.device)
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                        x, y = pad_if_necessary(x, y)
                     pred = self.model(x)
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
