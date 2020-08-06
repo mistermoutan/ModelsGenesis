@@ -21,7 +21,7 @@ class FineTuneConfig:
 
         self.workers = 1
 
-        self.task = task + "_{}".format(self.model)
+        self.task = task + "_{}".format(self.model.upper())
         self.task_dir = self._get_task_dir(None)
         self.stats_dir = os.path.join("stats/", self.task_dir)
         self.model_path_save = os.path.join("pretrained_weights/", self.task_dir)
@@ -44,20 +44,20 @@ class FineTuneConfig:
         self.flip_rate = 0.4
 
         # self supervision finetuning
-        self.batch_size_ss = 6  # if self.self_supervised else False
-        self.optimizer_ss = "sgd"  # if self.self_supervised else False
-        self.loss_function_ss = "MSE"  # if self.self_supervised else False
-        self.nb_epoch_ss = 1000  # if self.self_supervised else False
-        self.patience_ss_terminate = 30  # if self.self_supervised else False
-        self.patience_ss = int(self.patience_ss_terminate * 0.7)  # if self.self_supervised else False
-        self.lr_ss = 1e-3  # if self.self_supervised else False
-        self.scheduler_ss = "StepLR"  # if self.self_supervised else False
+        self.batch_size_ss = 6
+        self.optimizer_ss = "sgd"
+        self.loss_function_ss = "MSE"
+        self.nb_epoch_ss = 10
+        self.patience_ss_terminate = 30
+        self.patience_ss = int(self.patience_ss_terminate * 0.7)
+        self.lr_ss = 1e-3
+        self.scheduler_ss = "StepLR"
 
         # supervised finetuning
         self.batch_size_sup = 6
         self.optimizer_sup = "adam"
         self.loss_function_sup = "dice"  # binary_cross_entropy
-        self.nb_epoch_sup = 10000
+        self.nb_epoch_sup = 10
         self.patience_sup_terminate = 50
         self.patience_sup = int(self.patience_sup_terminate * 0.7)
         self.lr_sup = 1e-3
@@ -69,6 +69,31 @@ class FineTuneConfig:
         # testing
         self.threshold = 0.5  # above is considered part of mask
         self.mode = "DEFINE ME"
+
+    def make_config_as_original_mg(self):
+
+        self.from_scratch = False
+        self.batch_size_ss = 6
+        self.optimizer_ss = "sgd"
+        self.loss_function_ss = "MSE"
+        self.nb_epoch_ss = 10000
+        self.patience_ss_terminate = 50
+        self.patience_ss = int(self.patience_ss_terminate * 0.4)
+        self.lr_ss = float(1)
+        self.scheduler_ss = "ReduceLROnPlateau"  # "ReduceLROnPlateau" or StepLr
+
+        # in here just to conform with statistics and finetune module
+        self.batch_size_sup = 6
+        self.optimizer_sup = "adam"
+        self.loss_function_sup = "dice"  # binary_cross_entropy
+        self.nb_epoch_sup = 10000
+        self.patience_sup_terminate = 50
+        self.patience_sup = int(self.patience_sup_terminate * 0.4)
+        self.lr_sup = 1e-3
+        self.scheduler_sup = "steplr"
+        self.beta1_sup = 0.9
+        self.beta2_sup = 0.999
+        self.eps_sup = 1e-8
 
     def display(self):
         """Display Configuration values."""
