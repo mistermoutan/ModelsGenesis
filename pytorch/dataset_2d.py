@@ -22,6 +22,7 @@ class Dataset2D:
         self.nr_samples_train = None
         self.nr_samples_val = None
         self.nr_samples_test = None
+        print("INSTANCIATED DATASET 2D CLASS FOR {}".format(self.x_data_dir))
 
     def get_train(self, batch_size: int, return_tensor=True) -> tuple():
 
