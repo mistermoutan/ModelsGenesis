@@ -6,6 +6,8 @@ import torch
 import numpy as np
 
 from image_transformations import generate_pair
+from dataset import Dataset
+from dataset_2d import Dataset2D
 
 
 class DatasetPytorch(DatasetP):
@@ -13,7 +15,7 @@ class DatasetPytorch(DatasetP):
         """[summary]
 
         Args:
-            dataset ([type]): dataset.py class
+            dataset ([type]): dataset.py class or dataset_2d.py class
             config ([type]): config class
             type_ (str): "train", "val" or "test"
             apply_mg_transforms (bool) True for self supervision
@@ -49,7 +51,10 @@ class DatasetPytorch(DatasetP):
                 self.nr_samples_used += 1
                 self._check_reset()
                 if self.apply_mg_transforms:
-                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
+                    if isinstance(self.dataset, Dataset):
+                        x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
+                    elif isinstance(self.dataset, Dataset2D):
+                        x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
                     return (x_transform, y)
                 return (x, y)
 
@@ -63,7 +68,10 @@ class DatasetPytorch(DatasetP):
                 self.nr_samples_used += 1
                 self._check_reset()
                 if self.apply_mg_transforms:
-                    x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
+                    if isinstance(self.dataset, Dataset):
+                        x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
+                    elif isinstance(self.dataset, Dataset2D):
+                        x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
                     return (x_transform, y)
                 return (x, y)
 
