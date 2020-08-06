@@ -53,8 +53,26 @@ class DatasetPytorch(DatasetP):
                 if self.apply_mg_transforms:
                     if isinstance(self.dataset, Dataset):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
+
                     elif isinstance(self.dataset, Dataset2D):
-                        x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
+                        # x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
+                        if hasattr(self, "buffer_2d_transforms") and len(self.buffer_2d_transforms) > 0:
+                            x_transform, y = self.buffer_2d_transforms.pop()
+                        else:
+                            self.buffer_2d_transforms = []
+                            i = 0
+                            while i < 200:
+                                x, y = self.dataset.get_train(batch_size=1, return_tensor=False)
+                                if x is None:
+                                    break
+                                x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
+                                self.buffer_2d_transforms.append((x_transform, y))
+                                i += 1
+                                # print(i)
+
+                        if len(self.buffer_2d_transforms) > 0:
+                            x_transform, y = self.buffer_2d_transforms.pop()
+
                     return (x_transform, y)
                 return (x, y)
 
