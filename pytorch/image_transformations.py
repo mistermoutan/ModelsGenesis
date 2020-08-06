@@ -110,8 +110,10 @@ def local_pixel_shuffling(x, prob=0.5, two_dim=False):
             ]
         else:
             window = orig_image[0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y]
+        
         window = window.flatten()
         np.random.shuffle(window)
+
         if not two_dim:
             window = window.reshape((block_noise_size_x, block_noise_size_y, block_noise_size_z))
             image_temp[
@@ -119,9 +121,7 @@ def local_pixel_shuffling(x, prob=0.5, two_dim=False):
             ] = window
         else:
             window = window.reshape((block_noise_size_x, block_noise_size_y))
-            image_temp[
-                0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y
-            ] = window
+            image_temp[0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y] = window
 
     local_shuffling_x = image_temp
 
@@ -133,22 +133,23 @@ def image_in_painting(x, two_dim=False):
         _, img_rows, img_cols, img_deps = x.shape
     else:
         _, img_rows, img_cols = x.shape
-    
+
     cnt = 5
     while cnt > 0 and random.random() < 0.95:
         block_noise_size_x = random.randint(img_rows // 6, img_rows // 3)
         block_noise_size_y = random.randint(img_cols // 6, img_cols // 3)
         noise_x = random.randint(3, img_rows - block_noise_size_x - 3)
         noise_y = random.randint(3, img_cols - block_noise_size_y - 3)
-        if two_dim:
+        if not two_dim:
             block_noise_size_z = random.randint(img_deps // 6, img_deps // 3)
-            noise_z = random.randint(3, img_deps - block_noise_size_z - 3)    
+            noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
             x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = (
                 np.random.rand(block_noise_size_x, block_noise_size_y, block_noise_size_z,) * 1.0
             )
         else:
             x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y] = (
-            np.random.rand(block_noise_size_x, block_noise_size_y) * 1.0)
+                np.random.rand(block_noise_size_x, block_noise_size_y) * 1.0
+            )
         cnt -= 1
     return x
 
@@ -172,7 +173,7 @@ def image_out_painting(x, two_dim=False):
             print(img_deps, block_noise_size_z)
             dif = (block_noise_size_z + 3) - img_deps
             block_noise_size_z -= random.randint(dif, dif + 4)
-                print(block_noise_size_z)
+            print(block_noise_size_z)
         if img_deps - block_noise_size_z - 3 <= 3:
             noise_z = random.randint(3, img_deps - 3)
         else:
@@ -188,7 +189,8 @@ def image_out_painting(x, two_dim=False):
         ]
     else:
         x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y] = image_temp[
-            :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y]
+            :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y
+        ]
     cnt = 4
     while cnt > 0 and random.random() < 0.95:
         block_noise_size_x = img_rows - random.randint(3 * img_rows // 7, 4 * img_rows // 7)
@@ -199,7 +201,7 @@ def image_out_painting(x, two_dim=False):
                 noise_z = random.randint(3, img_deps - 3)
             else:
                 noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
-                
+
         noise_x = random.randint(3, img_rows - block_noise_size_x - 3)
         noise_y = random.randint(3, img_cols - block_noise_size_y - 3)
         if not two_dim:
@@ -209,9 +211,7 @@ def image_out_painting(x, two_dim=False):
                 :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z
             ]
         else:
-            x[
-                :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y
-            ] = image_temp[
+            x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y] = image_temp[
                 :, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y
             ]
 
@@ -221,7 +221,7 @@ def image_out_painting(x, two_dim=False):
 
 
 def generate_pair(img, batch_size, config, status="test", make_tensors=False, two_dim=False):
-    
+
     # IMG is (N,1,x,y,z) numpy array
 
     index = [i for i in range(img.shape[0])]
@@ -239,19 +239,19 @@ def generate_pair(img, batch_size, config, status="test", make_tensors=False, tw
         x[n], y[n] = data_augmentation(x[n], y[n], config.flip_rate)
 
         # Local Shuffle Pixel
-        x[n] = local_pixel_shuffling(x[n], prob=config.local_rate,two_dim=two_dim)
+        x[n] = local_pixel_shuffling(x[n], prob=config.local_rate, two_dim=two_dim)
 
         # Apply non-Linear transformation with an assigned probability
         x[n] = nonlinear_transformation(x[n], config.nonlinear_rate)
-
+    
         # Inpainting & Outpainting
         if random.random() < config.paint_rate:
             if random.random() < config.inpaint_rate:
                 # Inpainting
-                x[n] = image_in_painting(x[n],two_dim=two_dim)
+                x[n] = image_in_painting(x[n], two_dim=two_dim)
             else:
                 # Outpainting
-                x[n] = image_out_painting(x[n],two_dim=two_dim)
+                x[n] = image_out_painting(x[n], two_dim=two_dim)
 
     # Save sample images module
     """     if config.save_samples is not None and status == "train" and random.random() < 0.01:
