@@ -47,7 +47,7 @@ class FineTuneConfig:
         self.batch_size_ss = 6
         self.optimizer_ss = "sgd"
         self.loss_function_ss = "MSE"
-        self.nb_epoch_ss = 10
+        self.nb_epoch_ss = 1000
         self.patience_ss_terminate = 30
         self.patience_ss = int(self.patience_ss_terminate * 0.7)
         self.lr_ss = 1e-3
@@ -57,7 +57,7 @@ class FineTuneConfig:
         self.batch_size_sup = 6
         self.optimizer_sup = "adam"
         self.loss_function_sup = "dice"  # binary_cross_entropy
-        self.nb_epoch_sup = 10
+        self.nb_epoch_sup = 10000
         self.patience_sup_terminate = 50
         self.patience_sup = int(self.patience_sup_terminate * 0.7)
         self.lr_sup = 1e-3
