@@ -134,7 +134,7 @@ class Trainer:
 
             for iteration, (x_transform, y) in enumerate(train_data_loader):
 
-                if iteration == 0 and ((self.epoch_ss_current + 1) % 20 == 0):
+                if iteration == 0 and ((self.epoch_ss_current) % 20 == 0):
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
@@ -149,13 +149,13 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
-                if (iteration + 1) % (int(train_dataset.__len__() / 20)) == 0:
+                if (iteration + 1) % int((int(train_dataset.__len__() / self.config.batch_size_ss)) / 5) == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(
                             self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
                         )
                     )
-                if iteration == 0 and ((self.epoch_ss_current + 1) % 20 == 0):
+                if iteration == 0 and ((self.epoch_ss_current) % 20 == 0):
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
                 sys.stdout.flush()
@@ -347,7 +347,7 @@ class Trainer:
                 self.tb_writer.add_scalar("Loss/train : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                 self.stats.training_losses_sup.append(loss.item())
 
-                if (iteration + 1) % (int(train_dataset.__len__() / 20)) == 0:
+                if (iteration + 1) % int((int(train_dataset.__len__() / self.config.batch_size_sup)) / 5) == 0:
                     print(
                         "Epoch [{}/{}], iteration {}, Loss: {:.6f}".format(
                             self.epoch_sup_current + 1, self.config.nb_epoch_sup, iteration + 1, np.average(self.stats.training_losses_sup)
@@ -698,9 +698,10 @@ class Trainer:
                 if os.path.isfile(os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
                 else None
             )
-            checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
-            checkpoint["completed_ss"] = True
-            torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
+            if weight_dir_no_decrease is not None:
+                checkpoint = torch.load(weight_dir_no_decrease, map_location=self.device)
+                checkpoint["completed_ss"] = True
+                torch.save(checkpoint, os.path.join(self.config.model_path_save, "weights_ss_no_decrease.pt"))
 
             print("ADDED COMPLETED SS FLAG TO CHECKPOINT")
 
