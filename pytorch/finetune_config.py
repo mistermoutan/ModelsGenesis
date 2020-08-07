@@ -5,11 +5,12 @@ from utils import make_dir
 
 
 class FineTuneConfig:
-    def __init__(self, data_dir: str, task: str, self_supervised: bool, supervised: bool, model="VNET_MG"):
+    def __init__(self, data_dir: str, task: str, self_supervised: bool, supervised: bool, model="VNET_MG", extra_info_on_task_dir=True):
 
         self.model = model
         self.self_supervised = self_supervised  # only for stats module
         self.supervised = supervised
+        self.extra_info_on_task_dir = extra_info_on_task_dir
 
         # resume - The ones to interact with manually in functions of main, rest will come from kwargs
         self.resume_ss = False
@@ -105,7 +106,10 @@ class FineTuneConfig:
 
     def _get_task_dir(self, exp_nr=None):
         # get dir corresponding to next numerical experiment
-        task_dir = self.task + "/with_self_supervised/run" if self.self_supervised else self.task + "/only_supervised/run"
+        if self.extra_info_on_task_dir is True:
+            task_dir = self.task + "/with_self_supervised/run" if self.self_supervised else self.task + "/only_supervised/run"
+        else:
+            task_dir = self.task + "/run" if self.self_supervised else self.task + "/run"
         if exp_nr is None:
             self.experiment_nr = 1
             while os.path.isdir(

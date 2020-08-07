@@ -97,6 +97,7 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
         self_supervised=True,
         supervised=False,
         model=kwargs_dict_["model"],
+        extra_info_on_task_dir=False,
     )
     config.make_config_as_original_mg()
     replace_config_param_attributes(config, kwargs_dict_)
@@ -127,6 +128,7 @@ def resume_pretrain_mg_framework_specific_dataset(run_nr: int, **kwargs):
         self_supervised=True,
         supervised=False,
         model=kwargs_dict_["model"],
+        extra_info_on_task_dir=False,
     )
     config.override_dirs(run_nr)
 
