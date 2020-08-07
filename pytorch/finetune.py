@@ -665,7 +665,7 @@ class Trainer:
             unParalled_state_dict = {}
             for key in state_dict.keys():
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
-            self.model.load_state_dict(unParalled_state_dict)  ### TODO: WHY IS THIS UNPARALLELED NECESSARY?
+            self.model.load_state_dict(unParalled_state_dict)
 
         convert_acs = kwargs.get("convert_acs", False)
         if convert_acs is True:
@@ -760,7 +760,9 @@ class Trainer:
             torch.save(
                 {
                     "epoch_ss": self.epoch_ss_current + 1,
-                    "model_state_dict_ss": self.model.state_dict(),
+                    "model_state_dict_ss": self.model.state_dict()
+                    if self.config.model.lower() != "unet_acs"
+                    else self.model.module.state_dict(),
                     "optimizer_state_dict_ss": self.optimizer_ss.state_dict(),
                     "scheduler_state_dict_ss": self.scheduler_ss.state_dict(),
                     "num_epoch_no_improvement_ss": self.num_epoch_no_improvement_ss,
@@ -774,7 +776,9 @@ class Trainer:
             torch.save(
                 {
                     "epoch_sup": self.epoch_sup_current + 1,
-                    "model_state_dict_sup": self.model.state_dict(),
+                    "model_state_dict_sup": self.model.state_dict()
+                    if self.config.model.lower() != "unet_acs"
+                    else self.model.module.state_dict(),
                     "optimizer_state_dict_sup": self.optimizer_sup.state_dict(),
                     "scheduler_state_dict_sup": self.scheduler_sup.state_dict(),
                     "num_epoch_no_improvement_sup": self.num_epoch_no_improvement_sup,
@@ -895,6 +899,43 @@ class Trainer:
 
 if __name__ == "__main__":
     pass
+    # from ACSConv.acsconv.converters import ACSConverter
+
+    # model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+    # a = model.state_dict()
+    # a = []
+    # for child_name, child in model.named_children():
+    #    print(child)
+    #    a.append(child_name)
+    # model_acs = ACSConverter(model)
+    # b = model_acs.state_dict()
+    # for key, value in a.items():
+    #    if key not in b:
+    #        print("KEY DISCREPANCY")
+    #    else:
+    #        try:
+    #            assert a[key] == b[key]
+    #        except RuntimeError:
+    #            assert torch.all(a[key].eq(b[key]))
+    # torch.save(
+    #    {"model_state_dict_unet_2d": model.state_dict(),}, "unet_2d.pt",
+    # )
+    # torch.save(
+    #    {"model_state_dict_unet_acs": model_acs.state_dict(),}, "unet_acs.pt",
+    # )
+    # loaded_unet_2d = torch.load("unet_2d.pt", map_location="cuda")
+    # loaded_unet_acs = torch.load("unet_acs.pt", map_location="cuda")
+    # print(loaded_unet_2d["model_state_dict_unet_2d"].keys() == loaded_unet_acs["model_state_dict_unet_acs"].keys())
+    # print(loaded_unet_2d["model_state_dict_unet_2d"].keys())
+    # print(loaded_unet_acs["model_state_dict_unet_acs"].keys())
+
+    # print(a == b)
+    # b = []
+    # print("/////////////////////////")
+    # for child_name, child in model.named_children():
+    #    print(child)
+    #    b.append(child_name)
+    #  print(a == b)
     # config = models_genesis_config()
     # dataset = Dataset(config.data_dir, train_val_test=(0.8, 0.2, 0)) # train_val_test is non relevant as will ve overwritten after
     # dataset.x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in config.train_fold]
