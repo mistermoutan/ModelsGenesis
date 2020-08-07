@@ -131,6 +131,7 @@ dataset_map = {
     "task09_sup": "/work1/s182312/medical_decathlon/Task09_Spleen/imagesTr/extracted_cubes_64_64_32_sup",
     "task10_ss": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_ss",
     "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_sup",
+    "cellari_heart_sup": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_64_64_12_sup",
 }
 
 """ dataset_map = {
@@ -351,6 +352,7 @@ def pad_if_necessary(x, y, min_size=16):
     if set(pad) == {0}:
         # no padding necessary
         return x, y
+    print("PADIIGN")
 
     pad_tuple = tuple(pad)
     # print(x.shape, y.shape)
