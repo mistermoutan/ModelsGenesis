@@ -55,7 +55,8 @@ class DatasetPytorch(DatasetP):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
 
                     elif isinstance(self.dataset, Dataset2D):
-                        # x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
+                        x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
+                        """ x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
                         if hasattr(self, "buffer_2d_transforms") and len(self.buffer_2d_transforms) > 0:
                             x_transform, y = self.buffer_2d_transforms.pop()
                         else:
@@ -71,8 +72,8 @@ class DatasetPytorch(DatasetP):
                                 # print(i)
 
                         if len(self.buffer_2d_transforms) > 0:
-                            x_transform, y = self.buffer_2d_transforms.pop()
-
+                            x_transform, y = self.buffer_2d_transforms.pop() 
+                        """
                     return (x_transform, y)
                 return (x, y)
 
