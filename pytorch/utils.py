@@ -352,8 +352,6 @@ def pad_if_necessary(x, y, min_size=16):
     if set(pad) == {0}:
         # no padding necessary
         return x, y
-    print("PADIIGN")
-
     pad_tuple = tuple(pad)
     # print(x.shape, y.shape)
 
