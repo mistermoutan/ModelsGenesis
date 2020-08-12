@@ -16,6 +16,7 @@ img_array = np.expand_dims(img_array, (0, 1))
 
 img_array = torch.Tensor(img_array)
 img_array = img_array.float().to(device)
+img_array = img_array.contiguous()
 
 with torch.no_grad():
     unet3d.eval()
