@@ -23,11 +23,9 @@ from stats import Statistics
 
 from dice_loss import DiceLoss
 from image_transformations import generate_pair
-from utils import pad_if_necessary
+from utils import pad_if_necessary, save_object
 
 from dataset import Dataset
-
-# TODO: TAKE ADVANTAGE OF MULTIPLE GPUS
 
 
 class Trainer:
@@ -518,9 +516,16 @@ class Trainer:
         from_provided_weights = kwargs.get("from_provided_weights", False)
         from_scratch = kwargs.get("from_scratch", False)
         from_directory = kwargs.get("from_directory", False)
+        from_path = kwargs.get("from_path", False)
         if from_directory is not False:
             specific_weight_dir = kwargs.get("directory", None)
             assert specific_weight_dir is not None, "Specifiy weight dir to load"
+        if from_path is not False:
+            specific_weight_path = kwargs.get("path", None)
+            phase = kwargs.get("phase", None)
+            assert phase in ("ss", "sup")
+            assert specific_weight_path is not None, "Specifiy weight path to load"
+            assert os.path.isfile(specific_weight_path), "{} is NOT a file".format(specific_weight_path)
 
         DEFAULTING_TO_LAST_SS = False
 
@@ -629,6 +634,11 @@ class Trainer:
             weight_dir = os.path.join(specific_weight_dir, "weights_ss.pt")
             self._loadparams(fresh_params=True, phase="both")
 
+        if from_path:
+            # path specifies the actual file, eg: weights_sup.pt
+            weight_dir = specific_weight_path
+            self._loadparams(fresh_params=True, phase="both")
+
         if from_scratch:
             weight_dir = None
             self._loadparams(fresh_params=True, phase="both")
@@ -661,6 +671,13 @@ class Trainer:
             if from_directory:
                 print("Loaded Model State dict from model_state_dict_ss checkpoint key")
                 state_dict = checkpoint["model_state_dict_ss"]
+            if from_path:
+                if phase == "sup":
+                    print("Loaded Model State dict from model_state_dict_sup checkpoint key")
+                    state_dict = checkpoint["model_state_dict_sup"]
+                elif phase == "ss":
+                    print("Loaded Model State dict from model_state_dict_ss checkpoint key")
+                    state_dict = checkpoint["model_state_dict_ss"]
 
             unParalled_state_dict = {}
             for key in state_dict.keys():
