@@ -4,17 +4,6 @@ from copy import deepcopy
 import torch.nn.functional as F
 
 
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ("yes", "true", "t", "y", "1"):
-        return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
-        return False
-    else:
-        raise ValueError("Boolean value expected.")
-
-
 def make_dir(dir: str):
     if not os.path.exists(dir):
         os.makedirs(dir)
@@ -359,6 +348,39 @@ def pad_if_necessary(x, y, min_size=16):
     y = F.pad(y, pad_tuple, "constant", 0)
     # print(x.shape, y.shape)
     return x, y
+
+
+def pad_if_necessary_one_array(x, min_size=16, return_pad_tuple=False):
+
+    pad = []
+    for idx, i in enumerate(x.shape):
+        if i < min_size:
+            resto = min_size % i
+        else:
+            resto = i % min_size
+        # not padding batch and channel dims
+        if resto != 0 and idx not in (0, 1):
+            if resto % 2 == 0:
+                pad.insert(0, int(resto / 2))
+                pad.insert(0, int(resto / 2))
+            else:
+                maior = int((resto - 1) / 2)
+                menor = int(resto - maior)
+                pad.insert(0, maior)
+                pad.insert(0, menor)
+        else:
+            pad.insert(0, 0)
+            pad.insert(0, 0)
+
+    if set(pad) == {0}:
+        # no padding necessary
+        return x if return_pad_tuple is False else x, tuple(pad)
+
+    pad_tuple = tuple(pad)
+    # print(x.shape, y.shape)
+
+    x = F.pad(x, pad_tuple, "constant", 0)
+    return x if return_pad_tuple is False else x, pad_tuple
 
 
 if __name__ == "__main__":
