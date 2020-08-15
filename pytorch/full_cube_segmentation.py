@@ -28,7 +28,7 @@ class FullCubeSegmentationConstructor:
 
         self.dataset_dir = dataset_dir  # original cubes, not extracted ones for training
         self.task_dir = "/".join(
-            i for i in model_path.split("/")[1:-2]
+            i for i in model_path.split("/")[1:-1]
         )  # eg model_dir: #pretrained_weights/FROM_pretrained_weights/PRETRAIN_MG_FRAMEWORK_task01_ss_VNET_MG/run_1__task01_sup_VNET_MG/only_supervised/run_1/weights_sup.pt
         self.config = get_config_object_of_task_dir(self.task_dir)
         self.dataset_name = dataset_name
@@ -51,7 +51,9 @@ class FullCubeSegmentationConstructor:
     def get_segmentation_examples(self, nr_cubes=3, save_slices=True):
 
         segmentations = []
-        self.cubes_to_use = sample(os.listdir(self.dataset_dir), k=nr_cubes)
+        self.cubes_to_use = sample(
+            [i for i in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, i))], k=nr_cubes
+        )
         self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
         for cube_path in self.cubes_to_use_path:
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
@@ -61,11 +63,11 @@ class FullCubeSegmentationConstructor:
                 for idx, patch in patcher:
                     patch = torch.unsqueeze(patch, 0)  # (1,C,H,W) -> (1,1,C,H,W)
                     if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
-                        patch, _, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
+                        patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
                     pred = self.model(patch)
                     # need to then unpad to reconstruct
                     pred = self._unpad_3d_array(pred, pad_tuple)
-                    pred = torch.squeeze(dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
+                    pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                     pred_mask = self._make_pred_mask_from_pred(pred)
                     patcher.predicitons_to_reconstruct_from[
                         :, idx
@@ -74,17 +76,18 @@ class FullCubeSegmentationConstructor:
 
         for idx, seg in enumerate(segmentations):
             # torch.save(seg, os.path.join(self.save_dir, self.cubes_to_use_path[idx]))
-            save_dir = os.path.join(self.save_dir, self.dataset_name, "/")
+            save_dir = os.path.join(self.save_dir, self.dataset_name)
             make_dir(save_dir)
             nifty_img = nibabel.Nifti1Image(np.array(seg).astype(np.float32), np.eye(4))
-            nibabel.save(nifty_img, os.path.join(save_dir, self.cubes_to_use[idx]))
+            nibabel.save(nifty_img, os.path.join(save_dir, self.cubes_to_use[idx][:-4] + ".nii.gz"))
             self.save_3d_plot(np.array(seg), os.path.join(save_dir, "{}_plt3d.png".format(self.cubes_to_use[idx])))
+            make_dir(os.path.join(save_dir, self.cubes_to_use[idx][:-4], "slices/"))
             if save_slices is True:
                 for z_idx in range(seg.shape[-1]):
                     fig = plt.figure(figsize=(10, 5))
                     plt.imshow(seg[:, :, z_idx], cmap=cm.Greys_r)
                     fig.savefig(
-                        os.path.join(save_dir, self.cubes_to_use[idx], "/slices/" "slice_{}.jpg".format(z_idx)),
+                        os.path.join(save_dir, self.cubes_to_use[idx][:-4], "slices/", "slice_{}.jpg".format(z_idx)),
                         bbox_inches="tight",
                         dpi=150,
                     )
@@ -110,7 +113,7 @@ class FullCubeSegmentationConstructor:
         return img_array
 
     @staticmethod
-    def _make_pred_mask_from_pred(pred, threshold=0.5):
+    def _make_pred_mask_from_pred(pred, threshold=0.9):
         pred_mask_idxs = pred >= threshold
         pred_non_mask_idxs = pred < threshold
         pred[pred_mask_idxs] = float(1)
@@ -158,16 +161,16 @@ class Patcher:
 
     def _build_patches(self):
 
-        cube_dimensions = self.cube.shape
-        print("CUBE DIMENSIONS: {}".format(cube_dimensions))
+        self.original_cube_dimensions = self.cube.shape
+        print("CUBE DIMENSIONS: {}".format(self.original_cube_dimensions))
 
-        if len(cube_dimensions) == 3:
+        if len(self.original_cube_dimensions) == 3:
 
             self.kernel_size = [64, 64, 32]  # kernel size
             stride = [64, 64, 32]  # stride
             for idx in range(len(self.kernel_size)):
-                if self.kernel_size[idx] > cube_dimensions[idx]:
-                    self.kernel_size[idx] = cube_dimensions[idx]
+                if self.kernel_size[idx] > self.original_cube_dimensions[idx]:
+                    self.kernel_size[idx] = self.original_cube_dimensions[idx]
                     stride[idx] = self.kernel_size[idx]
 
             self.cube = torch.Tensor(self.cube)
@@ -200,7 +203,7 @@ class Patcher:
         patches_orig = patches_orig.view(1, self.output_c, self.output_h, self.output_w)  # torch.Size of padded cube (1, C, H, W)
         patches_orig = torch.squeeze(patches_orig)  # (x,y,z)
         patches_orig = self._unpad(patches_orig)
-        assert patches_orig.size() == self.cube.size()
+        assert patches_orig.size() == self.original_cube_dimensions, "{} != {}".format(patches_orig.size(), self.original_cube_dimensions)
         return patches_orig
         # Check for equality
         # print((patches_orig == self.cube[:, : self.output_c, : self.output_h, : self.output_w]).all())
@@ -244,7 +247,13 @@ class Patcher:
 
 
 if __name__ == "__main__":
-    pass
+    f = FullCubeSegmentationConstructor(
+        model_path="pretrained_weights/FROM_SCRATCH_cellari_heart_sup_UNET_ACS/only_supervised/run_2/weights_sup.pt",
+        dataset_dir="pytorch/datasets/heart_mri/datasets/x_cubes_full",
+        dataset_name="heart_cellari",
+    )
+    f.get_segmentation_examples()
+
     # cube = np.load("pytorch/datasets/heart_mri/datasets/x_cubes_full/HeartData1_img_phase_2.npy")
     # p = Patcher(cube)
     # for idx, patch in p:
