@@ -3,6 +3,7 @@ from random import sample
 import numpy as np
 import SimpleITK as sitk
 import torch
+from copy import deepcopy
 
 # from skimage.util.shape import view_as_windows
 import torch.nn.functional as F
@@ -22,8 +23,10 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 # from scipy.spatial import Delaunay
 from scipy.ndimage.morphology import distance_transform_edt as dtrans
 
+# add 2d
 
-class FullCubeSegmentationConstructor:
+
+class FullCubeSegmentationVisualizer:
     def __init__(self, model_path: str, dataset_dir: str, dataset_name: str):
 
         self.dataset_dir = dataset_dir  # original cubes, not extracted ones for training
@@ -31,15 +34,10 @@ class FullCubeSegmentationConstructor:
             i for i in model_path.split("/")[1:-1]
         )  # eg model_dir: #pretrained_weights/FROM_pretrained_weights/PRETRAIN_MG_FRAMEWORK_task01_ss_VNET_MG/run_1__task01_sup_VNET_MG/only_supervised/run_1/weights_sup.pt
         self.config = get_config_object_of_task_dir(self.task_dir)
+        self.two_dim = True if self.config.model.lower() == "unet_2d" else False
         self.dataset_name = dataset_name
-        # self.dataset = get_dataset_object_of_task_dir(self.task_dir)
-
-        # for key. value in dataset_map.items():
-        #    if value == "/".join(self.dataset.x_data_dir.split("/")[:-2]:
-        #        self.dataset_name = key
 
         assert self.config is not None
-        # assert self.dataset is not None
 
         self.save_dir = os.path.join("viz_samples/", self.task_dir)
         make_dir(self.save_dir)
@@ -57,15 +55,22 @@ class FullCubeSegmentationConstructor:
         self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
         for cube_path in self.cubes_to_use_path:
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
-            patcher = Patcher(np_array)
+            patcher = Patcher(np_array, two_dim=self.two_dim)
             with torch.no_grad():
                 self.model.eval()
                 for idx, patch in patcher:
                     patch = torch.unsqueeze(patch, 0)  # (1,C,H,W) -> (1,1,C,H,W)
                     if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                         patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
+                    if self.two_dim is True:
+                        pad_tuple = tuple([0 for i in range(len(patch.shape) * 2)])
+                        patch = patch.squeeze(dim=-1)
+
                     pred = self.model(patch)
                     # need to then unpad to reconstruct
+                    if self.two_dim is True:
+                        pred = pred.unsqueeze(dim=-1)
+
                     pred = self._unpad_3d_array(pred, pad_tuple)
                     pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                     pred_mask = self._make_pred_mask_from_pred(pred)
@@ -87,7 +92,7 @@ class FullCubeSegmentationConstructor:
                     fig = plt.figure(figsize=(10, 5))
                     plt.imshow(seg[:, :, z_idx], cmap=cm.Greys_r)
                     fig.savefig(
-                        os.path.join(save_dir, self.cubes_to_use[idx][:-4], "slices/", "slice_{}.jpg".format(z_idx)),
+                        os.path.join(save_dir, self.cubes_to_use[idx][:-4], "slices/", "slice_{}.jpg".format(z_idx + 1)),
                         bbox_inches="tight",
                         dpi=150,
                     )
@@ -95,7 +100,7 @@ class FullCubeSegmentationConstructor:
     @staticmethod
     def _unpad_3d_array(tensor, pad_tuple):
         # if pad(2,3) then [2:x-3]
-        assert len(pad_tuple) == 2 * len(tensor.size())
+        assert len(pad_tuple) == 2 * len(tensor.size()), "{} | {}".format(len(pad_tuple), tensor.size())
         pt = pad_tuple
         shape = tensor.size()
         tensor = tensor[:, :, pt[4] : shape[2] - pt[5], pt[2] : shape[3] - pt[3], pt[0] : shape[4] - pt[1]]
@@ -113,7 +118,7 @@ class FullCubeSegmentationConstructor:
         return img_array
 
     @staticmethod
-    def _make_pred_mask_from_pred(pred, threshold=0.9):
+    def _make_pred_mask_from_pred(pred, threshold=0.5):
         pred_mask_idxs = pred >= threshold
         pred_non_mask_idxs = pred < threshold
         pred[pred_mask_idxs] = float(1)
@@ -122,6 +127,7 @@ class FullCubeSegmentationConstructor:
 
     def save_3d_plot(self, mask_array, save_dir, figsize=(15, 10), step=1, edgecolor="0.2", cmap="viridis", backend="matplotlib"):
 
+        # TODO: fix this shit
         verts, faces, _, _ = marching_cubes(mask_array.astype(np.float), 0.5, spacing=(1, 1, 1), step_size=step)
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection="3d")
@@ -149,9 +155,10 @@ class Patcher:
 
     # https://discuss.pytorch.org/t/patch-making-does-pytorch-have-anything-to-offer/33850/10
 
-    def __init__(self, cube: np.ndarray or torch.Tensor):
+    def __init__(self, cube: np.ndarray or torch.Tensor, two_dim=False):
 
         self.cube = cube
+        self.two_dim = two_dim
         self._build_patches()
 
     def __iter__(self):
@@ -164,34 +171,39 @@ class Patcher:
         self.original_cube_dimensions = self.cube.shape
         print("CUBE DIMENSIONS: {}".format(self.original_cube_dimensions))
 
-        if len(self.original_cube_dimensions) == 3:
-
+        if self.two_dim is False:
             self.kernel_size = [64, 64, 32]  # kernel size
             stride = [64, 64, 32]  # stride
+        else:
+            # patches for two dimensional model
+            self.kernel_size = [64, 64, 1]
+            stride = [64, 64, 1]
             for idx in range(len(self.kernel_size)):
                 if self.kernel_size[idx] > self.original_cube_dimensions[idx]:
                     self.kernel_size[idx] = self.original_cube_dimensions[idx]
                     stride[idx] = self.kernel_size[idx]
 
-            self.cube = torch.Tensor(self.cube)
-            self._pad_to_cover_all()
-            self.cube = torch.unsqueeze(self.cube, 0)  # (x, y, z) -> (1,x,y,z)
-            assert self.cube.size()[0] == 1
+        self.cube = torch.Tensor(self.cube)
+        self._pad_to_cover_all()
+        print("CUBE DIMENSIONS POST PADDING TO COVER ALL: {}".format(self.cube.shape))
+        self.cube = torch.unsqueeze(self.cube, 0)  # (x, y, z) -> (1,x,y,z)
+        assert self.cube.size()[0] == 1
 
-            self.patches = (
-                self.cube.unfold(1, self.kernel_size[0], stride[0])
-                .unfold(2, self.kernel_size[1], stride[1])
-                .unfold(3, self.kernel_size[2], stride[2])
-            )
-            self.unfold_shape = self.patches.size()
+        self.patches = (
+            self.cube.unfold(1, self.kernel_size[0], stride[0])
+            .unfold(2, self.kernel_size[1], stride[1])
+            .unfold(3, self.kernel_size[2], stride[2])
+        )
 
-            self.patches = self.patches.contiguous().view(
-                self.patches.size(0), -1, self.kernel_size[0], self.kernel_size[1], self.kernel_size[2]
-            )  # (1, Number patches, kernel_size[0],kernel_size[1]. kernel_size[2])
-            print("PATCH TENSOR DIMENSION: {}".format(self.patches.size()))
+        self.unfold_shape = self.patches.size()
 
-            # prepare tensor that is to be updsted with model predictions
-            self.predicitons_to_reconstruct_from = torch.zeros(self.patches.size())
+        self.patches = self.patches.contiguous().view(
+            self.patches.size(0), -1, self.kernel_size[0], self.kernel_size[1], self.kernel_size[2]
+        )  # (1, Number patches, kernel_size[0],kernel_size[1]. kernel_size[2])
+        print("PATCH TENSOR DIMENSION: {}".format(self.patches.size()))
+
+        # init tensor that is to be updsted with model predictions
+        self.predicitons_to_reconstruct_from = torch.zeros(self.patches.size())
 
     def get_pred_mask_full_cube(self):
 
@@ -205,10 +217,12 @@ class Patcher:
         patches_orig = self._unpad(patches_orig)
         assert patches_orig.size() == self.original_cube_dimensions, "{} != {}".format(patches_orig.size(), self.original_cube_dimensions)
         return patches_orig
+
         # Check for equality
         # print((patches_orig == self.cube[:, : self.output_c, : self.output_h, : self.output_w]).all())
 
     def _unpad(self, tensor):
+
         # (x,y,z)
         if hasattr(self, "pad_tuple"):
             assert len(self.pad_tuple) == 2 * len(tensor.size())
@@ -247,15 +261,16 @@ class Patcher:
 
 
 if __name__ == "__main__":
-    f = FullCubeSegmentationConstructor(
-        model_path="pretrained_weights/FROM_SCRATCH_cellari_heart_sup_UNET_ACS/only_supervised/run_2/weights_sup.pt",
+
+    f = FullCubeSegmentationVisualizer(
+        model_path="pretrained_weights/FROM_SCRATCH_cellari_heart_sup_2D_UNET_2D/only_supervised/run_1/weights_sup.pt",
         dataset_dir="pytorch/datasets/heart_mri/datasets/x_cubes_full",
         dataset_name="heart_cellari",
     )
     f.get_segmentation_examples()
 
     # cube = np.load("pytorch/datasets/heart_mri/datasets/x_cubes_full/HeartData1_img_phase_2.npy")
-    # p = Patcher(cube)
+    # p = Patcher(cube, two_dim=True)
     # for idx, patch in p:
     #    print(idx, patch.shape)
 
