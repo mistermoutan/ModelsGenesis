@@ -13,6 +13,7 @@ pretrained_weights/
 *.pt
 *.ipynb
 *.json
+*.jpg
 objects/
 runs/
 stats/
