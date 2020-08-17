@@ -35,11 +35,12 @@ class FullCubeSegmentationVisualizer:
             i for i in model_path.split("/")[1:-1]
         )  # eg model_dir: #pretrained_weights/FROM_pretrained_weights/PRETRAIN_MG_FRAMEWORK_task01_ss_VNET_MG/run_1__task01_sup_VNET_MG/only_supervised/run_1/weights_sup.pt
         self.config = get_config_object_of_task_dir(self.task_dir)
-        self.dataset = get_dataset_object_of_task_dir(self.dataset_dir)  # for knowing which were the training and testing cubes used
+        self.dataset = get_dataset_object_of_task_dir(self.task_dir)  # for knowing which were the training and testing cubes used
         self.two_dim = True if self.config.model.lower() == "unet_2d" else False
         self.dataset_name = dataset_name
 
         assert self.config is not None
+        assert self.dataset is not None
 
         self.save_dir = os.path.join("viz_samples/", self.task_dir)
         make_dir(self.save_dir)
@@ -53,7 +54,7 @@ class FullCubeSegmentationVisualizer:
     def sample_k_full_cubes_which_were_used_for_training(self, k):
         train_minicubes_filenames = self.dataset.x_train_filenames_original
         corresponding_full_cubes = []
-        for cube_name in self.cubes_to_use:
+        for cube_name in self.all_cubes:
             list_of_files_corresponding_to_that_cube = [s for s in train_minicubes_filenames if cube_name in s]
             assert len(list_of_files_corresponding_to_that_cube) in (0, 1), "There should only be 1 match or no match. {}".format(
                 list_of_files_corresponding_to_that_cube
@@ -67,7 +68,7 @@ class FullCubeSegmentationVisualizer:
         if self.dataset.x_test_filenames_original != []:
             test_mini_cube_file_names.extend(self.dataset.x_test_filenames_original)
         corresponding_full_cubes = []
-        for cube_name in self.cubes_to_use:
+        for cube_name in self.all_cubes:
             list_of_files_corresponding_to_that_cube = [s for s in test_mini_cube_file_names if cube_name in s]
             assert len(list_of_files_corresponding_to_that_cube) in (0, 1), "There should only be 1 match or no match. {}".format(
                 list_of_files_corresponding_to_that_cube
@@ -80,17 +81,8 @@ class FullCubeSegmentationVisualizer:
 
         segmentations = []
         self.cubes_to_use = []
-
         self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
         self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_training(nr_cubes))
-
-        print(self.cubes_to_use)
-        print(self.dataset.x_train_filenames_original)
-        print(self.dataset.x_val_filenames_original)
-        print(self.dataset.x_test_filenames_original)
-
-        exit(0)
-
         self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
         self.label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in self.cubes_to_use]
 
