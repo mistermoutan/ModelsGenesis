@@ -4,6 +4,7 @@ import numpy as np
 import SimpleITK as sitk
 import torch
 from copy import deepcopy
+import json
 
 # from skimage.util.shape import view_as_windows
 import torch.nn.functional as F
@@ -13,6 +14,7 @@ import matplotlib.cm as cm
 
 from finetune import Trainer
 from utils import *
+from dice_loss import DiceLoss
 
 # 3D Plotting
 from skimage.measure import mesh_surface_area
@@ -23,17 +25,17 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 # from scipy.spatial import Delaunay
 from scipy.ndimage.morphology import distance_transform_edt as dtrans
 
-# add 2d
-
 
 class FullCubeSegmentationVisualizer:
-    def __init__(self, model_path: str, dataset_dir: str, dataset_name: str):
+    def __init__(self, model_path: str, dataset_dir: str, dataset_labels_dir: str, dataset_name: str):
 
         self.dataset_dir = dataset_dir  # original cubes, not extracted ones for training
+        self.dataset_labels_dir = dataset_labels_dir
         self.task_dir = "/".join(
             i for i in model_path.split("/")[1:-1]
         )  # eg model_dir: #pretrained_weights/FROM_pretrained_weights/PRETRAIN_MG_FRAMEWORK_task01_ss_VNET_MG/run_1__task01_sup_VNET_MG/only_supervised/run_1/weights_sup.pt
         self.config = get_config_object_of_task_dir(self.task_dir)
+        self.dataset = get_dataset_object_of_task_dir(self.dataset_dir)  # for knowing which were the training and testing cubes used
         self.two_dim = True if self.config.model.lower() == "unet_2d" else False
         self.dataset_name = dataset_name
 
@@ -46,13 +48,52 @@ class FullCubeSegmentationVisualizer:
         self.trainer.load_model(from_path=True, path=model_path, phase="sup")
         self.model = self.trainer.model
 
+        self.all_cubes = [i for i in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, i))]
+
+    def sample_k_full_cubes_which_were_used_for_training(self, k):
+        train_minicubes_filenames = self.dataset.x_train_filenames_original
+        corresponding_full_cubes = []
+        for cube_name in self.cubes_to_use:
+            list_of_files_corresponding_to_that_cube = [s for s in train_minicubes_filenames if cube_name in s]
+            assert len(list_of_files_corresponding_to_that_cube) in (0, 1), "There should only be 1 match or no match. {}".format(
+                list_of_files_corresponding_to_that_cube
+            )
+            corresponding_full_cubes.extend(list_of_files_corresponding_to_that_cube)
+        samp = sample(corresponding_full_cubes, k=k)
+        return samp
+
+    def sample_k_full_cubes_which_were_used_for_testing(self, k):
+        test_mini_cube_file_names = self.dataset.x_val_filenames_original
+        if self.dataset.x_test_filenames_original != []:
+            test_mini_cube_file_names.extend(self.dataset.x_test_filenames_original)
+        corresponding_full_cubes = []
+        for cube_name in self.cubes_to_use:
+            list_of_files_corresponding_to_that_cube = [s for s in test_mini_cube_file_names if cube_name in s]
+            assert len(list_of_files_corresponding_to_that_cube) in (0, 1), "There should only be 1 match or no match. {}".format(
+                list_of_files_corresponding_to_that_cube
+            )
+            corresponding_full_cubes.extend(list_of_files_corresponding_to_that_cube)
+        samp = sample(corresponding_full_cubes, k=k)
+        return samp
+
     def get_segmentation_examples(self, nr_cubes=3, save_slices=True):
 
         segmentations = []
-        self.cubes_to_use = sample(
-            [i for i in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, i))], k=nr_cubes
-        )
+        self.cubes_to_use = []
+
+        self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
+        self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_training(nr_cubes))
+
+        print(self.cubes_to_use)
+        print(self.dataset.x_train_filenames_original)
+        print(self.dataset.x_val_filenames_original)
+        print(self.dataset.x_test_filenames_original)
+
+        exit(0)
+
         self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
+        self.label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in self.cubes_to_use]
+
         for cube_path in self.cubes_to_use_path:
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             patcher = Patcher(np_array, two_dim=self.two_dim)
@@ -81,21 +122,32 @@ class FullCubeSegmentationVisualizer:
 
         for idx, seg in enumerate(segmentations):
             # torch.save(seg, os.path.join(self.save_dir, self.cubes_to_use_path[idx]))
-            save_dir = os.path.join(self.save_dir, self.dataset_name)
+            if idx < nr_cubes:
+                save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples/", self.cubes_to_use[idx][:-4])
+            else:
+                save_dir = os.path.join(self.save_dir, self.dataset_name, "training_examples/", self.cubes_to_use[idx][:-4])
+
             make_dir(save_dir)
+
+            # save nii of segmentation
             nifty_img = nibabel.Nifti1Image(np.array(seg).astype(np.float32), np.eye(4))
             nibabel.save(nifty_img, os.path.join(save_dir, self.cubes_to_use[idx][:-4] + ".nii.gz"))
-            self.save_3d_plot(np.array(seg), os.path.join(save_dir, "{}_plt3d.png".format(self.cubes_to_use[idx])))
-            make_dir(os.path.join(save_dir, self.cubes_to_use[idx][:-4], "slices/"))
+
+            # self.save_3d_plot(np.array(seg), os.path.join(save_dir, "{}_plt3d.png".format(self.cubes_to_use[idx])))
+
             if save_slices is True:
+                make_dir(os.path.join(save_dir, "slices/"))
                 for z_idx in range(seg.shape[-1]):
                     fig = plt.figure(figsize=(10, 5))
                     plt.imshow(seg[:, :, z_idx], cmap=cm.Greys_r)
                     fig.savefig(
-                        os.path.join(save_dir, self.cubes_to_use[idx][:-4], "slices/", "slice_{}.jpg".format(z_idx + 1)),
-                        bbox_inches="tight",
-                        dpi=150,
+                        os.path.join(save_dir, "slices/", "slice_{}.jpg".format(z_idx + 1)), bbox_inches="tight", dpi=150,
                     )
+
+            label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(self.label_cubes_of_cubes_to_use_path[idx]))
+            dice = {"dice": float(DiceLoss.dice_loss(seg, label_tensor_of_cube, return_loss=False))}
+            with open(os.path.join(save_dir, "dice.json"), "w") as f:
+                json.dump(dice, f)
 
     @staticmethod
     def _unpad_3d_array(tensor, pad_tuple):
@@ -265,6 +317,7 @@ if __name__ == "__main__":
     f = FullCubeSegmentationVisualizer(
         model_path="pretrained_weights/FROM_SCRATCH_cellari_heart_sup_2D_UNET_2D/only_supervised/run_1/weights_sup.pt",
         dataset_dir="pytorch/datasets/heart_mri/datasets/x_cubes_full",
+        dataset_labels_dir="pytorch/datasets/heart_mri/datasets/y_cubes_full",
         dataset_name="heart_cellari",
     )
     f.get_segmentation_examples()
