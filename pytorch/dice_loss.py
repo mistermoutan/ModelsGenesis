@@ -14,7 +14,7 @@ class DiceLoss:
         """
         if not torch.is_tensor(pred) or not torch.is_tensor(target):
             raise TypeError("Input type is not a torch.Tensor. Got {} and {}".format(type(pred), type(target)))
-        if len(pred.shape) not in (4, 5):
+        if len(pred.shape) not in (3, 4, 5):
             raise ValueError("Invalid input shape, we expect BxCxHxWxD. Got: {}".format(pred.shape))
         if not (pred.shape == target.shape):
             raise ValueError("input and target shapes must be the same. Got: {} and {}".format(pred.shape, target.shape))
