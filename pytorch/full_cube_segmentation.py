@@ -55,7 +55,7 @@ class FullCubeSegmentationVisualizer:
         train_minicubes_filenames = self.dataset.x_train_filenames_original
         corresponding_full_cubes = []
         for cube_name in self.all_cubes:
-            list_of_files_corresponding_to_that_cube = [s for s in train_minicubes_filenames if cube_name in s]
+            list_of_files_corresponding_to_that_cube = [cube_name for s in train_minicubes_filenames if cube_name in s]
             assert len(list_of_files_corresponding_to_that_cube) in (0, 1), "There should only be 1 match or no match. {}".format(
                 list_of_files_corresponding_to_that_cube
             )
@@ -69,7 +69,7 @@ class FullCubeSegmentationVisualizer:
             test_mini_cube_file_names.extend(self.dataset.x_test_filenames_original)
         corresponding_full_cubes = []
         for cube_name in self.all_cubes:
-            list_of_files_corresponding_to_that_cube = [s for s in test_mini_cube_file_names if cube_name in s]
+            list_of_files_corresponding_to_that_cube = [cube_name for s in test_mini_cube_file_names if cube_name in s]
             assert len(list_of_files_corresponding_to_that_cube) in (0, 1), "There should only be 1 match or no match. {}".format(
                 list_of_files_corresponding_to_that_cube
             )
@@ -85,9 +85,15 @@ class FullCubeSegmentationVisualizer:
         self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_training(nr_cubes))
         self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
         self.label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in self.cubes_to_use]
-
+        # rint("TRAINING: \n")
+        # print(self.dataset.x_train_filenames_original)
+        # print("TESTING \n")
+        # print(self.dataset.x_val_filenames_original)
+        # print("SELECTED: \n")
+        # print(self.cubes_to_use)
         for cube_path in self.cubes_to_use_path:
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
+            # np_array = self._normalize_cube(np_array, modality="mri")
             patcher = Patcher(np_array, two_dim=self.two_dim)
             with torch.no_grad():
                 self.model.eval()
@@ -135,11 +141,34 @@ class FullCubeSegmentationVisualizer:
                     fig.savefig(
                         os.path.join(save_dir, "slices/", "slice_{}.jpg".format(z_idx + 1)), bbox_inches="tight", dpi=150,
                     )
+                    plt.close(fig=fig)
 
             label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(self.label_cubes_of_cubes_to_use_path[idx]))
+            print(DiceLoss.dice_loss(seg, label_tensor_of_cube, return_loss=False))
             dice = {"dice": float(DiceLoss.dice_loss(seg, label_tensor_of_cube, return_loss=False))}
+            # print(dice)
             with open(os.path.join(save_dir, "dice.json"), "w") as f:
                 json.dump(dice, f)
+
+    @staticmethod
+    def _normalize_cube(np_array, modality="mri"):
+        if modality == "ct":
+            hu_max, hu_min = 1000, -1000
+        if modality == "mri":
+            hu_max, hu_min = 4000, 0
+
+        # min-max normalization
+        while np.max(np_array) < hu_max:
+            hu_max -= 10
+        while np.min(np_array) > hu_min:
+            hu_min += 10
+
+        if hu_max != 0 and hu_min != 0:
+            np_array[np_array < hu_min] = hu_min
+            np_array[np_array > hu_max] = hu_max
+            np_array = 1.0 * (np_array - hu_min) / (hu_max - hu_min)
+
+        return np_array
 
     @staticmethod
     def _unpad_3d_array(tensor, pad_tuple):
@@ -193,6 +222,7 @@ class FullCubeSegmentationVisualizer:
 
         plt.tight_layout()
         fig.savefig(save_dir, bbox_inches="tight", dpi=150)
+        plt.close(fig=fig)
 
 
 class Patcher:
