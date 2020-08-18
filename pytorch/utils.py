@@ -98,6 +98,7 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         setattr(config_object, key, value)
 
 
+# keys correspond to what dataset should be named on CLI
 dataset_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
     "task01_ss": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
@@ -121,6 +122,7 @@ dataset_map = {
     "task10_ss": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_ss",
     "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_sup",
     "cellari_heart_sup": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_64_64_12_sup",
+    "cellari_heart_sup_192": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_10_192_192_12_sup",
 }
 
 """ dataset_map = {
@@ -128,6 +130,38 @@ dataset_map = {
     "task01_sup": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
     "cellari_heart": "pytorch/datasets/extracted_cubes_64_64_12_sup",
 } """
+
+# for tester module and full cube segmentation module
+dataset_full_cubes_map_training = {
+    "lidc": "/work1/s182312/lidc_idri/np_cubes",
+    "task01": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr",
+    "task02": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr",
+    "task03": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr",
+    "task04": "/work1/s182312/medical_decathlon/Task04_Hippocampus/imagesTr",
+    "task05": "/work1/s182312/medical_decathlon/Task05_Prostate/imagesTr",
+    "task06": "/work1/s182312/medical_decathlon/Task06_Lung/imagesTr",
+    "task07": "/work1/s182312/medical_decathlon/Task07_Pancreas/imagesTr",
+    "task08": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/imagesTr",
+    "task09": "/work1/s182312/medical_decathlon/Task09_Spleen/imagesTr",
+    "task10": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr",
+    "cellari_heart": "/work1/s182312/heart_mri/datasets/x_cubes_full",
+}
+
+dataset_full_cubes_map_test = {
+    "lidc": "/work1/s182312/lidc_idri/np_cubes",
+    "task01": "/work1/s182312/medical_decathlon/Task01_BrainTumour/labelsTr",
+    "task02": "/work1/s182312/medical_decathlon/Task02_Heart/labelsTr",
+    "task03": "/work1/s182312/medical_decathlon/Task03_Liver/labelsTr",
+    "task04": "/work1/s182312/medical_decathlon/Task04_Hippocampus/labelsTr",
+    "task05": "/work1/s182312/medical_decathlon/Task05_Prostate/labelsTr",
+    "task06": "/work1/s182312/medical_decathlon/Task06_Lung/labelsTr",
+    "task07": "/work1/s182312/medical_decathlon/Task07_Pancreas/labelsTr",
+    "task08": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/labelsTr",
+    "task09": "/work1/s182312/medical_decathlon/Task09_Spleen/labelsTr",
+    "task10": "/work1/s182312/medical_decathlon/Task10_Colon/labelsTr",
+    "cellari_heart": "/work1/s182312/heart_mri/datasets/y_cubes_full",
+}
+
 
 # "task_02": "pytorch/datasets/task02/extracted_cubes",
 # "luna": "pytorch/datasets/luna16_cubes",
