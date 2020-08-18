@@ -122,7 +122,7 @@ dataset_map = {
     "task10_ss": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_ss",
     "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_sup",
     "cellari_heart_sup": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_64_64_12_sup",
-    "cellari_heart_sup_192": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_10_192_192_12_sup",
+    "cellari_heart_sup_10_192": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_10_192_192_12_sup",
 }
 
 """ dataset_map = {
