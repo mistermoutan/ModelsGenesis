@@ -132,34 +132,36 @@ dataset_map = {
 } """
 
 # for tester module and full cube segmentation module
-dataset_full_cubes_map_training = {
+dataset_full_cubes_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
-    "task01": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr",
-    "task02": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr",
-    "task03": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr",
-    "task04": "/work1/s182312/medical_decathlon/Task04_Hippocampus/imagesTr",
-    "task05": "/work1/s182312/medical_decathlon/Task05_Prostate/imagesTr",
-    "task06": "/work1/s182312/medical_decathlon/Task06_Lung/imagesTr",
-    "task07": "/work1/s182312/medical_decathlon/Task07_Pancreas/imagesTr",
-    "task08": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/imagesTr",
-    "task09": "/work1/s182312/medical_decathlon/Task09_Spleen/imagesTr",
-    "task10": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr",
-    "cellari_heart": "/work1/s182312/heart_mri/datasets/x_cubes_full",
+    "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr",
+    "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr",
+    "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr",
+    "task04_sup": "/work1/s182312/medical_decathlon/Task04_Hippocampus/imagesTr",
+    "task05_sup": "/work1/s182312/medical_decathlon/Task05_Prostate/imagesTr",
+    "task06_sup": "/work1/s182312/medical_decathlon/Task06_Lung/imagesTr",
+    "task07_sup": "/work1/s182312/medical_decathlon/Task07_Pancreas/imagesTr",
+    "task08_sup": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/imagesTr",
+    "task09_sup": "/work1/s182312/medical_decathlon/Task09_Spleen/imagesTr",
+    "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr",
+    "cellari_heart_sup": "/work1/s182312/heart_mri/datasets/x_cubes_full",
+    "cellari_heart_sup_10_192": "/work1/s182312/heart_mri/datasets/x_cubes_full",
 }
 
-dataset_full_cubes_map_test = {
+dataset_full_cubes_labels_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
-    "task01": "/work1/s182312/medical_decathlon/Task01_BrainTumour/labelsTr",
-    "task02": "/work1/s182312/medical_decathlon/Task02_Heart/labelsTr",
-    "task03": "/work1/s182312/medical_decathlon/Task03_Liver/labelsTr",
-    "task04": "/work1/s182312/medical_decathlon/Task04_Hippocampus/labelsTr",
-    "task05": "/work1/s182312/medical_decathlon/Task05_Prostate/labelsTr",
-    "task06": "/work1/s182312/medical_decathlon/Task06_Lung/labelsTr",
-    "task07": "/work1/s182312/medical_decathlon/Task07_Pancreas/labelsTr",
-    "task08": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/labelsTr",
-    "task09": "/work1/s182312/medical_decathlon/Task09_Spleen/labelsTr",
-    "task10": "/work1/s182312/medical_decathlon/Task10_Colon/labelsTr",
-    "cellari_heart": "/work1/s182312/heart_mri/datasets/y_cubes_full",
+    "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/labelsTr",
+    "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/labelsTr",
+    "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/labelsTr",
+    "task04_sup": "/work1/s182312/medical_decathlon/Task04_Hippocampus/labelsTr",
+    "task05_sup": "/work1/s182312/medical_decathlon/Task05_Prostate/labelsTr",
+    "task06_sup": "/work1/s182312/medical_decathlon/Task06_Lung/labelsTr",
+    "task07_sup": "/work1/s182312/medical_decathlon/Task07_Pancreas/labelsTr",
+    "task08_sup": "/work1/s182312/medical_decathlon/Task08_HepaticVessel/labelsTr",
+    "task09_sup": "/work1/s182312/medical_decathlon/Task09_Spleen/labelsTr",
+    "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/labelsTr",
+    "cellari_heart_sup": "/work1/s182312/heart_mri/datasets/y_cubes_full",
+    "cellari_heart_sup_10_192": "/work1/s182312/heart_mri/datasets/y_cubes_full",
 }
 
 
@@ -354,12 +356,28 @@ def pad_if_necessary(x, y, min_size=16):
 
     pad = []
     for idx, i in enumerate(x.shape):
+        if idx in (0, 1):
+            # not padding batch and channel dims
+            pad.insert(0, 0)
+            pad.insert(0, 0)
+            continue
+
         if i < min_size:
             resto = min_size % i
         else:
             resto = i % min_size
-        # not padding batch and channel dims
-        if resto != 0 and idx not in (0, 1):
+            # we need do pad to the next multiple of min_size
+            if resto != 0:
+                base = min_size
+                tmp = base
+                multiplier = 2
+                while tmp < i:
+                    tmp = base * multiplier
+                    multiplier += 1
+                base = tmp
+                resto = base - i
+
+        if resto != 0:
             if resto % 2 == 0:
                 pad.insert(0, int(resto / 2))
                 pad.insert(0, int(resto / 2))
@@ -385,15 +403,33 @@ def pad_if_necessary(x, y, min_size=16):
 
 
 def pad_if_necessary_one_array(x, min_size=16, return_pad_tuple=False):
-
+    """
+    get each dim to min size or multiple of min size
+    """
     pad = []
     for idx, i in enumerate(x.shape):
+        if idx in (0, 1):
+            # not padding batch and channel dims
+            pad.insert(0, 0)
+            pad.insert(0, 0)
+            continue
+
         if i < min_size:
             resto = min_size % i
         else:
             resto = i % min_size
-        # not padding batch and channel dims
-        if resto != 0 and idx not in (0, 1):
+            # we need do pad to the next multiple of min_size
+            if resto != 0:
+                base = min_size
+                tmp = base
+                multiplier = 2
+                while tmp < i:
+                    tmp = base * multiplier
+                    multiplier += 1
+                base = tmp
+                resto = base - i
+
+        if resto != 0:
             if resto % 2 == 0:
                 pad.insert(0, int(resto / 2))
                 pad.insert(0, int(resto / 2))
@@ -408,16 +444,26 @@ def pad_if_necessary_one_array(x, min_size=16, return_pad_tuple=False):
 
     if set(pad) == {0}:
         # no padding necessary
-        return x if return_pad_tuple is False else x, tuple(pad)
+        if return_pad_tuple is False:
+            return x
+        else:
+            return x, tuple(pad)
 
     pad_tuple = tuple(pad)
-    # print(x.shape, y.shape)
 
     x = F.pad(x, pad_tuple, "constant", 0)
-    return x if return_pad_tuple is False else x, pad_tuple
+    if return_pad_tuple is False:
+        return x
+    else:
+        return x, pad_tuple
 
 
 if __name__ == "__main__":
+    import torch
+
+    a = torch.zeros((1, 1, 130, 128, 12))
+    a = pad_if_necessary_one_array(a, return_pad_tuple=False)
+    print(a.shape)
     pass
     # build_dataset(["lidc"], split=(0.33, 0.33, 0.34), mode="alternate")
 
