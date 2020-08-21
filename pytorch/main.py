@@ -761,6 +761,9 @@ def test(**kwargs):
         if config_object is None:
             config_object = models_genesis_config(add_model_to_task=False)
             config_object.override_dirs(int(task_dir[-1]))
+        if config_object.supervised is False:
+            # not testing modules which have not been tuned for segmentation
+            continue
 
         dataset_object = get_dataset_object_of_task_dir(task_dir)
         if dataset_object is None:
