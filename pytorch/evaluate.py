@@ -4,14 +4,16 @@ from sklearn.metrics import jaccard_score
 from dice_loss import DiceLoss
 from unet3d import UNet3D
 import json
-
-from dataset import Dataset
-from utils import get_unused_datasets, make_dir
-
+from copy import deepcopy
 from collections import defaultdict
-
 import os
 import torch
+
+
+from dataset import Dataset
+from utils import *
+from full_cube_segmentation import FullCubeSegmentator
+from finetune import Trainer
 
 
 class Tester:
@@ -24,12 +26,10 @@ class Tester:
         make_dir(self.test_results_dir)
         self.test_all = test_all
 
-        if self.config.model == "VNET_MG":
-            self.model = UNet3D()
+        self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
+        self.trainer.load_model(from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup")
+        self.model = self.trainer.model
 
-        self.model.to(self.device)
-
-        self.model_weights_saved = os.listdir(self.config.model_path_save)
         self.metric_dict = dict()
         self.metric_dict_unused = dict()
 
@@ -38,8 +38,10 @@ class Tester:
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
+                self._test_on_full_cubes(dataset)
         else:
             self._test_dataset(self.dataset)
+            self._test_on_full_cubes(self.dataset)
 
         file_nr = 0
         while os.path.isfile(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr))):
@@ -64,57 +66,112 @@ class Tester:
                     json.dump(self.metric_dict_unused, f)
 
     def _test_dataset(self, dataset, unused=False):
-
+        # mini cubes settting
         dataset_dict = dict()
-        for model_file in self.model_weights_saved:
-            dataset_dict.setdefault(model_file, {})
-            self._load_model(model_file)
-            if self.continue_to_testing is False:
-                continue
 
-            jaccard = []
-            dice = []
+        # for model_file in self.model_weights_saved:
+        #    dataset_dict.setdefault(model_file, {})
+        #    self._load_model(model_file)
+        #    if self.continue_to_testing is False:
+        #        continue
 
-            with torch.no_grad():
-                self.model.eval()
-                iteration = 0
-                while True:
-                    # if dataset.x_test_filenames:
-                    #    print("USINGdataset.x_test_filenames)
+        dataset_dict.setdefault("mini_cubes", {})
+        jaccard = []
+        dice = []
 
-                    # batch size > 1 plus random shuffle of indexes in Dataset results in no having the exact same
-                    # testins result each time as batches are flattened and act "as one"
-                    # so you would be giving the metrics different tensors to work with
-                    x, y = dataset.get_test(batch_size=1, return_tensor=True)
-                    if x is None:
-                        break
-                    x, y = x.float().to(self.device), y.float().to(self.device)
-                    pred = self.model(x)
-                    x = self._make_pred_mask_from_pred(pred)
+        # MAKE TRAINING VS TESTING differentiation on metrics
+        # raise ValueError
 
-                    dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
+        if dataset.x_test_filenames_original != []:
+            previous_len = len(dataset.x_val_filenames_original)
+            previous_val_filenames = deepcopy(dataset.x_val_filenames_original)
+            dataset.x_val_filenames_original.extend(dataset.x_test_filenames_original)
+            dataset.reset()
+            assert len(dataset.x_val_filenames_original) == previous_len + len(dataset.x_test_filenames_original)
+            assert previous_val_filenames != dataset.x_val_filenames_original
 
-                    x_flat = x[:, 0].contiguous().view(-1)
-                    y_flat = y[:, 0].contiguous().view(-1)
-                    x_flat = x_flat.cpu()
-                    y_flat = y_flat.cpu()
-                    jaccard.append(jaccard_score(y_flat, x_flat))
-                    iteration += 1
-                dataset.reset()
+        with torch.no_grad():
+            self.model.eval()
+            while True:
+                # if dataset.x_test_filenames:
+                #    print("USINGdataset.x_test_filenames)
 
-            avg_jaccard = sum(jaccard) / len(jaccard)
-            avg_dice = sum(dice) / len(dice)
-            # print("AVG JACCARD ", str(avg_jaccard))
-            # print("AVG DICE ", str(avg_dice))
-            dataset_dict[model_file]["jaccard"] = avg_jaccard
-            dataset_dict[model_file]["dice"] = avg_dice
+                # batch size > 1 plus random shuffle of indexes in Dataset results in no having the exact same
+                # testins result each time as batches are flattened and act "as one"
+                # so you would be giving the metrics different tensors to work with
+                x, y = dataset.get_val(batch_size=1, return_tensor=True)
+                if x is None:
+                    break
+                x, y = x.float().to(self.device), y.float().to(self.device)
+                pred = self.model(x)
+                x = self._make_pred_mask_from_pred(pred)
+
+                dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
+
+                x_flat = x[:, 0].contiguous().view(-1)
+                y_flat = y[:, 0].contiguous().view(-1)
+                x_flat = x_flat.cpu()
+                y_flat = y_flat.cpu()
+                jaccard.append(jaccard_score(y_flat, x_flat))
+            dataset.reset()
+
+        avg_jaccard = sum(jaccard) / len(jaccard)
+        avg_dice = sum(dice) / len(dice)
+        dataset_dict["mini_cubes"]["jaccard_test"] = avg_jaccard
+        dataset_dict["mini_cubes"]["dice_test"] = avg_dice
+
+        jaccard = []
+        dice = []
+        with torch.no_grad():
+            self.model.eval()
+            while True:
+                x, y = dataset.get_train(batch_size=1, return_tensor=True)
+                if x is None:
+                    break
+                x, y = x.float().to(self.device), y.float().to(self.device)
+                pred = self.model(x)
+                x = self._make_pred_mask_from_pred(pred)
+                dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
+                x_flat = x[:, 0].contiguous().view(-1)
+                y_flat = y[:, 0].contiguous().view(-1)
+                x_flat = x_flat.cpu()
+                y_flat = y_flat.cpu()
+                jaccard.append(jaccard_score(y_flat, x_flat))
+            dataset.reset()
+
+        avg_jaccard = sum(jaccard) / len(jaccard)
+        avg_dice = sum(dice) / len(dice)
+        dataset_dict["mini_cubes"]["jaccard_train"] = avg_jaccard
+        dataset_dict["mini_cubes"]["dice_train"] = avg_dice
 
         if unused is False:
             self.metric_dict[dataset.x_data_dir[:-3]] = dataset_dict
         else:
             self.metric_dict_unused[dataset.x_data_dir[:-3]] = dataset_dict
 
+    def _test_on_full_cubes(dataset):
+
+        for key, value in dataset_map.items():
+            if value == dataset.x_data_dir[:-2]:
+                dataset_name = key
+                break
+
+        full_cubes_dir = dataset_full_cubes_map[dataset_name]
+        full_cubes_labels_dir = dataset_full_cubes_labels_map[dataset_name]
+        fcs = FullCubeSegmentator(
+            model_path=os.path.join(self.config.model_path, "weights_sup.pt"),
+            dataset_dir=full_cubes_dir,
+            dataset_labels_dir=full_cubes_labels_dir,
+            dataset_name=dataset_name,
+        )
+
+        metric_dict = fcs.compute_metrics_for_all_cubes()  # {"dice": .., "jaccard":}
+        self.metric_dict[dataset.x_data_dir[:-3]]["full_cubes"] = metric_dict
+        fcs.save_segmentation_examples()
+
     def _load_model(self, checkpoint_name: str):
+
+        # NOT USED; CALLED TRAINER ISNTEAD
 
         checkpoint = torch.load(os.path.join(self.config.model_path_save, checkpoint_name), map_location=self.device)
         self.continue_to_testing = True
@@ -152,3 +209,12 @@ class Tester:
         intersection = np.logical_and(target_mask, prediction)
         union = np.logical_or(target_mask, prediction)
         iou_score = np.sum(intersection) / np.sum(union)
+
+
+if __name__ == "__main__":
+
+    config = load_object("objects/FROM_SCRATCH_cellari_heart_sup_2D_UNET_2D/only_supervised/run_1/config.pkl")
+    dataset = load_object("objects/FROM_SCRATCH_cellari_heart_sup_2D_UNET_2D/only_supervised/run_1/dataset.pkl")
+    dataset.x_data_dir = 
+    t = Tester(config, dataset, test_all=False)
+    t.test_segmentation()
