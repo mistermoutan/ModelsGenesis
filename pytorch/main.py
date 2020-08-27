@@ -761,7 +761,11 @@ def test(**kwargs):
         if config_object is None:
             config_object = models_genesis_config(add_model_to_task=False)
             config_object.override_dirs(int(task_dir[-1]))
+        if hasattr(config_object, "supervised") is False:
+            print("SKIPPING, no supervised attribute in config: \n", task_dir)
+            continue
         if config_object.supervised is False:
+            print("SKIPPING, supervised is False in config: \n", task_dir)
             # not testing modules which have not been tuned for segmentation
             continue
 
