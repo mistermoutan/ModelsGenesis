@@ -98,7 +98,7 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         setattr(config_object, key, value)
 
 
-# keys correspond to what dataset should be named on CLI
+# keys correspondto what dataset should be named on CLI
 dataset_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
     "task01_ss": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
@@ -128,9 +128,13 @@ dataset_map = {
 """ dataset_map = {
     "task01_ss": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
     "task01_sup": "pytorch/datasets/task01_brats/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
-    "cellari_heart": "pytorch/datasets/extracted_cubes_64_64_12_sup",
+    "cellari_heart": "pytorch/datasets/heart_mri/datasets/x_cubes_full/extracted_cubes_64_64_12_sup",
 } """
 
+
+""" dataset_full_cubes_map = {"cellari_heart": "pytorch/datasets/heart_mri/datasets/x_cubes_full"}
+
+dataset_full_cubes_labels_map = {"cellari_heart": "pytorch/datasets/heart_mri/datasets/y_cubes_full"} """
 # for tester module and full cube segmentation module
 dataset_full_cubes_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
@@ -456,6 +460,48 @@ def pad_if_necessary_one_array(x, min_size=16, return_pad_tuple=False):
         return x
     else:
         return x, pad_tuple
+
+
+def pretty_size(size):
+    """Pretty prints a torch.Size object"""
+    assert isinstance(size, torch.Size)
+    return " × ".join(map(str, size))
+
+
+def dump_tensors(gpu_only=True):
+    """Prints a list of the Tensors being tracked by the garbage collector."""
+    import gc
+
+    total_size = 0
+    for obj in gc.get_objects():
+        try:
+            if torch.is_tensor(obj):
+                if not gpu_only or obj.is_cuda:
+                    print(
+                        "%s:%s%s %s"
+                        % (type(obj).__name__, " GPU" if obj.is_cuda else "", " pinned" if obj.is_pinned else "", pretty_size(obj.size()))
+                    )
+                    total_size += obj.numel()
+                    del obj
+            elif hasattr(obj, "data") and torch.is_tensor(obj.data):
+                if not gpu_only or obj.is_cuda:
+                    print(
+                        "%s → %s:%s%s%s%s %s"
+                        % (
+                            type(obj).__name__,
+                            type(obj.data).__name__,
+                            " GPU" if obj.is_cuda else "",
+                            " pinned" if obj.data.is_pinned else "",
+                            " grad" if obj.requires_grad else "",
+                            " volatile" if obj.volatile else "",
+                            pretty_size(obj.data.size()),
+                        )
+                    )
+                    total_size += obj.data.numel()
+                    del obj
+        except Exception as e:
+            pass
+    # print("Total size:", total_size)
 
 
 if __name__ == "__main__":
