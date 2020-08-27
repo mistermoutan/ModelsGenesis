@@ -178,7 +178,7 @@ dataset_full_cubes_labels_map = {
 def get_unused_datasets(dataset):
 
     all_datasets = set(dataset_map.values())
-    print("ALL DATASETS ", all_datasets)
+    # print("ALL DATASETS ", all_datasets)
     if isinstance(dataset, list):
         for d in dataset:
             if d.x_data_dir[:-3] in all_datasets:
@@ -186,7 +186,7 @@ def get_unused_datasets(dataset):
     else:
         if dataset.x_data_dir[:-3] in all_datasets:
             all_datasets.remove(dataset.x_data_dir[:-3])
-    print("UNUSED DATASETS ", all_datasets)
+    # print("UNUSED DATASETS ", all_datasets)
     return all_datasets
 
 
