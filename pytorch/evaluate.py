@@ -33,6 +33,13 @@ class Tester:
         self.metric_dict = dict()
         self.metric_dict_unused = dict()
 
+        self.dataset_name = None 
+        for key, value in dataset_map.items():
+            if value == dataset.x_data_dir[:-3]:
+                self.dataset_name = key
+                break
+        assert self.dataset_name is not None, "Could not find dataset name key in dataset_map dictionary"
+
     def test_segmentation(self):
 
         if isinstance(self.dataset, list):
@@ -103,11 +110,12 @@ class Tester:
                 if x is None:
                     break
                 x, y = x.float().to(self.device), y.float().to(self.device)
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                    x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
                 pred = self.model(x)
+                pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
                 x = self._make_pred_mask_from_pred(pred)
-
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
-
                 x_flat = x[:, 0].contiguous().view(-1)
                 y_flat = y[:, 0].contiguous().view(-1)
                 x_flat = x_flat.cpu()
@@ -129,7 +137,10 @@ class Tester:
                 if x is None:
                     break
                 x, y = x.float().to(self.device), y.float().to(self.device)
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                    x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
                 pred = self.model(x)
+                pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
                 x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
                 x_flat = x[:, 0].contiguous().view(-1)
@@ -145,28 +156,23 @@ class Tester:
         dataset_dict["mini_cubes"]["dice_train"] = avg_dice
 
         if unused is False:
-            self.metric_dict[dataset.x_data_dir[:-3]] = dataset_dict
+            self.metric_dict[self.dataset_name] = dataset_dict
         else:
-            self.metric_dict_unused[dataset.x_data_dir[:-3]] = dataset_dict
+            self.metric_dict_unused[self.dataset_name] = dataset_dict
 
-    def _test_on_full_cubes(dataset):
+    def _test_on_full_cubes(self, dataset):
 
-        for key, value in dataset_map.items():
-            if value == dataset.x_data_dir[:-2]:
-                dataset_name = key
-                break
-
-        full_cubes_dir = dataset_full_cubes_map[dataset_name]
-        full_cubes_labels_dir = dataset_full_cubes_labels_map[dataset_name]
+        full_cubes_dir = dataset_full_cubes_map[self.dataset_name]
+        full_cubes_labels_dir = dataset_full_cubes_labels_map[self.dataset_name]
         fcs = FullCubeSegmentator(
-            model_path=os.path.join(self.config.model_path, "weights_sup.pt"),
+            model_path=os.path.join(self.config.model_path_save, "weights_sup.pt"),
             dataset_dir=full_cubes_dir,
             dataset_labels_dir=full_cubes_labels_dir,
-            dataset_name=dataset_name,
+            dataset_name=self.dataset_name,
         )
 
         metric_dict = fcs.compute_metrics_for_all_cubes()  # {"dice": .., "jaccard":}
-        self.metric_dict[dataset.x_data_dir[:-3]]["full_cubes"] = metric_dict
+        self.metric_dict[self.dataset_name]["full_cubes"] = metric_dict
         fcs.save_segmentation_examples()
 
     def _load_model(self, checkpoint_name: str):
@@ -212,9 +218,26 @@ class Tester:
 
 
 if __name__ == "__main__":
-
-    config = load_object("objects/FROM_SCRATCH_cellari_heart_sup_2D_UNET_2D/only_supervised/run_1/config.pkl")
-    dataset = load_object("objects/FROM_SCRATCH_cellari_heart_sup_2D_UNET_2D/only_supervised/run_1/dataset.pkl")
-    dataset.x_data_dir = 
+    
+    config = load_object("objects/FROM_SCRATCH_cellari_heart_UNET_3D/only_supervised/run_2/config.pkl")
+    dataset = load_object("objects/FROM_SCRATCH_cellari_heart_UNET_3D/only_supervised/run_2/dataset.pkl")
     t = Tester(config, dataset, test_all=False)
     t.test_segmentation()
+
+
+    #config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/config.pkl")
+    #dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/dataset.pkl")
+    #t = Tester(config, dataset, test_all=False)
+    #t.test_segmentation()
+
+    #config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_ACS/only_supervised/run_1/config.pkl")
+    #dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_ACS/only_supervised/run_1/dataset.pkl") 
+    #t = Tester(config, dataset, test_all=False)
+    #t.test_segmentation()
+
+    #config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_2D_UNET_2D/only_supervised/run_1/config.pkl")
+    #dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_2D/only_supervised/run_1/dataset.pkl")
+    #t = Tester(config, dataset, test_all=False)
+    #t.test_segmentation()
+
+

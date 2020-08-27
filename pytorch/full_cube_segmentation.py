@@ -91,80 +91,104 @@ class FullCubeSegmentator:
         samp = sample(corresponding_full_cubes, k=k)
         return samp
 
-    def compute_metrics_for_all_cubes(self):
+    def compute_metrics_for_all_cubes(self, inference_full_image=True):
 
         segmentations = []
-        self.cubes_to_use = []
+        cubes_to_use = []
         full_cubes_used_for_testing = self.get_all_cubes_which_were_used_for_testing()
         full_cubes_used_for_training = self.get_all_cubes_which_were_used_for_training()
-        self.cubes_to_use.extend(full_cubes_used_for_testing)
-        self.cubes_to_use.extend(full_cubes_used_for_training)
+        cubes_to_use.extend(full_cubes_used_for_testing)
+        cubes_to_use.extend(full_cubes_used_for_training)
 
-        self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
-        self.label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in self.cubes_to_use]
+        cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in cubes_to_use]
+        label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in cubes_to_use]
 
         metric_dict = dict()
         dice_test, dice_train, jaccard_test, jaccard_train = [], [], [], []
 
-        for idx, cube_path in enumerate(self.cubes_to_use_path):
+        for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
             # np_array = self._normalize_cube(np_array, modality="mri")
             # patcher = Patcher(np_array, two_dim=self.two_dim)
-            with torch.no_grad():
-                self.model.eval()
+
+            if inference_full_image is False:
+
+                print("PATCH")
+                patcher = Patcher(np_array, two_dim=self.two_dim)
+
+                with torch.no_grad():
+                    self.model.eval()
+                    for patch_idx, patch in patcher:
+
+                        patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
+                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                            patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
+
+                        pred = self.model(patch)
+                        assert pred.shape == patch.shape, "{} vs {}".format(pred.shape, patch.shape)
+                        # need to then unpad to reconstruct
+                        if self.two_dim is True:
+                            raise RuntimeError("SHOULD  NOT BE USED HERE")
+
+                        pred = self._unpad_3d_array(pred, pad_tuple)
+                        pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
+                        pred_mask = self._make_pred_mask_from_pred(pred)
+                        patcher.predicitons_to_reconstruct_from[
+                            :, patch_idx
+                        ] = pred_mask  # update array in patcher that will construct full cube predicted mask
+                pred_mask_full_cube = patcher.get_pred_mask_full_cube()
+            else:
 
                 full_cube_tensor = torch.Tensor(np_array)
                 full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (C,H,W) -> (1,C,H,W)
                 full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (1,C,H,W) -> (1,1,C,H,W)
 
-                if self.two_dim is False:
-                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
-                        full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
-                        pred = self.model(full_cube_tensor)
-                        pred = self._unpad_3d_array(pred, pad_tuple)
-                        pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
-                        pred = torch.squeeze(pred, dim=0)
-                        pred_mask_full_full_cube = self._make_pred_mask_from_pred(pred)
-                        del pred
-                        # segmentations.append(pred_mask_full_full_cube)
-                else:
-                    pred_mask_full_full_cube = torch.zeros(self.original_cube_dimensions)
-                    for z_idx in range(full_cube_tensor.size()[-1]):
-                        tensor_slice = full_cube_tensor[..., z_idx]  # SLICE : (1,1,C,H,W) -> (1,1,C,H)
-                        assert tensor_slice.shape == (1, 1, self.original_cube_dimensions[0], self.original_cube_dimensions[1])
-                        pred = self.model(tensor_slice)
-                        pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
-                        pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
-                        pred_mask_slice = self._make_pred_mask_from_pred(pred)
-                        pred_mask_full_full_cube[..., z_idx] = pred_mask_slice
-                """ self.model.eval()
-                for patch_idx, patch in patcher:
-                    patch = torch.unsqueeze(patch, 0)  # (1,C,H,W) -> (1,1,C,H,W)
-                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
-                        patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
-                    if self.two_dim is True:
-                        pad_tuple = tuple([0 for i in range(len(patch.shape) * 2)])  # as there is no padding in 2d
-                        patch = patch.squeeze(dim=-1)
+                with torch.no_grad():
+                    self.model.eval()
+                    if self.two_dim is False:
+                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                            full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
+                            try:
+                                p = self.model(full_cube_tensor)
+                                p.to("cpu")
+                                pred = p
+                                del p
+                                dump_tensors()
+                                torch.cuda.empty_cache()
+                                dump_tensors()
+                                torch.cuda.empty_cache()
+                                pred = self._unpad_3d_array(pred, pad_tuple)
+                                pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
+                                pred = torch.squeeze(pred, dim=0)
+                                pred_mask_full_cube = self._make_pred_mask_from_pred(pred)
+                                torch.cuda.empty_cache()
+                                del pred
 
-                    pred = self.model(patch)
-                    # need to then unpad to reconstruct
-                    if self.two_dim is True:
-                        pred = pred.unsqueeze(dim=-1)
+                            except RuntimeError as e:
+                                if "out of memory" in str(e):
+                                    print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
+                                    # exit(0)
+                                    res = self.compute_metrics_for_all_cubes(inference_full_image=False)
+                                    return res
 
-                    pred = self._unpad_3d_array(pred, pad_tuple)
-                    pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
-                    pred_mask = self._make_pred_mask_from_pred(pred)
-                    patcher.predicitons_to_reconstruct_from[
-                        :, patch_idx
-                    ] = pred_mask  # update array in patcher that will construct full cube predicted mask
-            """
+                    else:
+                        pred_mask_full_cube = torch.zeros(self.original_cube_dimensions)
+                        for z_idx in range(full_cube_tensor.size()[-1]):
+                            tensor_slice = full_cube_tensor[..., z_idx]  # SLICE : (1,1,C,H,W) -> (1,1,C,H)
+                            assert tensor_slice.shape == (1, 1, self.original_cube_dimensions[0], self.original_cube_dimensions[1])
+                            pred = self.model(tensor_slice)
+                            pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
+                            pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
+                            pred_mask_slice = self._make_pred_mask_from_pred(pred)
+                            pred_mask_full_cube[..., z_idx] = pred_mask_slice
 
             # full_cube_segmentation_mask = patcher.get_pred_mask_full_cube()
-            full_cube_label_tensor = torch.Tensor(self._load_cube_to_np_array(self.label_cubes_of_cubes_to_use_path[idx]))
-            full_cube_label_tensor = full_cube_label_tensor.to("cuda:0")
-            dice_score = float(DiceLoss.dice_loss(pred_mask_full_full_cube, full_cube_label_tensor, return_loss=False))
-            x_flat = pred_mask_full_full_cube.contiguous().view(-1)
+            full_cube_label_tensor = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[idx]))
+            # full_cube_label_tensor = full_cube_label_tensor.to("cuda:0")
+            pred_mask_full_cube = pred_mask_full_cube.to("cpu")
+            dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, full_cube_label_tensor, return_loss=False))
+            x_flat = pred_mask_full_cube.contiguous().view(-1)
             y_flat = full_cube_label_tensor.contiguous().view(-1)
             x_flat = x_flat.cpu()
             y_flat = y_flat.cpu()
@@ -193,14 +217,16 @@ class FullCubeSegmentator:
 
     def save_segmentation_examples(self, nr_cubes=3, inference_full_image=True):
 
+        # deal with recursion when defaulting to patchign
         segmentations = []
-        self.cubes_to_use = []
-        self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
-        self.cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_training(nr_cubes))
-        self.cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in self.cubes_to_use]
-        self.label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in self.cubes_to_use]
+        cubes_to_use = []
+        cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
+        cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_training(nr_cubes))
 
-        for cube_idx, cube_path in enumerate(self.cubes_to_use_path):
+        cubes_to_use_path = [os.path.join(self.dataset_dir, i) for i in cubes_to_use]
+        label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in cubes_to_use]
+
+        for cube_idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
 
@@ -215,9 +241,6 @@ class FullCubeSegmentator:
                         patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
                         if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                             patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
-                        if self.two_dim is True:
-                            pad_tuple = tuple([0 for i in range(len(patch.shape) * 2)])
-                            patch = patch.squeeze(dim=-1)  # (1, 1 C, H, 1) -> (1, 1, C, H)
 
                         pred = self.model(patch)
                         assert pred.shape == patch.shape, "{} vs {}".format(pred.shape, patch.shape)
@@ -231,34 +254,45 @@ class FullCubeSegmentator:
                         patcher.predicitons_to_reconstruct_from[
                             :, idx
                         ] = pred_mask  # update array in patcher that will construct full cube predicted mask
-                pred_mask_full_full_cube = patcher.get_pred_mask_full_cube()
+                pred_mask_full_cube = patcher.get_pred_mask_full_cube()
                 # segmentations.append(patcher.get_pred_mask_full_cube())
             else:
 
+                full_cube_tensor = torch.Tensor(np_array)
+                full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (C,H,W) -> (1,C,H,W)
+                full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (1,C,H,W) -> (1,1,C,H,W)
+
                 with torch.no_grad():
                     self.model.eval()
-
-                    full_cube_tensor = torch.Tensor(np_array)
-                    full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (C,H,W) -> (1,C,H,W)
-                    full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (1,C,H,W) -> (1,1,C,H,W)
-
                     if self.two_dim is False:
                         if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                             full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
                             try:
-                                pred = self.model(full_cube_tensor)
+                                p = self.model(full_cube_tensor)
+                                p.to("cpu")
+                                pred = p
+                                del p
+                                dump_tensors()
+                                torch.cuda.empty_cache()
+                                dump_tensors()
+                                torch.cuda.empty_cache()
+                                pred = self._unpad_3d_array(pred, pad_tuple)
+                                pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
+                                pred = torch.squeeze(pred, dim=0)
+                                pred_mask_full_cube = self._make_pred_mask_from_pred(pred)
+                                torch.cuda.empty_cache()
+                                del pred
+
                             except RuntimeError as e:
                                 if "out of memory" in str(e):
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
+                                    # exit(0)
                                     self.save_segmentation_examples(inference_full_image=False)
                                     return
-                            pred = self._unpad_3d_array(pred, pad_tuple)
-                            pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
-                            pred = torch.squeeze(pred, dim=0)
-                            pred_mask_full_full_cube = self._make_pred_mask_from_pred(pred)
-                            # segmentations.append(pred_mask_full_full_cube)
+
+                            # segmentations.append(pred_mask_full_cube)
                     else:
-                        pred_mask_full_full_cube = torch.zeros(self.original_cube_dimensions)
+                        pred_mask_full_cube = torch.zeros(self.original_cube_dimensions)
                         for z_idx in range(full_cube_tensor.size()[-1]):
                             tensor_slice = full_cube_tensor[..., z_idx]  # SLICE : (1,1,C,H,W) -> (1,1,C,H)
                             assert tensor_slice.shape == (1, 1, self.original_cube_dimensions[0], self.original_cube_dimensions[1])
@@ -266,40 +300,40 @@ class FullCubeSegmentator:
                             pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
                             pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
                             pred_mask_slice = self._make_pred_mask_from_pred(pred)
-                            pred_mask_full_full_cube[..., z_idx] = pred_mask_slice
+                            pred_mask_full_cube[..., z_idx] = pred_mask_slice
 
-                        # segmentations.append(pred_mask_full_full_cube)
+                        # segmentations.append(pred_mask_full_cube)
 
-            # for idx, seg in enumerate(segmentations):
+            # for idx, pred_mask_full_cube in enumerate(segmentations):
 
-            seg = pred_mask_full_full_cube
+            print(cube_idx)
 
             if cube_idx < nr_cubes:
-                save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples/", self.cubes_to_use[cube_idx][:-4])
+                save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples/", cubes_to_use[cube_idx][:-4])
             else:
-                save_dir = os.path.join(self.save_dir, self.dataset_name, "training_examples/", self.cubes_to_use[cube_idx][:-4])
+                save_dir = os.path.join(self.save_dir, self.dataset_name, "training_examples/", cubes_to_use[cube_idx][:-4])
 
             make_dir(save_dir)
 
             # save nii of segmentation
-            seg = seg.cpu()
-            nifty_img = nibabel.Nifti1Image(np.array(seg).astype(np.float32), np.eye(4))
-            nibabel.save(nifty_img, os.path.join(save_dir, self.cubes_to_use[cube_idx][:-4] + ".nii.gz"))
+            pred_mask_full_cube = pred_mask_full_cube.cpu()
+            nifty_img = nibabel.Nifti1Image(np.array(pred_mask_full_cube).astype(np.float32), np.eye(4))
+            nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + ".nii.gz"))
 
-            # self.save_3d_plot(np.array(seg), os.path.join(save_dir, "{}_plt3d.png".format(self.cubes_to_use[idx])))
+            # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx])))
 
             make_dir(os.path.join(save_dir, "slices/"))
-            for z_idx in range(seg.shape[-1]):
+            for z_idx in range(pred_mask_full_cube.shape[-1]):
                 fig = plt.figure(figsize=(10, 5))
-                plt.imshow(seg[:, :, z_idx], cmap=cm.Greys_r)
+                plt.imshow(pred_mask_full_cube[:, :, z_idx], cmap=cm.Greys_r)
                 fig.savefig(
                     os.path.join(save_dir, "slices/", "slice_{}.jpg".format(z_idx + 1)), bbox_inches="tight", dpi=150,
                 )
                 plt.close(fig=fig)
 
-            label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(self.label_cubes_of_cubes_to_use_path[cube_idx]))
-            dice_score = float(DiceLoss.dice_loss(seg, label_tensor_of_cube, return_loss=False))
-            x_flat = seg.contiguous().view(-1)
+            label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))
+            dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, label_tensor_of_cube, return_loss=False))
+            x_flat = pred_mask_full_cube.contiguous().view(-1)
             y_flat = label_tensor_of_cube.contiguous().view(-1)
             x_flat = x_flat.cpu()
             y_flat = y_flat.cpu()
@@ -387,14 +421,18 @@ class FullCubeSegmentator:
 if __name__ == "__main__":
 
     f = FullCubeSegmentator(
-        model_path="pretrained_weights/FROM_SCRATCH_cellari_heart_sup_UNET_3D/only_supervised/run_1/weights_sup.pt",
+        model_path="pretrained_weights/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_2/weights_sup.pt",
         dataset_dir="pytorch/datasets/heart_mri/datasets/x_cubes_full",
         dataset_labels_dir="pytorch/datasets/heart_mri/datasets/y_cubes_full",
         dataset_name="heart_cellari",
     )
     # f.compute_metrics_for_all_cubes()
-    metric_dict = f.compute_metrics_for_all_cubes()
-    print(metric_dict)
+    # metric_dict = f.compute_metrics_for_all_cubes()
+    # print(metric_dict)
+    f.save_segmentation_examples()
+    # metric_dict_2 = f.compute_metrics_for_all_cubes(inference_full_image=False)
+    # print(metric_dict_2)
+    # f.save_segmentation_examples()
     # from utils import pad_if_necessary_one_array
 
     # a = torch.randn(1, 1, 64, 64, 12)
