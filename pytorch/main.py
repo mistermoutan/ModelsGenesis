@@ -780,7 +780,7 @@ def test(**kwargs):
             dataset_object = Dataset(
                 config_object.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
             )  # train_val_test is non relevant as is overwritten by files
-        tester = Tester(config_object, dataset_object)
+        tester = Tester(config_object, dataset_object, test_all=False)
         tester.test_segmentation()
 
 
