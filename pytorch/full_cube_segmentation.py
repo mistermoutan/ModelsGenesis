@@ -95,6 +95,10 @@ class FullCubeSegmentator:
 
         segmentations = []
         cubes_to_use = []
+
+        if inference_full_image is False:
+            print("PATCHING Will be Done")
+
         full_cubes_used_for_testing = self.get_all_cubes_which_were_used_for_testing()
         full_cubes_used_for_training = self.get_all_cubes_which_were_used_for_training()
         cubes_to_use.extend(full_cubes_used_for_testing)
@@ -114,7 +118,6 @@ class FullCubeSegmentator:
 
             if inference_full_image is False:
 
-                print("PATCH")
                 patcher = Patcher(np_array, two_dim=self.two_dim)
 
                 with torch.no_grad():
@@ -218,6 +221,9 @@ class FullCubeSegmentator:
     def save_segmentation_examples(self, nr_cubes=3, inference_full_image=True):
 
         # deal with recursion when defaulting to patchign
+
+        if inference_full_image is False:
+            print("PATCHING Will be Done")
         segmentations = []
         cubes_to_use = []
         cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
