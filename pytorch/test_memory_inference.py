@@ -18,7 +18,7 @@ img_array = np.expand_dims(img_array, (0, 1))
 img_array = torch.Tensor(img_array)
 img_array = img_array.float().to(device)
 img_array = img_array.contiguous()
-img_array, _ = pad_if_necessary_one_array(img_array, return_pad_tuple=False)
+img_array = pad_if_necessary_one_array(img_array, return_pad_tuple=False)
 
 
 def do_inference(array):
@@ -43,7 +43,7 @@ def clip_array(array):
         array = array[:, :, :, :, 15:]
     else:
         raise ValueError
-
+    array = pad_if_necessary_one_array(array, return_pad_tuple=False)
     return array
 
 
