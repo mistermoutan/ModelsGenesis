@@ -201,7 +201,7 @@ class FullCubeSegmentator:
                 dice_train.append(dice_score)
                 jaccard_train.append(jac_score)
 
-            print(idx)
+            # print(idx)
 
         avg_jaccard_test = sum(jaccard_test) / len(jaccard_test)
         avg_jaccard_train = sum(jaccard_train) / len(jaccard_train)
@@ -306,7 +306,7 @@ class FullCubeSegmentator:
 
             # for idx, pred_mask_full_cube in enumerate(segmentations):
 
-            print(cube_idx)
+            # print(cube_idx)
 
             if cube_idx < nr_cubes:
                 save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples/", cubes_to_use[cube_idx][:-4])
