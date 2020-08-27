@@ -188,6 +188,7 @@ class FullCubeSegmentator:
 
             # full_cube_segmentation_mask = patcher.get_pred_mask_full_cube()
             full_cube_label_tensor = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[idx]))
+            full_cube_label_tensor = self.adjust_label_cube_acording_to_dataset(full_cube_label_tensor)
             # full_cube_label_tensor = full_cube_label_tensor.to("cuda:0")
             pred_mask_full_cube = pred_mask_full_cube.to("cpu")
             dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, full_cube_label_tensor, return_loss=False))
@@ -338,6 +339,7 @@ class FullCubeSegmentator:
                 plt.close(fig=fig)
 
             label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))
+            label_tensor_of_cube = self.adjust_label_cube_acording_to_dataset(label_tensor_of_cube)
             dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, label_tensor_of_cube, return_loss=False))
             x_flat = pred_mask_full_cube.contiguous().view(-1)
             y_flat = label_tensor_of_cube.contiguous().view(-1)
@@ -348,6 +350,32 @@ class FullCubeSegmentator:
             # print(dice)
             with open(os.path.join(save_dir, "dice.json"), "w") as f:
                 json.dump(metrics, f)
+
+    def adjust_label_cube_acording_to_dataset(self, label_cube):
+
+        if "Task01_BrainTumour" in dataset_map[self.dataset_name]:
+            above_0_idxs = label_cube >= 1
+            label_cube[above_0_idxs] = float(1)
+        elif "Task03_Liver" in dataset_map[self.dataset_name]:
+            # use mask for liver only
+            non_liver_idxs = label_cube != 1
+            label_cube[non_liver_idxs] = float(0)
+        elif "Task04_Hippocampus" in dataset_map[self.dataset_name]:
+            strucutures_idxs = label_cube >= 1
+            label_cube[strucutures_idxs] = float(1)
+        elif "Task05_Prostate" in dataset_map[self.dataset_name]:
+            strucutures_idxs = label_cube >= 1
+            label_cube[strucutures_idxs] = float(1)
+        elif "Task07_Pancreas" in dataset_map[self.dataset_name]:
+            # use mask for pancreas only
+            non_pancreas_idxs = label_cube != 1
+            label_cube[non_pancreas_idxs] = float(0)
+        elif "Task08_HepaticVessel" in dataset_map[self.dataset_name]:
+            # use mask for vessel only
+            non_vessel_idxs = label_cube != 1
+            label_cube[non_vessel_idxs] = float(0)
+
+        return label_cube
 
     @staticmethod
     def _normalize_cube(np_array, modality="mri"):
