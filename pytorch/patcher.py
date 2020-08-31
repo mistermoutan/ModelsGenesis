@@ -24,7 +24,7 @@ class Patcher:
         print("CUBE DIMENSIONS: {}".format(self.original_cube_dimensions))
 
         if self.two_dim is False:
-            self.kernel_size = [300, 280, 100]  # kernel size
+            self.kernel_size = [200, 200, 100]  # kernel size
             stride = self.kernel_size  # stride
         else:
             # patches for two dimensional model
@@ -77,6 +77,7 @@ class Patcher:
     def _unpad(self, tensor):
 
         # (x,y,z)
+        #get back to original cube
         if hasattr(self, "pad_tuple"):
             assert len(self.pad_tuple) == 2 * len(tensor.size())
             pt = self.pad_tuple
