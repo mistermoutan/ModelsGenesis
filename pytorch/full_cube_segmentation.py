@@ -169,7 +169,7 @@ class FullCubeSegmentator:
                                 del pred
 
                             except RuntimeError as e:
-                                if "out of memory" in str(e):
+                                if "out of memory" in str(e) or "cuDNN error: CUDNN_STATUS_NOT_SUPPORTED" in str(e):
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
                                     # exit(0)
                                     res = self.compute_metrics_for_all_cubes(inference_full_image=False)
@@ -291,7 +291,7 @@ class FullCubeSegmentator:
                                 del pred
 
                             except RuntimeError as e:
-                                if "out of memory" in str(e):
+                                if "out of memory" in str(e) or "cuDNN error: CUDNN_STATUS_NOT_SUPPORTED" in str(e):
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
                                     # exit(0)
                                     self.save_segmentation_examples(inference_full_image=False)
@@ -334,7 +334,9 @@ class FullCubeSegmentator:
                 fig = plt.figure(figsize=(10, 5))
                 plt.imshow(pred_mask_full_cube[:, :, z_idx], cmap=cm.Greys_r)
                 fig.savefig(
-                    os.path.join(save_dir, "slices/", "slice_{}.jpg".format(z_idx + 1)), bbox_inches="tight", dpi=150,
+                    os.path.join(save_dir, "slices/", "slice_{}.jpg".format(z_idx + 1)),
+                    bbox_inches="tight",
+                    dpi=150,
                 )
                 plt.close(fig=fig)
 
