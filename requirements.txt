@@ -8,3 +8,4 @@ torchvision
 scipy
 matplotlib
 dill
+pandas
