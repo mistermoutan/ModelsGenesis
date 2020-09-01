@@ -205,7 +205,7 @@ class FullCubeSegmentator:
                 dice_train.append(dice_score)
                 jaccard_train.append(jac_score)
 
-            # print(idx)
+            print(idx)
 
         avg_jaccard_test = sum(jaccard_test) / len(jaccard_test)
         avg_jaccard_train = sum(jaccard_train) / len(jaccard_train)
@@ -313,7 +313,7 @@ class FullCubeSegmentator:
 
             # for idx, pred_mask_full_cube in enumerate(segmentations):
 
-            # print(cube_idx)
+            print(cube_idx)
 
             if cube_idx < nr_cubes:
                 save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples/", cubes_to_use[cube_idx][:-4])
@@ -329,6 +329,9 @@ class FullCubeSegmentator:
 
             # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx])))
 
+            label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))
+            label_tensor_of_cube = self.adjust_label_cube_acording_to_dataset(label_tensor_of_cube)
+
             make_dir(os.path.join(save_dir, "slices/"))
             for z_idx in range(pred_mask_full_cube.shape[-1]):
                 fig = plt.figure(figsize=(10, 5))
@@ -340,8 +343,17 @@ class FullCubeSegmentator:
                 )
                 plt.close(fig=fig)
 
-            label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))
-            label_tensor_of_cube = self.adjust_label_cube_acording_to_dataset(label_tensor_of_cube)
+                # save ground truth as well
+
+                fig = plt.figure(figsize=(10, 5))
+                plt.imshow(label_tensor_of_cube[:, :, z_idx], cmap=cm.Greys_r)
+                fig.savefig(
+                    os.path.join(save_dir, "slices/", "slice_{}_gt.jpg".format(z_idx + 1)),
+                    bbox_inches="tight",
+                    dpi=150,
+                )
+                plt.close(fig=fig)
+
             dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, label_tensor_of_cube, return_loss=False))
             x_flat = pred_mask_full_cube.contiguous().view(-1)
             y_flat = label_tensor_of_cube.contiguous().view(-1)
