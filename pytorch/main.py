@@ -171,7 +171,12 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True,)
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+    )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
 
@@ -213,7 +218,12 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True,)
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+    )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -756,6 +766,8 @@ def test(**kwargs):
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
         print("\n\n TESTING WEIGHTS FROM: ", task_dir)
+        if task_dir_already_has_metric_dict_computed(task_dir) is True:
+            continue
 
         config_object = get_config_object_of_task_dir(task_dir)
         if config_object is None:

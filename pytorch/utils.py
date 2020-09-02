@@ -65,6 +65,14 @@ def get_cross_validator_object_of_task_dir(task_dir):
     return o
 
 
+def task_dir_already_has_metric_dict_computed(task_dir):
+
+    if os.path.isfile(os.path.join("test_results/", task_dir, "test_results0.json")):
+        return True
+    else:
+        return False
+
+
 def replace_config_param_attributes(config_object, kwargs_dict):
 
     #!!!
@@ -512,4 +520,3 @@ if __name__ == "__main__":
     print(a.shape)
     pass
     # build_dataset(["lidc"], split=(0.33, 0.33, 0.34), mode="alternate")
-
