@@ -43,8 +43,8 @@ options.is_numpy = True if options.is_numpy.lower() == "true" else False
 
 class setup_config:
     """
-    If the image modality in your target task is CT, we suggest that all the intensity values be clipped on the min (-1000) and max (+1000) 
-    interesting Hounsfield Unitrange and then scale between 0 and 1. If the image modality is MRI, we suggest that all 
+    If the image modality in your target task is CT, we suggest that all the intensity values be clipped on the min (-1000) and max (+1000)
+    interesting Hounsfield Unitrange and then scale between 0 and 1. If the image modality is MRI, we suggest that all
     the intensity values be clipped on min 0) and max (+4000) interesting range and then scale between 0 and 1.
      For any other modalities, you may want to first clip on the meaningful intensity range and then scale between 0 and 1.
     """
@@ -284,11 +284,15 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
             crop_window = resize(
-                crop_window, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
+                crop_window,
+                (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
+                preserve_range=True,
             )
             if target_array:
                 crop_window_target = resize(
-                    crop_window_target, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
+                    crop_window_target,
+                    (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
+                    preserve_range=True,
                 )
 
         # skip "full" tissues
@@ -346,17 +350,18 @@ def get_self_learning_data(config):
         if config.is_numpy is False:
             itk_img = sitk.ReadImage(os.path.join(config.DATA_DIR, volume))
             img_array = sitk.GetArrayFromImage(itk_img)
+            if len(img_array.shape) == 4:
+                if "task01" in config.DATA_DIR.lower():
+                    img_array = img_array[1]
+                elif "task05" in config.DATA_DIR.lower():
+                    img_array = img_array[0]
+                else:
+                    raise ValueError
+
             img_array = img_array.transpose(2, 1, 0)
 
         else:
             img_array = np.load(os.path.join(config.DATA_DIR, volume))
-
-        # HACK use one modality only if 4d MRI
-        if len(img_array.shape) == 4:
-            if "Task01_BrainTumour" in config.DATA_DIR:
-                img_array = img_array[1]
-            elif "task05" in config.DATA_DIR.lower():
-                img_array = img_array[0]
 
         if img_array.shape[0] < config.input_rows or img_array.shape[1] < config.input_cols or img_array.shape[2] < config.input_deps:
             continue
