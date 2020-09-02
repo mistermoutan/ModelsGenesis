@@ -429,9 +429,9 @@ class FullCubeSegmentator:
             img_array = sitk.GetArrayFromImage(itk_img)
 
             if len(img_array.shape) == 4:
-                if "task01" in self.dataset_name:
+                if "Task01_BrainTumour" in dataset_map[self.dataset_name]:
                     img_array = img_array[1]
-                elif "task05" in self.dataset_name:
+                elif "Task05_Prostate" in dataset_map[self.dataset_name]:
                     img_array = img_array[0]
                 else:
                     raise ValueError("We should be working with 1 channel only")
