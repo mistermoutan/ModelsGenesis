@@ -767,6 +767,8 @@ def test(**kwargs):
     for task_dir in task_dirs:
         print("\n\n TESTING WEIGHTS FROM: ", task_dir)
         if task_dir_already_has_metric_dict_computed(task_dir) is True:
+            print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED2: ", task_dir)
+
             continue
 
         config_object = get_config_object_of_task_dir(task_dir)
