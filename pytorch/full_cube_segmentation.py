@@ -137,10 +137,17 @@ class FullCubeSegmentator:
                         pred = self._unpad_3d_array(pred, pad_tuple)
                         pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                         pred_mask = self._make_pred_mask_from_pred(pred)
+                        del pred
                         patcher.predicitons_to_reconstruct_from[
                             :, patch_idx
                         ] = pred_mask  # update array in patcher that will construct full cube predicted mask
+
+                        dump_tensors()
+                        torch.cuda.empty_cache()
+                        dump_tensors()
+
                 pred_mask_full_cube = patcher.get_pred_mask_full_cube()
+
             else:
 
                 full_cube_tensor = torch.Tensor(np_array)
@@ -172,6 +179,9 @@ class FullCubeSegmentator:
                                 if "out of memory" in str(e) or "cuDNN error: CUDNN_STATUS_NOT_SUPPORTED" in str(e):
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
                                     # exit(0)
+                                    dump_tensors()
+                                    torch.cuda.empty_cache()
+                                    dump_tensors()
                                     res = self.compute_metrics_for_all_cubes(inference_full_image=False)
                                     return res
 
@@ -258,9 +268,16 @@ class FullCubeSegmentator:
                         pred = self._unpad_3d_array(pred, pad_tuple)
                         pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                         pred_mask = self._make_pred_mask_from_pred(pred)
+                        del pred
+
                         patcher.predicitons_to_reconstruct_from[
                             :, idx
                         ] = pred_mask  # update array in patcher that will construct full cube predicted mask
+
+                        dump_tensors()
+                        torch.cuda.empty_cache()
+                        dump_tensors()
+
                 pred_mask_full_cube = patcher.get_pred_mask_full_cube()
                 # segmentations.append(patcher.get_pred_mask_full_cube())
             else:
@@ -294,6 +311,9 @@ class FullCubeSegmentator:
                                 if "out of memory" in str(e) or "cuDNN error: CUDNN_STATUS_NOT_SUPPORTED" in str(e):
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
                                     # exit(0)
+                                    dump_tensors()
+                                    torch.cuda.empty_cache()
+                                    dump_tensors()
                                     self.save_segmentation_examples(inference_full_image=False)
                                     return
 
