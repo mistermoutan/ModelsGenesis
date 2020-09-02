@@ -28,6 +28,8 @@ parser.add_option("--scale", dest="scale", help="number of cubes extracted from 
 parser.add_option("--modality", dest="modality", help="ct or mri", default="None", type="string")
 parser.add_option("--target_dir", dest="target_dir", help="target volume dir for label generation", default=None, type="string")
 parser.add_option("--is_numpy", dest="is_numpy", default="False", type="str")
+parser.add_option("--len_border", dest="len_border", default=0, type="int")
+parser.add_option("--len_border_z", dest="len_border_z", default=0, type="int")
 (options, args) = parser.parse_args()
 
 
@@ -99,8 +101,8 @@ config = setup_config(
     crop_rows=options.crop_rows,
     crop_cols=options.crop_cols,
     scale=options.scale,
-    len_border=100,
-    len_border_z=30,
+    len_border=options.len_border,
+    len_border_z=options.len_border_z,
     len_depth=3,
     DATA_DIR=options.data,
     target_dir=options.target_dir,
@@ -338,7 +340,7 @@ def get_self_learning_data(config):
     print("### ", config.DATA_DIR, " ###")
 
     volumes_file_names = [
-        i for i in os.listdir(config.DATA_DIR) if "." != i[0] and i.endswith(".nii.gz") or i.endswith(".mhd") or i.endswith(".npy")
+        i for i in os.listdir(config.DATA_DIR) if "." != i[0] and (i.endswith(".nii.gz") or i.endswith(".mhd") or i.endswith(".npy"))
     ]
 
     for volume in tqdm(volumes_file_names):
@@ -389,7 +391,8 @@ def get_self_learning_data(config):
             x = infinite_generator_from_one_volume(config, img_array)
             if x is not None:
                 cubes_dir = os.path.join(
-                    config.DATA_DIR, "extracted_cubes_{}_{}_{}_ss".format(config.input_rows, config.input_cols, config.input_deps)
+                    config.DATA_DIR,
+                    "extracted_cubes_{}_{}_{}_{}_ss".format(config.scale, config.input_rows, config.input_cols, config.input_deps),
                 )
                 make_dir(os.path.join(cubes_dir, "x/"))
                 make_dir(os.path.join(cubes_dir, "y/"))
@@ -428,7 +431,8 @@ def get_self_learning_data(config):
                     assert x is None or y is None
 
                 cubes_dir = os.path.join(
-                    config.DATA_DIR, "extracted_cubes_{}_{}_{}_sup".format(config.input_rows, config.input_cols, config.input_deps)
+                    config.DATA_DIR,
+                    "extracted_cubes_{}_{}_{}_{}_sup".format(config.scale, config.input_rows, config.input_cols, config.input_deps),
                 )
                 make_dir(os.path.join(cubes_dir, "x/"))
                 make_dir(os.path.join(cubes_dir, "y/"))
