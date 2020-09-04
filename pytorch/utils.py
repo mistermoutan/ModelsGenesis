@@ -476,7 +476,7 @@ def pretty_size(size):
     return " × ".join(map(str, size))
 
 
-def dump_tensors(gpu_only=True):
+def dump_tensors(gpu_only=False):
     """Prints a list of the Tensors being tracked by the garbage collector."""
     import gc
 
