@@ -48,9 +48,10 @@ class FullCubeSegmentator:
         self.save_dir = os.path.join("viz_samples/", self.task_dir)
         make_dir(self.save_dir)
 
+        self.model_path = model_path
         self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
-        self.trainer.load_model(from_path=True, path=model_path, phase="sup")
-        self.model = self.trainer.model
+        #self.trainer.load_model(from_path=True, path=model_path, phase="sup")
+        #self.model = self.trainer.model
 
         self.all_cubes = [i for i in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, i))]
 
@@ -96,6 +97,20 @@ class FullCubeSegmentator:
         segmentations = []
         cubes_to_use = []
 
+        dump_tensors()
+        torch.cuda.ipc_collect()
+        torch.cuda.empty_cache()
+        dump_tensors()
+
+        if hasattr(self.trainer, "model"):
+            del self.trainer.model
+            dump_tensors()
+            torch.cuda.ipc_collect()
+            torch.cuda.empty_cache()
+            dump_tensors()
+
+        self.trainer.load_model(from_path=True, path=self.model_path, phase="sup")
+
         if inference_full_image is False:
             print("PATCHING Will be Done")
 
@@ -121,14 +136,14 @@ class FullCubeSegmentator:
                 patcher = Patcher(np_array, two_dim=self.two_dim)
 
                 with torch.no_grad():
-                    self.model.eval()
+                    self.trainer.model.eval()
                     for patch_idx, patch in patcher:
 
                         patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
                         if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                             patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
 
-                        pred = self.model(patch)
+                        pred = self.trainer.model(patch)
                         assert pred.shape == patch.shape, "{} vs {}".format(pred.shape, patch.shape)
                         # need to then unpad to reconstruct
                         if self.two_dim is True:
@@ -143,6 +158,7 @@ class FullCubeSegmentator:
                         ] = pred_mask  # update array in patcher that will construct full cube predicted mask
 
                         dump_tensors()
+                        torch.cuda.ipc_collect()
                         torch.cuda.empty_cache()
                         dump_tensors()
 
@@ -155,16 +171,17 @@ class FullCubeSegmentator:
                 full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (1,C,H,W) -> (1,1,C,H,W)
 
                 with torch.no_grad():
-                    self.model.eval()
+                    self.trainer.model.eval()
                     if self.two_dim is False:
                         if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                             full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
                             try:
-                                p = self.model(full_cube_tensor)
+                                p = self.trainer.model(full_cube_tensor)
                                 p.to("cpu")
                                 pred = p
                                 del p
                                 dump_tensors()
+                                torch.cuda.ipc_collect()
                                 torch.cuda.empty_cache()
                                 dump_tensors()
                                 torch.cuda.empty_cache()
@@ -172,6 +189,7 @@ class FullCubeSegmentator:
                                 pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                                 pred = torch.squeeze(pred, dim=0)
                                 pred_mask_full_cube = self._make_pred_mask_from_pred(pred)
+                                torch.cuda.ipc_collect()
                                 torch.cuda.empty_cache()
                                 del pred
 
@@ -180,6 +198,7 @@ class FullCubeSegmentator:
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
                                     # exit(0)
                                     dump_tensors()
+                                    torch.cuda.ipc_collect()
                                     torch.cuda.empty_cache()
                                     dump_tensors()
                                     res = self.compute_metrics_for_all_cubes(inference_full_image=False)
@@ -190,7 +209,7 @@ class FullCubeSegmentator:
                         for z_idx in range(full_cube_tensor.size()[-1]):
                             tensor_slice = full_cube_tensor[..., z_idx]  # SLICE : (1,1,C,H,W) -> (1,1,C,H)
                             assert tensor_slice.shape == (1, 1, self.original_cube_dimensions[0], self.original_cube_dimensions[1])
-                            pred = self.model(tensor_slice)
+                            pred = self.trainer.model(tensor_slice)
                             pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
                             pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
                             pred_mask_slice = self._make_pred_mask_from_pred(pred)
@@ -215,11 +234,17 @@ class FullCubeSegmentator:
                 dice_train.append(dice_score)
                 jaccard_train.append(jac_score)
 
+            dump_tensors()
+            torch.cuda.ipc_collect()
+            torch.cuda.empty_cache()
+            dump_tensors()
+
             print(idx)
 
         avg_jaccard_test = sum(jaccard_test) / len(jaccard_test)
         avg_jaccard_train = sum(jaccard_train) / len(jaccard_train)
-        avg_dice_test = sum(dice_test) / len(dice_test)
+        avg_dice_test = 
+        sum(dice_test) / len(dice_test)
         avg_dice_train = sum(dice_train) / len(dice_train)
 
         metric_dict["dice_test"] = avg_dice_test
@@ -233,8 +258,21 @@ class FullCubeSegmentator:
 
         # deal with recursion when defaulting to patchign
 
+        dump_tensors()
+        torch.cuda.ipc_collect()
+        torch.cuda.empty_cache()
+        dump_tensors()
+
+        if hasattr(self.trainer, "model"):
+            del self.trainer.model
+            dump_tensors()
+            torch.cuda.ipc_collect()
+            torch.cuda.empty_cache()
+            dump_tensors()
+
         if inference_full_image is False:
             print("PATCHING Will be Done")
+
         segmentations = []
         cubes_to_use = []
         cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
@@ -252,14 +290,14 @@ class FullCubeSegmentator:
                 patcher = Patcher(np_array, two_dim=self.two_dim)
 
                 with torch.no_grad():
-                    self.model.eval()
+                    self.trainer.model.eval()
                     for idx, patch in patcher:
 
                         patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
                         if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                             patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
 
-                        pred = self.model(patch)
+                        pred = self.trainer.model(patch)
                         assert pred.shape == patch.shape, "{} vs {}".format(pred.shape, patch.shape)
                         # need to then unpad to reconstruct
                         if self.two_dim is True:
@@ -275,6 +313,7 @@ class FullCubeSegmentator:
                         ] = pred_mask  # update array in patcher that will construct full cube predicted mask
 
                         dump_tensors()
+                        torch.cuda.ipc_collect()
                         torch.cuda.empty_cache()
                         dump_tensors()
 
@@ -287,16 +326,17 @@ class FullCubeSegmentator:
                 full_cube_tensor = torch.unsqueeze(full_cube_tensor, 0)  # (1,C,H,W) -> (1,1,C,H,W)
 
                 with torch.no_grad():
-                    self.model.eval()
+                    self.trainer.model.eval()
                     if self.two_dim is False:
                         if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                             full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
                             try:
-                                p = self.model(full_cube_tensor)
+                                p = self.trainer.model(full_cube_tensor)
                                 p.to("cpu")
                                 pred = p
                                 del p
                                 dump_tensors()
+                                torch.cuda.ipc_collect()
                                 torch.cuda.empty_cache()
                                 dump_tensors()
                                 torch.cuda.empty_cache()
@@ -304,6 +344,7 @@ class FullCubeSegmentator:
                                 pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                                 pred = torch.squeeze(pred, dim=0)
                                 pred_mask_full_cube = self._make_pred_mask_from_pred(pred)
+                                torch.cuda.ipc_collect()
                                 torch.cuda.empty_cache()
                                 del pred
 
@@ -312,6 +353,7 @@ class FullCubeSegmentator:
                                     print("TOO BIG FOR MEMORY, DEFAULTING TO PATCHING")
                                     # exit(0)
                                     dump_tensors()
+                                    torch.cuda.ipc_collect()
                                     torch.cuda.empty_cache()
                                     dump_tensors()
                                     self.save_segmentation_examples(inference_full_image=False)
@@ -323,7 +365,7 @@ class FullCubeSegmentator:
                         for z_idx in range(full_cube_tensor.size()[-1]):
                             tensor_slice = full_cube_tensor[..., z_idx]  # SLICE : (1,1,C,H,W) -> (1,1,C,H)
                             assert tensor_slice.shape == (1, 1, self.original_cube_dimensions[0], self.original_cube_dimensions[1])
-                            pred = self.model(tensor_slice)
+                            pred = self.trainer.model(tensor_slice)
                             pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
                             pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
                             pred_mask_slice = self._make_pred_mask_from_pred(pred)
@@ -384,6 +426,11 @@ class FullCubeSegmentator:
             # print(dice)
             with open(os.path.join(save_dir, "dice.json"), "w") as f:
                 json.dump(metrics, f)
+
+            dump_tensors()
+            torch.cuda.ipc_collect()
+            torch.cuda.empty_cache()
+            dump_tensors()
 
     def adjust_label_cube_acording_to_dataset(self, label_cube):
 
