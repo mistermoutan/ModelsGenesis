@@ -100,7 +100,10 @@ class FullCubeSegmentator:
         dump_tensors()
         torch.cuda.ipc_collect()
         torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.empty_cache()
         dump_tensors()
+        torch.cuda.empty_cache()
 
         if hasattr(self.trainer, "model"):
             del self.trainer.model
@@ -108,6 +111,11 @@ class FullCubeSegmentator:
             torch.cuda.ipc_collect()
             torch.cuda.empty_cache()
             dump_tensors()
+
+        dump_tensors()
+        torch.cuda.ipc_collect()
+        torch.cuda.empty_cache()
+        dump_tensors()
 
         self.trainer.load_model(from_path=True, path=self.model_path, phase="sup")
 
@@ -128,6 +136,10 @@ class FullCubeSegmentator:
         for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
+            if sum([i for i in np_array.shape]) > 500:
+                print("CUBE TOO BIG, PATCHING")
+                inference_full_image = False
+
             # np_array = self._normalize_cube(np_array, modality="mri")
             # patcher = Patcher(np_array, two_dim=self.two_dim)
 
@@ -261,6 +273,10 @@ class FullCubeSegmentator:
         torch.cuda.ipc_collect()
         torch.cuda.empty_cache()
         dump_tensors()
+        dump_tensors()
+        torch.cuda.ipc_collect()
+        torch.cuda.empty_cache()
+        dump_tensors()
 
         if hasattr(self.trainer, "model"):
             del self.trainer.model
@@ -271,6 +287,13 @@ class FullCubeSegmentator:
 
         if inference_full_image is False:
             print("PATCHING Will be Done")
+
+        dump_tensors()
+        torch.cuda.ipc_collect()
+        torch.cuda.empty_cache()
+        dump_tensors()
+
+        self.trainer.load_model(from_path=True, path=self.model_path, phase="sup")
 
         segmentations = []
         cubes_to_use = []
@@ -283,6 +306,9 @@ class FullCubeSegmentator:
         for cube_idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
+            if sum([i for i in np_array.shape]) > 500:
+                print("CUBE TOO BIG, PATCHING")
+                inference_full_image = False
 
             if inference_full_image is False:
 
@@ -426,6 +452,10 @@ class FullCubeSegmentator:
             with open(os.path.join(save_dir, "dice.json"), "w") as f:
                 json.dump(metrics, f)
 
+            dump_tensors()
+            torch.cuda.ipc_collect()
+            torch.cuda.empty_cache()
+            dump_tensors()
             dump_tensors()
             torch.cuda.ipc_collect()
             torch.cuda.empty_cache()
