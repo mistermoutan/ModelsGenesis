@@ -50,8 +50,8 @@ class FullCubeSegmentator:
 
         self.model_path = model_path
         self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
-        #self.trainer.load_model(from_path=True, path=model_path, phase="sup")
-        #self.model = self.trainer.model
+        # self.trainer.load_model(from_path=True, path=model_path, phase="sup")
+        # self.model = self.trainer.model
 
         self.all_cubes = [i for i in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, i))]
 
@@ -243,8 +243,7 @@ class FullCubeSegmentator:
 
         avg_jaccard_test = sum(jaccard_test) / len(jaccard_test)
         avg_jaccard_train = sum(jaccard_train) / len(jaccard_train)
-        avg_dice_test = 
-        sum(dice_test) / len(dice_test)
+        avg_dice_test = sum(dice_test) / len(dice_test)
         avg_dice_train = sum(dice_train) / len(dice_train)
 
         metric_dict["dice_test"] = avg_dice_test
