@@ -5,6 +5,7 @@ __pycache__/
 pretrained_weights/
 job_logs/
 env/
+old_env/
 .vscode/
 .ipynb_checkpoints/
 .idea/
