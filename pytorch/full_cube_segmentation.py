@@ -57,6 +57,8 @@ class FullCubeSegmentator:
 
     def get_all_cubes_which_were_used_for_training(self):
 
+        if self.dataset_name == "lidc":
+            return ["{}.npy".format(i) for i in range(510)]
         train_minicubes_filenames = self.dataset.x_train_filenames_original
         corresponding_full_cubes = []
         for cube_name in self.all_cubes:
@@ -68,6 +70,9 @@ class FullCubeSegmentator:
         return corresponding_full_cubes
 
     def get_all_cubes_which_were_used_for_testing(self):
+
+        if self.dataset_name == "lidc":
+            return ["{}.npy".format(i) for i in range(510, 948)]
 
         test_mini_cube_file_names = self.dataset.x_val_filenames_original
         if self.dataset.x_test_filenames_original != []:

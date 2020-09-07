@@ -145,7 +145,7 @@ dataset_map = {
 dataset_full_cubes_labels_map = {"cellari_heart": "pytorch/datasets/heart_mri/datasets/y_cubes_full"} """
 # for tester module and full cube segmentation module
 dataset_full_cubes_map = {
-    "lidc": "/work1/s182312/lidc_idri/np_cubes",
+    "lidc": "/work2/s182312/lidc_full_cubes/full_cubes",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr",
     "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr",
     "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr",
@@ -161,7 +161,7 @@ dataset_full_cubes_map = {
 }
 
 dataset_full_cubes_labels_map = {
-    "lidc": "/work1/s182312/lidc_idri/np_cubes",
+    "lidc": "/work2/s182312/lidc_full_cubes/full_cubes_labels",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/labelsTr",
     "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/labelsTr",
     "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/labelsTr",
