@@ -42,6 +42,8 @@ assert options.modality is not None, "input --modality , ct or mri"
 
 
 options.is_numpy = True if options.is_numpy.lower() == "true" else False
+if options.centered is True:
+    print("CENTERED ")
 
 
 class setup_config:
