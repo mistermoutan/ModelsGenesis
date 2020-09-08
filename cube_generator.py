@@ -30,6 +30,7 @@ parser.add_option("--target_dir", dest="target_dir", help="target volume dir for
 parser.add_option("--is_numpy", dest="is_numpy", default="False", type="str")
 parser.add_option("--len_border", dest="len_border", default=0, type="int")
 parser.add_option("--len_border_z", dest="len_border_z", default=0, type="int")
+parser.add_option("--centered", dest="centered", action="store_true", required=False)
 (options, args) = parser.parse_args()
 
 
@@ -66,6 +67,7 @@ class setup_config:
         modality=None,
         target_dir=None,
         is_numpy=False,
+        centered=False,
     ):
         self.input_rows = input_rows
         self.input_cols = input_cols
@@ -84,6 +86,7 @@ class setup_config:
             self.hu_max, self.hu_min = 4000, 0
         self.target_dir = target_dir
         self.is_numpy = is_numpy
+        self.centered = centered
 
     def display(self):
         """Display Configuration values."""
@@ -108,6 +111,7 @@ config = setup_config(
     target_dir=options.target_dir,
     modality=options.modality,
     is_numpy=options.is_numpy,
+    centered=options.centered,
 )
 
 if "Task03_Liver" in config.DATA_DIR:
@@ -213,6 +217,22 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
                     print("FINDING NEW Z STARTING POINT")
                     start_z = random.randint(config.starting_z, config.starting_z + z_slack // 2)
 
+        elif hasattr(config, "centered") and config.centered is True:
+
+            print("SAVING CENTER OF CUBE")
+
+            def random_center(shape, move):
+                offset = np.random.randint(-move, move + 1, size=3)
+                zyx = np.array(shape) // 2 + offset
+
+                return zyx
+
+            shape = img_array.shape
+            center = random_center(shape, 5)
+            start_x = center[0] - config.input_rows // 2
+            start_y = center[1] - config.input_cols // 2
+            start_z = center[2] - config.input_deps // 2
+
         else:
 
             while (config.len_border > size_x - config.crop_rows - 1 - config.len_border) and config.len_border > 0:
@@ -286,15 +306,11 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
             crop_window = resize(
-                crop_window,
-                (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
-                preserve_range=True,
+                crop_window, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
             )
             if target_array:
                 crop_window_target = resize(
-                    crop_window_target,
-                    (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
-                    preserve_range=True,
+                    crop_window_target, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
                 )
 
         # skip "full" tissues
