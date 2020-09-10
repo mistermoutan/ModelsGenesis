@@ -5,11 +5,6 @@ import random
 from skimage.transform import resize
 
 
-def make_dir(dir: str):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-
-
 class setup_config:
     def __init__(
         self,
@@ -141,15 +136,11 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
         if config.crop_rows != config.input_rows or config.crop_cols != config.input_cols:
             crop_window = resize(
-                crop_window,
-                (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
-                preserve_range=True,
+                crop_window, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
             )
             if target_array:
                 crop_window_target = resize(
-                    crop_window_target,
-                    (config.input_rows, config.input_cols, config.input_deps + config.len_depth),
-                    preserve_range=True,
+                    crop_window_target, (config.input_rows, config.input_cols, config.input_deps + config.len_depth), preserve_range=True,
                 )
 
         # skip "full" tissues
@@ -179,13 +170,8 @@ def infinite_generator_from_one_volume(config, img_array, target_array=None):
 
 if __name__ == "__main__":
 
-    make_dir("full_cubes/training")
-    make_dir("full_cubes/validation")
-    make_dir("full_cubes/training_labels")
-    make_dir("full_cubes/validation_labels")
-
     scans = pl.query(pl.Scan).all()
-    """     config = setup_config(
+    config = setup_config(
         input_rows=64,
         input_cols=64,
         input_deps=32,
@@ -204,7 +190,7 @@ if __name__ == "__main__":
     slice_set_val = []  # np.zeros((100, config.input_rows, config.input_cols, config.input_deps), dtype=float)
     slice_set_val_target = []  # np.zeros((100, config.input_rows, config.input_cols, config.input_deps), dtype=float)
     slice_set_ts = []  # np.zeros((408, config.input_rows, config.input_cols, config.input_deps), dtype=float)
-    slice_set_ts_target = []  # np.zeros((408, config.input_rows, config.input_cols, config.input_deps), dtype=float) """
+    slice_set_ts_target = []  # np.zeros((408, config.input_rows, config.input_cols, config.input_deps), dtype=float)
 
     for i, scan in enumerate(scans):
         nodules = scan.cluster_annotations()
@@ -217,7 +203,7 @@ if __name__ == "__main__":
         for j, annotations_of_a_nodule in enumerate(nodules):
             cons_mask, cons_bbox = consensus(annotations_of_a_nodule, ret_masks=False, pad=padding)
             mask_vol[cons_bbox] = cons_mask
-            """ config.starting_x, config.ending_x = cons_bbox[0].start, cons_bbox[0].stop
+            config.starting_x, config.ending_x = cons_bbox[0].start, cons_bbox[0].stop
             config.starting_y, config.ending_y = cons_bbox[1].start, cons_bbox[1].stop
             config.starting_z, config.ending_z = cons_bbox[2].start, cons_bbox[2].stop
             res = infinite_generator_from_one_volume(config, vol, mask_vol)
@@ -245,38 +231,36 @@ if __name__ == "__main__":
     slice_set_val_target_array = np.array(slice_set_val_target)
     slice_set_ts_array = np.array(slice_set_ts)
     slice_set_ts_target_array = np.array(slice_set_ts_target)
-    """
-    """     print(slice_set_tr_array.shape)
+
+    print(slice_set_tr_array.shape)
     print(slice_set_tr_target_array.shape)
     print(slice_set_val_array.shape)
     print(slice_set_val_target_array.shape)
     print(slice_set_ts_array.shape)
-    print(slice_set_ts_target_array.shape) """
+    print(slice_set_ts_target_array.shape)
 
-        if i < 510:
-            np.save(
-                "full_cubes/training/{}.npy".format(i),
-                slice_set_tr_array,
-            )
-            np.save(
-                "full_cubes/training_labels/{}_target.npy".format(i),
-                slice_set_tr_target_array,
-            )
-        else:
+    np.save(
+        "tr_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + ".npy",
+        slice_set_tr_array,
+    )
+    np.save(
+        "tr_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + "_target.npy",
+        slice_set_tr_target_array,
+    )
+    np.save(
+        "val_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + ".npy",
+        slice_set_val_array,
+    )
+    np.save(
+        "val_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + "_target.npy",
+        slice_set_val_target_array,
+    )
+    np.save(
+        "ts_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + ".npy",
+        slice_set_ts_array,
+    )
+    np.save(
+        "ts_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + "_target.npy",
+        slice_set_ts_target_array,
+    )
 
-            np.save(
-                "full_cubes/validation/{}.npy".format(i),
-                slice_set_val_array,
-            )
-            np.save(
-                "full_cubes/validation/{}_target.npy".format(i),
-                slice_set_val_target_array,
-        )
-        """         np.save(
-            "ts_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + ".npy",
-            slice_set_ts_array,
-        )
-        np.save(
-            "ts_cubes" + "_" + str(config.input_rows) + "x" + str(config.input_cols) + "x" + str(config.input_deps) + "_target.npy",
-            slice_set_ts_target_array,
-        ) """
