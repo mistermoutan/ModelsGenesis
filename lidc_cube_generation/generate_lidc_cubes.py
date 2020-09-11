@@ -12,12 +12,15 @@ def make_dir(dir: str):
 
 
 def get_padding_to_make_cube_80_80_80_as_in_lidc(shape):
-
+    # print("shape ", shape)
     wanted = (80, 80, 80)
     slack = []
     for i, j in zip(wanted, shape):
-        assert i > j
-        slack.insert(0, (i - j))
+
+        if i > j:
+            slack.insert(0, (i - j))
+        else:
+            slack.insert(0, 0)
 
     pad = []
     for i in slack:
@@ -27,7 +30,7 @@ def get_padding_to_make_cube_80_80_80_as_in_lidc(shape):
             maior = int((i - 1) / 2)
             menor = int(i - maior)
             pad.insert(0, (maior, menor))
-
+    # print("padding ", pad)
     return pad
 
 
@@ -252,13 +255,17 @@ if __name__ == "__main__":
             first_annotation = annotations_of_a_nodule[0]  # select the first anotation
             first_annotation_mask = first_annotation.boolean_mask()
             padding = get_padding_to_make_cube_80_80_80_as_in_lidc(first_annotation_mask.shape)
-            first_annotation_mask = annotations_of_a_nodule.boolean_mask(pad=padding)
-            first_annotation_bbox = annotations_of_a_nodule[0].bbox(pad=padding)
+            first_annotation_mask = first_annotation.boolean_mask(pad=padding)
+            print(first_annotation_mask.shape)
+            # assert first_annotation_mask.shape == (80, 80, 80), "got {} , volume shape: {}".format(first_annotation_mask.shape, vol.shape)
+            first_annotation_bbox = first_annotation.bbox(pad=padding)
             x = vol[first_annotation_bbox]
             y = first_annotation_mask
             assert np.count_nonzero(y) > 0
-            np.save(os.path.join(X_DIR, "{}_{}.npy".format(scan.patient_id[-4:], j), x))
-            np.save(os.path.join(Y_DIR, "{}_{}.npy".format(scan.patient_id[-4:], j), y))
+            x = np.expand_dims(x, 0)
+            y = np.expand_dims(y, 0)
+            np.save(os.path.join(X_DIR, "{}_{}.npy".format(scan.patient_id[-4:], j)), x)
+            np.save(os.path.join(Y_DIR, "{}_{}.npy".format(scan.patient_id[-4:], j)), y)
 
     # slice_set_tr_array = np.array(slice_set_tr)
     # slice_set_tr_target_array = np.array(slice_set_tr_target)
