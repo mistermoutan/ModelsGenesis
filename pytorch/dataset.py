@@ -12,12 +12,12 @@ class Dataset:
     def __init__(self, data_dir: str, train_val_test: tuple, file_names=None):
         """
         Arguments:
-            data_dir {str} -- [folder must be organized with x/ and y/ folders inside with .npy files, in y folder files must be named as the ones in x but ending in _target.npy]
+            data_dir {str} -- [folder must be organized with x/ and y/ folders inside with .npy files, in y folder files must be named as the ones in x but ending in _target.npy or named the same as in x]
             train_val_test {tuple} -- [proportion of train,validation and test examples] (default: {(0.65,0.15,0.20)})
-            
+
         Keyword Arguments:
             file_names {[[], [], []]} -- Pre specify file names used for tr, val and test. Will override train_val_test split behavior
-            
+
         """
         self.x_data_dir = path.join(data_dir, "x/")  # dir has an x and y folder
         self.y_data_dir = path.join(data_dir, "y/")
@@ -62,7 +62,10 @@ class Dataset:
             )  # (N, x, y, z) -> (N, 1-Channel, x, y, z)
             # print(self.x_array_tr.shape)
             if self.has_target:
-                self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name[:-4] + "_target.npy")), axis=1)
+                try:
+                    self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name[:-4] + "_target.npy")), axis=1)
+                except FileNotFoundError:
+                    self.y_array_tr = np.expand_dims(np.load(path.join(self.y_data_dir, x_train_file_name)), axis=1)
                 assert self.x_array_tr.shape == self.y_array_tr.shape
             self.train_idxs = [i for i in range(self.x_array_tr.shape[0])]
             shuffle(self.train_idxs)
@@ -75,7 +78,10 @@ class Dataset:
                 np.load(path.join(self.x_data_dir, x_val_file_name)), axis=1
             )  # (N, x, y, z) -> (N, 1, x, y, z)
             if self.has_target:
-                self.y_array_val = np.expand_dims(np.load(path.join(self.y_data_dir, x_val_file_name[:-4] + "_target.npy")), axis=1)
+                try:
+                    self.y_array_val = np.expand_dims(np.load(path.join(self.y_data_dir, x_val_file_name[:-4] + "_target.npy")), axis=1)
+                except FileNotFoundError:
+                    self.y_array_val = np.expand_dims(np.load(path.join(self.y_data_dir, x_val_file_name)), axis=1)
                 assert self.x_array_val.shape == self.y_array_val.shape
             self.val_idxs = [i for i in range(self.x_array_val.shape[0])]
             shuffle(self.val_idxs)
@@ -88,7 +94,11 @@ class Dataset:
                 np.load(path.join(self.x_data_dir, x_test_file_name)), axis=1
             )  # (N, x, y, z) -> (N, 1, x, y, z)
             if self.has_target:
-                self.y_array_test = np.expand_dims(np.load(path.join(self.y_data_dir, x_test_file_name[:-4] + "_target.npy")), axis=1)
+                try:
+                    self.y_array_test = np.expand_dims(np.load(path.join(self.y_data_dir, x_test_file_name[:-4] + "_target.npy")), axis=1)
+                except FileNotFoundError:
+                    self.y_array_test = np.expand_dims(np.load(path.join(self.y_data_dir, x_test_file_name)), axis=1)
+
                 assert self.x_array_test.shape == self.y_array_test.shape
             self.test_idxs = [i for i in range(self.x_array_test.shape[0])]
             # shuffle(self.test_idxs)
