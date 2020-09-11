@@ -9,6 +9,8 @@ import time
 from datetime import timedelta
 from copy import deepcopy
 
+from ACSConv.experiments.mylib.utils import categorical_to_one_hot
+
 from unet_2d import UNet
 from unet_3d import UNet3D as Unet3D_Counterpart_to_2D
 
@@ -335,6 +337,11 @@ class Trainer:
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x, y = pad_if_necessary(x, y)
+                if "fcn_resnet_18" in self.config.model.lower():
+                    #expects 3 channel input
+                    x_transform = torch.cat((x_transform,x_transform,x_transform),dim = 1)
+                    # 2 channel output of network
+                    y = categorical_to_one_hot(y, dim=1, expand_dim=False)
 
                 pred = self.model(x)
                 loss = criterion(pred, y)
@@ -498,17 +505,32 @@ class Trainer:
     def load_model(self, **kwargs):
 
         from ACSConv.acsconv.converters import ACSConverter
+        from ACSConv.experiments.lidc.resnet import FCNResNet
 
         if self.config.model.lower() == "vnet_mg":
             self.model = UNet3D()
+            
         elif self.config.model.lower() == "unet_2d":
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+        
         elif self.config.model.lower() == "unet_acs":
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model)
+        
         elif self.config.model.lower() == "unet_3d":
             self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
-
+        
+        elif self.config.model.lower() == "fcn_restnet18":
+            self.model = FCNResNet(pretrained=False, num_classes=2)
+        
+        elif self.config.model.lower() == "fcn_resnet18_acs":
+            self.config.model.lower() == FCNResNet(pretrained=False, num_classes=2)
+            self.model = ACSConverter(self.model)
+        
+        elif self.config.model.lower() == "fcn_resnet18_acs_pretrained_imgnet":
+            self.model = FCNResNet(pretrained=True, num_classes=2)
+            self.mode = ACSConverter(self.model)
+             
         self.model.to(self.device)
 
         from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
@@ -691,7 +713,10 @@ class Trainer:
             self.model = ACSConverter(self.model)
             print("CONVERTED MODEL FROM UNET 2D WITH ACS CONVERTER")
             # override config for from now on to use ACS MODEL
-            self.config.model = "UNET_ACS"
+            if "unet" in self.config.model.lower():
+                self.config.model = "UNET_ACS"
+            elif "resnet18" in self.config.mode.lower():
+                self.config.model = "FCN_RESNET18_ACS"
             save_object(self.config, "config", self.config.object_dir)
 
         nr_devices = len([i for i in range(torch.cuda.device_count())])
@@ -779,7 +804,7 @@ class Trainer:
                 {
                     "epoch_ss": self.epoch_ss_current + 1,
                     "model_state_dict_ss": self.model.state_dict()
-                    if self.config.model.lower() != "unet_acs"
+                    if "acs" not in self.config.model.lower()
                     else self.model.module.state_dict(),
                     "optimizer_state_dict_ss": self.optimizer_ss.state_dict(),
                     "scheduler_state_dict_ss": self.scheduler_ss.state_dict(),
@@ -795,7 +820,7 @@ class Trainer:
                 {
                     "epoch_sup": self.epoch_sup_current + 1,
                     "model_state_dict_sup": self.model.state_dict()
-                    if self.config.model.lower() != "unet_acs"
+                    if "acs" not in self.config.model.lower()
                     else self.model.module.state_dict(),
                     "optimizer_state_dict_sup": self.optimizer_sup.state_dict(),
                     "scheduler_state_dict_sup": self.scheduler_sup.state_dict(),
@@ -829,6 +854,10 @@ class Trainer:
                 )
             elif self.config.scheduler_ss.lower() == "steplr":
                 self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss), gamma=0.5)
+            
+            elif self.config.scheduler_ss.lower() == "multisteplr"
+                self.scheduler_ss = torch.optim.lr_scheduler.MultiStepLR(self.optimizer_ss, milestones=self.config.milestones,
+                                                     gamma=self.config.gamma)
 
         if phase == "sup" or phase == "both":
 
@@ -837,12 +866,18 @@ class Trainer:
                     self.model.parameters(), self.config.lr_sup, momentum=0.9, weight_decay=0.0, nesterov=False
                 )
             elif self.config.optimizer_sup.lower() == "adam":
-                self.optimizer_sup = torch.optim.Adam(
-                    self.model.parameters(),
-                    self.config.lr_sup,
-                    betas=(self.config.beta1_sup, self.config.beta2_sup),
-                    eps=self.config.eps_sup,
-                )
+                if hasattr(self.config, "eps_sup") and self.config.eps_sup is not None:
+                    self.optimizer_sup = torch.optim.Adam(
+                        self.model.parameters(),
+                        self.config.lr_sup,
+                        betas=(self.config.beta1_sup, self.config.beta2_sup),
+                        eps=self.config.eps_sup,
+                    )
+                else:
+                    self.optimizer_sup = torch.optim.Adam(
+                        self.model.parameters(),
+                        self.config.lr_sup,
+                    )
             else:
                 raise NotImplementedError
 
@@ -850,8 +885,13 @@ class Trainer:
                 self.scheduler_sup = torch.optim.lr_scheduler.ReduceLROnPlateau(
                     self.optimizer_sup, mode="min", factor=0.5, patience=self.config.patience_sup
                 )
+
             elif self.config.scheduler_sup.lower() == "steplr":
                 self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
+           
+            elif self.config.scheduler_sup.lower() == "multisteplr"
+                self.scheduler_sup = torch.optim.lr_scheduler.MultiStepLR(self.optimizer_sup, milestones=self.config.milestones,
+                                                     gamma=self.config.gamma)
             else:
                 raise NotImplementedError
 

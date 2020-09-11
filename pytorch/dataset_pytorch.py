@@ -28,6 +28,13 @@ class DatasetPytorch(DatasetP):
         self.apply_mg_transforms = apply_mg_transforms
         self.nr_samples_used = 0
 
+        if hasattr(self.dataset, "use_acs_paper_transforms") and self.dataset.use_acs_paper_transforms is True:
+            print("GOING TO USE ACS PAPER TRANSFORMS")
+            self.acs_transform_train = ACSPaperTransforms(crop_size=48, move=5, train=True)
+            self.acs_transform_test = ACSPaperTransforms(crop_size=48, move=5, train=False)
+            self.apply_acs_transforms = True
+        self.apply_acs_transforms = False
+
     def __len__(self):
 
         if self.type == "train":
@@ -44,7 +51,7 @@ class DatasetPytorch(DatasetP):
         if self.type == "train":
             x, y = (
                 self.dataset.get_train(batch_size=1, return_tensor=False)
-                if self.apply_mg_transforms
+                if (self.apply_mg_transforms or self.apply_mg_transforms)
                 else self.dataset.get_train(batch_size=1, return_tensor=True)
             )
             if x is not None:
@@ -56,31 +63,24 @@ class DatasetPytorch(DatasetP):
 
                     elif isinstance(self.dataset, Dataset2D):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
-                        """ x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
-                        if hasattr(self, "buffer_2d_transforms") and len(self.buffer_2d_transforms) > 0:
-                            x_transform, y = self.buffer_2d_transforms.pop()
-                        else:
-                            self.buffer_2d_transforms = []
-                            i = 0
-                            while i < 200:
-                                x, y = self.dataset.get_train(batch_size=1, return_tensor=False)
-                                if x is None:
-                                    break
-                                x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
-                                self.buffer_2d_transforms.append((x_transform, y))
-                                i += 1
-                                # print(i)
-
-                        if len(self.buffer_2d_transforms) > 0:
-                            x_transform, y = self.buffer_2d_transforms.pop() 
-                        """
                     return (x_transform, y)
+                
+                elif self.apply_acs_transforms:
+                    assert y is not None
+                     if isinstance(self.dataset, Dataset):
+                        x_transform, y_transform = self.acs_transform_train(x,y)
+                        shape_x_transform = x_transform.shape
+                        assert len(shape_x_transform == 5) and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
+                    elif isinstance(self.dataset,Dataset2D):
+                        raise NotImplementedError
+                    return (Tensor(x_transform), Tensor(y_transform))
+                
                 return (x, y)
 
         if self.type == "val":
             x, y = (
                 self.dataset.get_val(batch_size=1, return_tensor=False)
-                if self.apply_mg_transforms
+                if (self.apply_mg_transforms or self.apply_acs_transforms)
                 else self.dataset.get_val(batch_size=1, return_tensor=True)
             )
             if x is not None:
@@ -92,6 +92,16 @@ class DatasetPytorch(DatasetP):
                     elif isinstance(self.dataset, Dataset2D):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
                     return (x_transform, y)
+                
+                elif self.apply_acs_transforms:
+                    assert y is not None
+                     if isinstance(self.dataset, Dataset):
+                        x_transform, y_transform = self.acs_transform_test(x,y)
+                        shape_x_transform = x_transform.shape
+                        assert len(shape_x_transform == 5) and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
+                    elif isinstance(self.dataset,Dataset2D):
+                        raise NotImplementedError
+                    return (Tensor(x_transform), Tensor(y_transform))
                 return (x, y)
 
         if self.type == "test":
@@ -136,6 +146,45 @@ class DatasetPytorch(DatasetP):
                 y_tensor[idx] = y
 
         return (x_tensor, y_tensor)
+
+
+from ACSConv.experiments.mylib.voxel_transform import rotation, reflection, crop, random_center
+from ACSConv.experiments.mylib.utils import _triple
+
+
+class ACSPaperTransforms:
+    def __init__(self, size, move=None, train=True):
+        self.size = _triple(size)
+        self.move = move
+        self.train = train
+
+    def __call__(self, voxel, seg):
+        # workaround items come as (1,1,x, y, z) from get_train from dataset and this was originally designed for x,y,z input
+        voxel = np.squeeze(voxel)
+        seg = np.squeeze(seg)
+        shape = voxel.shape
+        # voxel = voxel / 255.0 - 1 already normalized
+        if self.train:
+            if self.move is not None:
+                center = random_center(shape[2:], self.move)
+            else:
+                center = np.array(shape[2:]) // 2
+            voxel_ret = crop(voxel, center, self.size)
+            seg_ret = crop(seg, center, self.size)
+
+            angle = np.random.randint(4, size=3)
+            voxel_ret = rotation(voxel_ret, angle=angle)
+            seg_ret = rotation(seg_ret, angle=angle)
+
+            axis = np.random.randint(4) - 1
+            voxel_ret = reflection(voxel_ret, axis=axis)
+            seg_ret = reflection(seg_ret, axis=axis)
+        else:
+            center = np.array(shape[2:]) // 2
+            voxel_ret = crop(voxel, center, self.size)
+            seg_ret = crop(seg, center, self.size)
+
+        return np.expand_dims(voxel_ret, axis=(0,1)), np.expand_dims(seg_ret, axis=(0,1))
 
 
 if __name__ == "__main__":
@@ -187,4 +236,3 @@ if __name__ == "__main__":
             if sample_count > n_samples:
                 print("OVERDOING")
         PD.reset()  # works
-

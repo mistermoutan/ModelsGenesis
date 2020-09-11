@@ -109,6 +109,7 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 # keys correspondto what dataset should be named on CLI
 dataset_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
+    "lidc_80_80": "/work2/s182312/lidc_mini_cubes_for_acs_replication",
     "task01_ss": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
     "task02_ss": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr/extracted_cubes_64_64_32_ss",
@@ -146,6 +147,7 @@ dataset_full_cubes_labels_map = {"cellari_heart": "pytorch/datasets/heart_mri/da
 # for tester module and full cube segmentation module
 dataset_full_cubes_map = {
     "lidc": "/work2/s182312/lidc_full_cubes/full_cubes",
+    "lidc_80_80": "/work2/s182312/lidc_full_cubes/full_cubes",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr",
     "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr",
     "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/imagesTr",
@@ -162,6 +164,7 @@ dataset_full_cubes_map = {
 
 dataset_full_cubes_labels_map = {
     "lidc": "/work2/s182312/lidc_full_cubes/full_cubes_labels",
+    "lidc_80_80": "/work2/s182312/lidc_full_cubes/full_cubes_labels",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/labelsTr",
     "task02_sup": "/work1/s182312/medical_decathlon/Task02_Heart/labelsTr",
     "task03_sup": "/work1/s182312/medical_decathlon/Task03_Liver/labelsTr",
@@ -304,7 +307,14 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["dataset"] = args_object.dataset
 
     # model
-    assert args_object.model.lower() in ("vnet_mg", "unet_2d", "unet_acs", "unet_3d")
+    assert args_object.model.lower() in (
+        "vnet_mg",
+        "unet_2d",
+        "unet_acs",
+        "unet_3d",
+        "fcn_resnet18_acs",
+        "fcn_resnet18_acs_pretrained_imgnet",
+    )
     kwargs_dict["model"] = args_object.model
     if args_object.model.lower() == "unet_2d":
         assert args_object.two_dimensional_data is True, "Need to work with 2d Data for Unet_2d, pass --two_dimensional_data argument"

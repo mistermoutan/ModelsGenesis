@@ -21,18 +21,35 @@ class DiceLoss:
         if not pred.device == target.device:
             raise ValueError("input and target must be in the same device. Got: {} and {}".format(pred.device, target.device))
 
+        pred_shape = pred.shape
+
+        # for i_class in range(n_classes):
+        #    if targets[:,i_class].sum()>0:
+        #        loss += dice_loss_perclass(probs[:,i_class], targets[:,i_class], smooth)
+        # return loss / n_classes
+
+        list_of_flattened_channels = []
+
         if len(pred.shape) != 3:
-            # works for both  (N,C,x,y) and (N,C,x,y,z)
-            iflat = pred[:, 0].contiguous().view(-1)  # one channel only N x 1 x H x D X W -> N x H x D x W
-            tflat = target[:, 0].contiguous().view(-1)
+            for channel_idx in range(pred_shape[1]):
+                if target[:, channel_idx].sum() > 0:
+                    iflat = pred[:, channel_idx].contiguous().view(-1)  # one channel only N x 1 x H x D X W -> N x H x D x W
+                    tflat = target[:, channel_idx].contiguous().view(-1)
+                    list_of_flattened_channels.append((iflat, tflat))
         else:
             iflat = pred.contiguous().view(-1)  # comes as (x,y,z) so flatten everything
             tflat = target.contiguous().view(-1)
+            list_of_flattened_channels.append((iflat, tflat))
 
-        intersection = torch.sum(iflat * tflat)
-        A_sum_sq = torch.sum(iflat * iflat)
-        B_sum_sq = torch.sum(tflat * tflat)
-        dice = (2.0 * intersection + smooth + eps) / (A_sum_sq + B_sum_sq + eps)
+        dice = 0
+        for iflat, tflat in list_of_flattened_channels:
+            intersection = torch.sum(iflat * tflat)
+            A_sum_sq = torch.sum(iflat * iflat)
+            B_sum_sq = torch.sum(tflat * tflat)
+            dice += (2.0 * intersection + smooth + eps) / (A_sum_sq + B_sum_sq + eps)
+
+        dice /= len(list_of_flattened_channels)
+
         return 1 - dice if return_loss else dice
 
 
