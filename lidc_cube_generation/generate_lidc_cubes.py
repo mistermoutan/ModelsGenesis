@@ -262,7 +262,7 @@ if __name__ == "__main__":
             x = vol[first_annotation_bbox]
             y = first_annotation_mask
             assert np.count_nonzero(y) > 0
-            x = np.expand_dims(x, 0)
+            x = np.expand_dims(x, 0)  # to conform, dataset class expects (N_samples, x, y, z) per .npy file
             y = np.expand_dims(y, 0)
             np.save(os.path.join(X_DIR, "{}_{}.npy".format(scan.patient_id[-4:], j)), x)
             np.save(os.path.join(Y_DIR, "{}_{}.npy".format(scan.patient_id[-4:], j)), y)
