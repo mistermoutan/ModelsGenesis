@@ -33,7 +33,7 @@ class Tester:
         self.metric_dict = dict()
         self.metric_dict_unused = dict()
 
-        self.dataset_name = None 
+        self.dataset_name = None
         for key, value in dataset_map.items():
             if value == dataset.x_data_dir[:-3]:
                 self.dataset_name = key
@@ -45,10 +45,12 @@ class Tester:
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
-                self._test_on_full_cubes(dataset)
+                if "lidc" not in self.dataset_name.lower():
+                    self._test_on_full_cubes(dataset)
         else:
             self._test_dataset(self.dataset)
-            self._test_on_full_cubes(self.dataset)
+            if "lidc" not in self.dataset_name.lower():
+                self._test_on_full_cubes(self.dataset)
 
         file_nr = 0
         while os.path.isfile(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr))):
@@ -218,26 +220,23 @@ class Tester:
 
 
 if __name__ == "__main__":
-    
+
     config = load_object("objects/FROM_SCRATCH_cellari_heart_UNET_3D/only_supervised/run_2/config.pkl")
     dataset = load_object("objects/FROM_SCRATCH_cellari_heart_UNET_3D/only_supervised/run_2/dataset.pkl")
     t = Tester(config, dataset, test_all=False)
     t.test_segmentation()
 
+    # config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/config.pkl")
+    # dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/dataset.pkl")
+    # t = Tester(config, dataset, test_all=False)
+    # t.test_segmentation()
 
-    #config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/config.pkl")
-    #dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/dataset.pkl")
-    #t = Tester(config, dataset, test_all=False)
-    #t.test_segmentation()
+    # config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_ACS/only_supervised/run_1/config.pkl")
+    # dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_ACS/only_supervised/run_1/dataset.pkl")
+    # t = Tester(config, dataset, test_all=False)
+    # t.test_segmentation()
 
-    #config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_ACS/only_supervised/run_1/config.pkl")
-    #dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_ACS/only_supervised/run_1/dataset.pkl") 
-    #t = Tester(config, dataset, test_all=False)
-    #t.test_segmentation()
-
-    #config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_2D_UNET_2D/only_supervised/run_1/config.pkl")
-    #dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_2D/only_supervised/run_1/dataset.pkl")
-    #t = Tester(config, dataset, test_all=False)
-    #t.test_segmentation()
-
-
+    # config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_2D_UNET_2D/only_supervised/run_1/config.pkl")
+    # dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_2D/only_supervised/run_1/dataset.pkl")
+    # t = Tester(config, dataset, test_all=False)
+    # t.test_segmentation()
