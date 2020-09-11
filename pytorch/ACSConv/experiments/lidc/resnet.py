@@ -194,6 +194,7 @@ class FCNResNet(nn.Module):
         features_cat2 = self.conv2(features_cat2)
         features = features_cat2
 
+        # final layer is Conv with out_channels = num_classes therefore requiring one hot enconding of ther result
         out = self.classifier(features)
         return out
 
