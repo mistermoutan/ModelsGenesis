@@ -28,10 +28,10 @@ class DiceLoss:
 
         if len(pred.shape) != 3:
             for channel_idx in range(pred_shape[1]):
-                if target[:, channel_idx].sum() > 0:
-                    iflat = pred[:, channel_idx].contiguous().view(-1)  # one channel only N x 1 x H x D X W -> N x H x D x W
-                    tflat = target[:, channel_idx].contiguous().view(-1)
-                    list_of_flattened_channels.append((iflat, tflat))
+                # if target[:, channel_idx].sum() > 0:
+                iflat = pred[:, channel_idx].contiguous().view(-1)  # one channel only N x 1 x H x D X W -> N x H x D x W
+                tflat = target[:, channel_idx].contiguous().view(-1)
+                list_of_flattened_channels.append((iflat, tflat))
         else:
             iflat = pred.contiguous().view(-1)  # comes as (x,y,z) so flatten everything
             tflat = target.contiguous().view(-1)
