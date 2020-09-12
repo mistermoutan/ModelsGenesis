@@ -27,8 +27,6 @@ from dice_loss import DiceLoss
 from image_transformations import generate_pair
 from utils import pad_if_necessary, save_object
 
-from dataset import Dataset
-
 
 class Trainer:
 
@@ -338,8 +336,8 @@ class Trainer:
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x, y = pad_if_necessary(x, y)
                 if "fcn_resnet_18" in self.config.model.lower():
-                    #expects 3 channel input
-                    x_transform = torch.cat((x_transform,x_transform,x_transform),dim = 1)
+                    # expects 3 channel input
+                    x_transform = torch.cat((x_transform, x_transform, x_transform), dim=1)
                     # 2 channel output of network
                     y = categorical_to_one_hot(y, dim=1, expand_dim=False)
 
@@ -439,12 +437,6 @@ class Trainer:
         self._add_completed_flag_to_last_checkpoint_saved(phase="sup")
         print("FINISHED TRAINING SUP")
 
-    def test(self, test_dataset):
-        from evaluate import Tester
-
-        self.tester = Tester(self.model, self.config)
-        self.tester.test_segmentation(test_dataset)
-
     def add_hparams_to_writer(self):
 
         hpa_dict = {
@@ -491,12 +483,12 @@ class Trainer:
             "training_time_sup": self.sup_timedelta,
         }
 
-        if hasattr(self, "tester"):
-            if isinstance(self.tester.dice, float):
-                met_dict.update({"test_dice": self.tester.dice, "test_jaccard": self.tester.jaccard})
-            elif isinstance(self.tester.dice, list):
-                met_dict.update({"test_dice_{}".format(str(i)): dice for i, dice in enumerate(self.tester.dice)})
-                met_dict.update({"test_jaccard_{}".format(str(i)): jacd for i, jacd in enumerate(self.tester.jaccard)})
+        # if hasattr(self, "tester"):
+        #    if isinstance(self.tester.dice, float):
+        #        met_dict.update({"test_dice": self.tester.dice, "test_jaccard": self.tester.jaccard})
+        #    elif isinstance(self.tester.dice, list):
+        #        met_dict.update({"test_dice_{}".format(str(i)): dice for i, dice in enumerate(self.tester.dice)})
+        #        met_dict.update({"test_jaccard_{}".format(str(i)): jacd for i, jacd in enumerate(self.tester.jaccard)})
 
         self.tb_writer.add_hparams(hparam_dict=hpa_dict, metric_dict=met_dict)
         self.tb_writer.flush()
@@ -509,28 +501,28 @@ class Trainer:
 
         if self.config.model.lower() == "vnet_mg":
             self.model = UNet3D()
-            
+
         elif self.config.model.lower() == "unet_2d":
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
-        
+
         elif self.config.model.lower() == "unet_acs":
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model)
-        
+
         elif self.config.model.lower() == "unet_3d":
             self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
-        
+
         elif self.config.model.lower() == "fcn_restnet18":
             self.model = FCNResNet(pretrained=False, num_classes=2)
-        
+
         elif self.config.model.lower() == "fcn_resnet18_acs":
             self.config.model.lower() == FCNResNet(pretrained=False, num_classes=2)
             self.model = ACSConverter(self.model)
-        
+
         elif self.config.model.lower() == "fcn_resnet18_acs_pretrained_imgnet":
             self.model = FCNResNet(pretrained=True, num_classes=2)
             self.mode = ACSConverter(self.model)
-             
+
         self.model.to(self.device)
 
         from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
@@ -854,10 +846,11 @@ class Trainer:
                 )
             elif self.config.scheduler_ss.lower() == "steplr":
                 self.scheduler_ss = torch.optim.lr_scheduler.StepLR(self.optimizer_ss, step_size=int(self.config.patience_ss), gamma=0.5)
-            
-            elif self.config.scheduler_ss.lower() == "multisteplr"
-                self.scheduler_ss = torch.optim.lr_scheduler.MultiStepLR(self.optimizer_ss, milestones=self.config.milestones,
-                                                     gamma=self.config.gamma)
+
+            elif self.config.scheduler_ss.lower() == "multisteplr":
+                self.scheduler_ss = torch.optim.lr_scheduler.MultiStepLR(
+                    self.optimizer_ss, milestones=self.config.milestones, gamma=self.config.gamma
+                )
 
         if phase == "sup" or phase == "both":
 
@@ -874,10 +867,7 @@ class Trainer:
                         eps=self.config.eps_sup,
                     )
                 else:
-                    self.optimizer_sup = torch.optim.Adam(
-                        self.model.parameters(),
-                        self.config.lr_sup,
-                    )
+                    self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup,)
             else:
                 raise NotImplementedError
 
@@ -888,10 +878,11 @@ class Trainer:
 
             elif self.config.scheduler_sup.lower() == "steplr":
                 self.scheduler_sup = torch.optim.lr_scheduler.StepLR(self.optimizer_sup, step_size=int(self.config.patience_sup), gamma=0.5)
-           
-            elif self.config.scheduler_sup.lower() == "multisteplr"
-                self.scheduler_sup = torch.optim.lr_scheduler.MultiStepLR(self.optimizer_sup, milestones=self.config.milestones,
-                                                     gamma=self.config.gamma)
+
+            elif self.config.scheduler_sup.lower() == "multisteplr":
+                self.scheduler_sup = torch.optim.lr_scheduler.MultiStepLR(
+                    self.optimizer_sup, milestones=self.config.milestones, gamma=self.config.gamma
+                )
             else:
                 raise NotImplementedError
 

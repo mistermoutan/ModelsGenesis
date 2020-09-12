@@ -1,9 +1,7 @@
-import os
 import numpy as np
 from torch.utils.data import Dataset as DatasetP
 from torch import Tensor
 import torch
-import numpy as np
 
 from image_transformations import generate_pair
 from dataset import Dataset
@@ -30,8 +28,8 @@ class DatasetPytorch(DatasetP):
 
         if hasattr(self.dataset, "use_acs_paper_transforms") and self.dataset.use_acs_paper_transforms is True:
             print("GOING TO USE ACS PAPER TRANSFORMS")
-            self.acs_transform_train = ACSPaperTransforms(crop_size=48, move=5, train=True)
-            self.acs_transform_test = ACSPaperTransforms(crop_size=48, move=5, train=False)
+            self.acs_transform_train = ACSPaperTransforms(size=48, move=5, train=True)
+            self.acs_transform_test = ACSPaperTransforms(size=48, move=5, train=False)
             self.apply_acs_transforms = True
         self.apply_acs_transforms = False
 
@@ -64,17 +62,17 @@ class DatasetPytorch(DatasetP):
                     elif isinstance(self.dataset, Dataset2D):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
                     return (x_transform, y)
-                
+
                 elif self.apply_acs_transforms:
                     assert y is not None
-                     if isinstance(self.dataset, Dataset):
-                        x_transform, y_transform = self.acs_transform_train(x,y)
+                    if isinstance(self.dataset, Dataset):
+                        x_transform, y_transform = self.acs_transform_train(x, y)
                         shape_x_transform = x_transform.shape
-                        assert len(shape_x_transform == 5) and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
-                    elif isinstance(self.dataset,Dataset2D):
+                        assert len(shape_x_transform) == 5 and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
+                    elif isinstance(self.dataset, Dataset2D):
                         raise NotImplementedError
                     return (Tensor(x_transform), Tensor(y_transform))
-                
+
                 return (x, y)
 
         if self.type == "val":
@@ -92,14 +90,14 @@ class DatasetPytorch(DatasetP):
                     elif isinstance(self.dataset, Dataset2D):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True, two_dim=True)
                     return (x_transform, y)
-                
+
                 elif self.apply_acs_transforms:
                     assert y is not None
-                     if isinstance(self.dataset, Dataset):
-                        x_transform, y_transform = self.acs_transform_test(x,y)
+                    if isinstance(self.dataset, Dataset):
+                        x_transform, y_transform = self.acs_transform_test(x, y)
                         shape_x_transform = x_transform.shape
-                        assert len(shape_x_transform == 5) and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
-                    elif isinstance(self.dataset,Dataset2D):
+                        assert len(shape_x_transform) == 5 and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
+                    elif isinstance(self.dataset, Dataset2D):
                         raise NotImplementedError
                     return (Tensor(x_transform), Tensor(y_transform))
                 return (x, y)
@@ -184,7 +182,7 @@ class ACSPaperTransforms:
             voxel_ret = crop(voxel, center, self.size)
             seg_ret = crop(seg, center, self.size)
 
-        return np.expand_dims(voxel_ret, axis=(0,1)), np.expand_dims(seg_ret, axis=(0,1))
+        return np.expand_dims(voxel_ret, axis=(0, 1)), np.expand_dims(seg_ret, axis=(0, 1))
 
 
 if __name__ == "__main__":

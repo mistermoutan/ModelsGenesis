@@ -83,13 +83,7 @@ def replicate_acs_results_fcnresnet18_my_cubes(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=False)
     dataset.use_acs_paper_transforms = True  # !!
 
-    config = FineTuneConfig(
-        data_dir="",
-        task="REPLICATE_ACS_PAPER",
-        self_supervised=False,
-        supervised=True,
-        model=kwargs_dict_["model"],
-    )
+    config = FineTuneConfig(data_dir="", task="REPLICATE_ACS_PAPER", self_supervised=False, supervised=True, model=kwargs_dict_["model"],)
     config.batch_size_sup = 8
     config.nb_epoch_sup = 100
     config.lr_sup = 0.001
@@ -229,12 +223,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
-    config = FineTuneConfig(
-        data_dir="",
-        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
-        self_supervised=False,
-        supervised=True,
-    )
+    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True,)
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
 
@@ -276,12 +265,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     mode = kwargs_dict_.get("mode", "")
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
-    config = FineTuneConfig(
-        data_dir="",
-        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
-        self_supervised=False,
-        supervised=True,
-    )
+    config = FineTuneConfig(data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True,)
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
@@ -912,7 +896,7 @@ if __name__ == "__main__":
     elif args.command == "replicate_acs_results_fcnresnet18_my_cubes":
 
         kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
-        assert kwargs_dict.model is not None and kwargs_dict.model.lower() != "vnet_mg"
+        assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
         replicate_acs_results_fcnresnet18_my_cubes(kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_provided_weights_no_ss":

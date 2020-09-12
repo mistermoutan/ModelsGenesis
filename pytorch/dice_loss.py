@@ -1,11 +1,7 @@
 import torch
-import torch.nn as nn
 
 
 class DiceLoss:
-
-    # TODO: dice needs threshold here no, actually no, so the network after reaching 0.5 has no incentive to become "more certain"
-
     @staticmethod
     def dice_loss(pred, target, smooth=0, eps=1e-7, return_loss=True):
         """
