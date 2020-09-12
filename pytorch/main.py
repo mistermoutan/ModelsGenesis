@@ -101,23 +101,23 @@ def replicate_acs_results_fcnresnet18_my_cubes(**kwargs):
     config.patience_sup_terminate = 120
 
     config.from_scratch = True
-    
-    if num_cv_folds is not None:
-    cv = get_cross_validator_object_of_task_dir(config.task_dir)
-    if cv is None:
-        if config.experiment_nr == 1:
-            cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
-            cv.override_dataset_files_with_splits()
-            save_object(cv, "cross_validator", config.object_dir)
-            print("RUN 1: Building cross validator")
-        else:
-            print("TOO LATE TO BRING CROSS VALIDATON IN")
 
-    else:
-        cv.set_dataset(dataset)
-        cv.override_dataset_files_with_splits()
-        # to "loose" used splits as they're popped and needs to be saved in run1 objects
-        save_cross_validator_object_of_task_dir(cv, config.task_dir)
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
 
     config.display()
 
@@ -129,7 +129,7 @@ def replicate_acs_results_fcnresnet18_my_cubes(**kwargs):
     trainer_mg_replication.finetune_supervised()
     trainer_mg_replication.add_hparams_to_writer()
     trainer_mg_replication.get_stats()
-    
+
     """
     --- 
     PRETRAIN MODEL ON DIFFERENT DATASET WITH MG FRAMEWORK
@@ -908,11 +908,11 @@ if __name__ == "__main__":
         kwargs_dict = build_kwargs_dict(args)
         print("RESUMING REPLICATION OF RESULTS EXPERIMENT FROM RUN {}".format(args.run))
         resume_replication_of_results_pretrain(args.run, kwargs_dict=kwargs_dict)
-    
+
     elif args.command == "replicate_acs_results_fcnresnet18_my_cubes":
-        
+
         kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
-        assert kwargs_dict.model is not None and kwargs_dict.model.lower()!="vnet_mg"
+        assert kwargs_dict.model is not None and kwargs_dict.model.lower() != "vnet_mg"
         replicate_acs_results_fcnresnet18_my_cubes(kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_provided_weights_no_ss":
