@@ -277,7 +277,7 @@ class Trainer:
             train_dataset = DatasetPytorch(self.dataset, self.config, type_="train", apply_mg_transforms=False)
             train_data_loader = DataLoader(
                 train_dataset,
-                batch_size=self.config.batch_size_ss,
+                batch_size=self.config.batch_size_sup,
                 num_workers=self.config.workers,
                 collate_fn=DatasetPytorch.custom_collate,
                 pin_memory=True,
@@ -286,7 +286,7 @@ class Trainer:
             val_dataset = DatasetPytorch(self.dataset, self.config, type_="val", apply_mg_transforms=False)
             val_data_loader = DataLoader(
                 val_dataset,
-                batch_size=self.config.batch_size_ss,
+                batch_size=self.config.batch_size_sup,
                 num_workers=self.config.workers,
                 collate_fn=DatasetPytorch.custom_collate,
                 pin_memory=True,
@@ -335,9 +335,9 @@ class Trainer:
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x, y = pad_if_necessary(x, y)
-                if "fcn_resnet_18" in self.config.model.lower():
+                if "fcn_resnet18" in self.config.model.lower():
                     # expects 3 channel input
-                    x_transform = torch.cat((x_transform, x_transform, x_transform), dim=1)
+                    x = torch.cat((x, x, x), dim=1)
                     # 2 channel output of network
                     y = categorical_to_one_hot(y, dim=1, expand_dim=False)
 
@@ -516,7 +516,7 @@ class Trainer:
             self.model = FCNResNet(pretrained=False, num_classes=2)
 
         elif self.config.model.lower() == "fcn_resnet18_acs":
-            self.config.model.lower() == FCNResNet(pretrained=False, num_classes=2)
+            self.model = FCNResNet(pretrained=False, num_classes=2)
             self.model = ACSConverter(self.model)
 
         elif self.config.model.lower() == "fcn_resnet18_acs_pretrained_imgnet":
