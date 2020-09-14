@@ -30,10 +30,10 @@ from utils import pad_if_necessary, save_object
 
 class Trainer:
 
-    """ 
+    """
     Initializing model from scratch allows for:
         - Training on dataset from scratch with ModelGenesis self supervised framework
-            
+
     Using pretrained weights as a starting point this class allows for finetuning the model by:
         - Using ModelGenesis self supervised framework (finetune_self_supervised)
         - Performing supervised task
@@ -539,6 +539,11 @@ class Trainer:
             phase = kwargs.get("phase", None)
             assert phase in ("ss", "sup")
             assert specific_weight_path is not None, "Specifiy weight path to load"
+            if "FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG" or "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG" in specific_weight_path:
+                specific_weight_path_split = specific_weight_path.split("/")
+                specific_weight_path_split[1] = "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG"
+                specific_weight_path = "/".join(specific_weight_path_split)
+
             assert os.path.isfile(specific_weight_path), "{} is NOT a file".format(specific_weight_path)
 
         DEFAULTING_TO_LAST_SS = False
@@ -867,7 +872,10 @@ class Trainer:
                         eps=self.config.eps_sup,
                     )
                 else:
-                    self.optimizer_sup = torch.optim.Adam(self.model.parameters(), self.config.lr_sup,)
+                    self.optimizer_sup = torch.optim.Adam(
+                        self.model.parameters(),
+                        self.config.lr_sup,
+                    )
             else:
                 raise NotImplementedError
 
