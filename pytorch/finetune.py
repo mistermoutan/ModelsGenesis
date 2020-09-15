@@ -539,7 +539,9 @@ class Trainer:
             phase = kwargs.get("phase", None)
             assert phase in ("ss", "sup")
             assert specific_weight_path is not None, "Specifiy weight path to load"
-            if "FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG" or "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG" in specific_weight_path:
+            if ("FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG" in specific_weight_path) or (
+                "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG" in specific_weight_path
+            ):
                 specific_weight_path_split = specific_weight_path.split("/")
                 specific_weight_path_split[1] = "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG"
                 specific_weight_path = "/".join(specific_weight_path_split)
