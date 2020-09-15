@@ -827,6 +827,20 @@ def test(**kwargs):
         if task_dir_already_has_metric_dict_computed(task_dir) is True:
             print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED2: ", task_dir)
             continue
+        if "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG" in task_dir:
+            already_done = False
+            split = task_dir.split("/")
+            split[0] = "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG"
+            path = "/".join(split)
+            if task_dir_already_has_metric_dict_computed(path):
+                already_done = True
+            split = task_dir.split("/")
+            split[0] = "FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG"
+            path = "/".join(split)
+            if task_dir_already_has_metric_dict_computed(path):
+                already_done = True
+            if already_done is True:
+                continue
 
         print("\n\n TESTING WEIGHTS FROM: ", task_dir)
 
