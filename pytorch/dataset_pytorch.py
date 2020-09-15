@@ -31,7 +31,8 @@ class DatasetPytorch(DatasetP):
             self.acs_transform_train = ACSPaperTransforms(size=48, move=5, train=True)
             self.acs_transform_test = ACSPaperTransforms(size=48, move=5, train=False)
             self.apply_acs_transforms = True
-        self.apply_acs_transforms = False
+        else:
+            self.apply_acs_transforms = False
 
     def __len__(self):
 
@@ -124,6 +125,42 @@ class DatasetPytorch(DatasetP):
     def reset(self):
         self.dataset.reset()
 
+    """     def get_padding_to_make_cube_80_80_80_as_in_lidc(shape, wanted=(80,80,80)):
+        # print("shape ", shape)
+        # wanted = (80, 80, 80)
+        slack = []
+        for i, j in zip(wanted, shape):
+
+            if i > j:
+                slack.insert(0, (i - j))
+            else:
+                slack.insert(0, 0)
+
+        pad = []
+        for i in slack:
+            if i % 2 == 0:
+                pad.insert(0, (int(i / 2), int(i / 2)))
+            else:
+                maior = int((i - 1) / 2)
+                menor = int(i - maior)
+                pad.insert(0, (maior, menor))
+        # print("padding ", pad)
+        return pad
+        
+    @staticmethod
+    def fix_dims_batch(batch):
+        # in mini lidc cubes because not all have same dims
+        shape_first_elem_of_batch = list(batch[0][0].shape)
+        #get biggest
+        for tuple_x_y in batch:
+            for i, dim in enumerate(tuple_x_y[0].shape):
+                if dim > shape_first_elem_of_batch[i]:
+                    shape_first_elem_of_batch[i] = dim
+        for tuple_x_y in batch:
+            if list(tuple_x_y[0].shape) != shape_first_elem_of_batch:
+                pass """
+            
+            
     @staticmethod
     def custom_collate(batch):
         dims = batch[0][0].shape
@@ -182,7 +219,7 @@ class ACSPaperTransforms:
             voxel_ret = crop(voxel, center, self.size)
             seg_ret = crop(seg, center, self.size)
 
-        return np.expand_dims(voxel_ret, axis=(0, 1)), np.expand_dims(seg_ret, axis=(0, 1))
+        return np.expand_dims(voxel_ret, axis=(0, 1)).astype(np.float32), np.expand_dims(seg_ret, axis=(0, 1)).astype(np.float32)
 
 
 if __name__ == "__main__":
