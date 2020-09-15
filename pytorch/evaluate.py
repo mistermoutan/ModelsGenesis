@@ -114,8 +114,11 @@ class Tester:
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
-                pred = self.model(x)
-                pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                    pred = self.model(x)
+                    pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                else:
+                    pred = self.model(x)
+
                 x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
                 x_flat = x[:, 0].contiguous().view(-1)
@@ -141,8 +144,11 @@ class Tester:
                 x, y = x.float().to(self.device), y.float().to(self.device)
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
-                pred = self.model(x)
-                pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                    pred = self.model(x)
+                    pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                else:
+                    pred = self.model(x)
+
                 x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
                 x_flat = x[:, 0].contiguous().view(-1)
