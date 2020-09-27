@@ -76,7 +76,7 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
 def replicate_acs_results_fcnresnet18_my_cubes(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
-    dataset_list = ["lidc_80_80"]
+    dataset_list = ["lidc_80_80_padded"]
     split = (0.8, 0.2, 0)
     num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
 
