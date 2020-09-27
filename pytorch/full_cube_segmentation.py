@@ -141,7 +141,7 @@ class FullCubeSegmentator:
         for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
-            if sum([i for i in np_array.shape]) > 500:
+            if sum([i for i in np_array.shape]) > 500 and self.two_dim is False:
                 print("CUBE TOO BIG, PATCHING")
                 inference_full_image = False
 
@@ -311,7 +311,7 @@ class FullCubeSegmentator:
         for cube_idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
-            if sum([i for i in np_array.shape]) > 500:
+            if sum([i for i in np_array.shape]) > 500 and self.two_dim is False:
                 print("CUBE TOO BIG, PATCHING")
                 inference_full_image = False
 
