@@ -113,8 +113,6 @@ def crop(array, zyx, dhw):
     d, h, w = dhw
     if len(array.shape) == 3:
         cropped = array[z - d // 2 : z + d // 2, y - h // 2 : y + h // 2, x - w // 2 : x + w // 2]
-    elif len(array.shape) == 5:
-        cropped = array[:, :, z - d // 2 : z + d // 2, y - h // 2 : y + h // 2, x - w // 2 : x + w // 2]
     else:
         raise ValueError("NOT READY")
     return cropped
