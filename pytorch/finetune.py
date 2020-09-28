@@ -138,6 +138,7 @@ class Trainer:
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                     x_transform, y = pad_if_necessary(x_transform, y)
+
                 pred = self.model(x_transform)
                 loss = criterion(pred, y)
                 loss.to(self.device)
@@ -364,9 +365,9 @@ class Trainer:
             with torch.no_grad():
                 self.model.eval()
                 for iteration, (x, y) in enumerate(val_data_loader):
-                    x, y = self.dataset.get_val(batch_size=self.config.batch_size_sup)
-                    if x is None:
-                        break
+                    # x, y = self.dataset.get_val(batch_size=self.config.batch_size_sup)
+                    # if x is None:
+                    #    break
                     x, y = x.float().to(self.device), y.float().to(self.device)
                     if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                         x, y = pad_if_necessary(x, y)
