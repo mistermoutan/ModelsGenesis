@@ -159,8 +159,7 @@ class DatasetPytorch(DatasetP):
         for tuple_x_y in batch:
             if list(tuple_x_y[0].shape) != shape_first_elem_of_batch:
                 pass """
-            
-            
+
     @staticmethod
     def custom_collate(batch):
         dims = batch[0][0].shape
@@ -201,9 +200,9 @@ class ACSPaperTransforms:
         # voxel = voxel / 255.0 - 1 already normalized
         if self.train:
             if self.move is not None:
-                center = random_center(shape[2:], self.move)
+                center = random_center(shape, self.move)
             else:
-                center = np.array(shape[2:]) // 2
+                center = np.array(shape) // 2
             voxel_ret = crop(voxel, center, self.size)
             seg_ret = crop(seg, center, self.size)
 
@@ -215,7 +214,7 @@ class ACSPaperTransforms:
             voxel_ret = reflection(voxel_ret, axis=axis)
             seg_ret = reflection(seg_ret, axis=axis)
         else:
-            center = np.array(shape[2:]) // 2
+            center = np.array(shape) // 2
             voxel_ret = crop(voxel, center, self.size)
             seg_ret = crop(seg, center, self.size)
 
