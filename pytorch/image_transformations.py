@@ -163,6 +163,9 @@ def image_in_painting(x, two_dim=False):
 
 
 def image_out_painting(x, two_dim=False):
+
+    image_temp = copy.deepcopy(x)
+
     if not two_dim:
         _, img_rows, img_cols, img_deps = x.shape
         x = (
@@ -187,7 +190,6 @@ def image_out_painting(x, two_dim=False):
         )
 
     # print(x.shape)
-    image_temp = copy.deepcopy(x)
     block_noise_size_x = img_rows - random.randint(3 * img_rows // 7, 4 * img_rows // 7)
     block_noise_size_y = img_cols - random.randint(3 * img_cols // 7, 4 * img_cols // 7)
     if not two_dim:
