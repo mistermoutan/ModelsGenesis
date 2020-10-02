@@ -20,7 +20,7 @@ def bernstein_poly(i, n, t):
      The Bernstein polynomial of n, i as a function of t
     n: number of points
     i: the specific point {0, n_points}
-    t: [0,t], given as linspace (0,1,number of steps) - number of steps: higher gives you closer proximity points aling the curve  
+    t: [0,t], given as linspace (0,1,number of steps) - number of steps: higher gives you closer proximity points aling the curve
     """
 
     a = comb(n, i) * (t ** (n - i)) * (1 - t) ** i
@@ -30,16 +30,16 @@ def bernstein_poly(i, n, t):
 
 def bezier_curve(points, nTimes=1000):
     """
-       Given a set of control points, return the
-       bezier curve defined by the control points.
+    Given a set of control points, return the
+    bezier curve defined by the control points.
 
-       Control points should be a list of lists, or list of tuples
-       such as [ [1,1], 
-                 [2,3], 
-                 [4,5], ..[Xn, Yn] ]
-        nTimes is the number of time steps, defaults to 1000
+    Control points should be a list of lists, or list of tuples
+    such as [ [1,1],
+              [2,3],
+              [4,5], ..[Xn, Yn] ]
+     nTimes is the number of time steps, defaults to 1000
 
-        See http://processingjs.nihongoresources.com/bezierinfo/
+     See http://processingjs.nihongoresources.com/bezierinfo/
     """
 
     nPoints = len(points)
@@ -51,7 +51,7 @@ def bezier_curve(points, nTimes=1000):
     # n poits = 4
     polynomial_array = np.array([bernstein_poly(i=i, n=nPoints - 1, t=t) for i in range(0, nPoints)])
 
-    # the sum term of the polinomila is handle in this mattrix multipliation
+    # the sum term of the polinomial is handle in this mattrix multipliation
     xvals = np.dot(xPoints, polynomial_array)
     yvals = np.dot(yPoints, polynomial_array)
 
@@ -106,11 +106,14 @@ def local_pixel_shuffling(x, prob=0.5, two_dim=False):
             block_noise_size_z = random.randint(1, img_deps // 10)
             noise_z = random.randint(0, img_deps - block_noise_size_z)
             window = orig_image[
-                0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z,
+                0,
+                noise_x : noise_x + block_noise_size_x,
+                noise_y : noise_y + block_noise_size_y,
+                noise_z : noise_z + block_noise_size_z,
             ]
         else:
             window = orig_image[0, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y]
-        
+
         window = window.flatten()
         np.random.shuffle(window)
 
@@ -144,7 +147,12 @@ def image_in_painting(x, two_dim=False):
             block_noise_size_z = random.randint(img_deps // 6, img_deps // 3)
             noise_z = random.randint(3, img_deps - block_noise_size_z - 3)
             x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y, noise_z : noise_z + block_noise_size_z] = (
-                np.random.rand(block_noise_size_x, block_noise_size_y, block_noise_size_z,) * 1.0
+                np.random.rand(
+                    block_noise_size_x,
+                    block_noise_size_y,
+                    block_noise_size_z,
+                )
+                * 1.0
             )
         else:
             x[:, noise_x : noise_x + block_noise_size_x, noise_y : noise_y + block_noise_size_y] = (
@@ -157,11 +165,26 @@ def image_in_painting(x, two_dim=False):
 def image_out_painting(x, two_dim=False):
     if not two_dim:
         _, img_rows, img_cols, img_deps = x.shape
-        x = np.random.rand(x.shape[0], x.shape[1], x.shape[2], x.shape[3],) * 1.0
+        x = (
+            np.random.rand(
+                x.shape[0],
+                x.shape[1],
+                x.shape[2],
+                x.shape[3],
+            )
+            * 1.0
+        )
 
     else:
         _, img_rows, img_cols = x.shape
-        x = np.random.rand(x.shape[0], x.shape[1], x.shape[2],) * 1.0
+        x = (
+            np.random.rand(
+                x.shape[0],
+                x.shape[1],
+                x.shape[2],
+            )
+            * 1.0
+        )
 
     # print(x.shape)
     image_temp = copy.deepcopy(x)
@@ -243,7 +266,7 @@ def generate_pair(img, batch_size, config, status="test", make_tensors=False, tw
 
         # Apply non-Linear transformation with an assigned probability
         x[n] = nonlinear_transformation(x[n], config.nonlinear_rate)
-    
+
         # Inpainting & Outpainting
         if random.random() < config.paint_rate:
             if random.random() < config.inpaint_rate:
