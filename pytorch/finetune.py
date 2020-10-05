@@ -371,6 +371,11 @@ class Trainer:
                     x, y = x.float().to(self.device), y.float().to(self.device)
                     if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                         x, y = pad_if_necessary(x, y)
+                    if "fcn_resnet18" in self.config.model.lower():
+                        # expects 3 channel input
+                        x = torch.cat((x, x, x), dim=1)
+                        # 2 channel output of network
+                        y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
