@@ -290,6 +290,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
             kwargs_dict["split"] = tuple(args_object.tr_val_ts_split)
 
     if args_object.num_cv_folds is not None:
+        assert args_object.dataset != "lidc", "This lidc is to be used with the splits as the Model Genesis paper describes"
         kwargs_dict["num_cv_folds"] = args_object.num_cv_folds
 
     if kwargs.get("get_directory", False):
