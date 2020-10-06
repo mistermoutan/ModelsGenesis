@@ -964,7 +964,7 @@ if __name__ == "__main__":
         assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
         replicate_acs_results_fcnresnet18_my_cubes(kwargs_dict=kwargs_dict)
 
-    elif command == "resume_replicate_acs_results_fcnresnet18_my_cubes":
+    elif args.command == "resume_replicate_acs_results_fcnresnet18_my_cubes":
         assert args.run is not None, "You have to specify which --run to resume (int)"
         kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
         assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
