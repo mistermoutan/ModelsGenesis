@@ -130,6 +130,40 @@ def replicate_acs_results_fcnresnet18_my_cubes(**kwargs):
     trainer_mg_replication.add_hparams_to_writer()
     trainer_mg_replication.get_stats()
 
+
+def resume_replicate_acs_results_fcnresnet18_my_cubes(run_nr, **kwargs):
+
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    dataset_list = ["lidc_80_80_padded"]
+
+    config = FineTuneConfig(
+        data_dir="",
+        task="REPLICATE_ACS_PAPER",
+        self_supervised=False,
+        supervised=True,
+        model=kwargs_dict_["model"],
+    )
+
+    config.override_dirs(run_nr)
+
+    if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
+        config = load_object(os.path.join(config.object_dir, "config.pkl"))  #!
+    else:
+        raise FileNotFoundError("Could not find CONFIG object pickle. Did you specify a valid run number?")
+
+    if os.path.isfile(os.path.join(config.object_dir, "dataset.pkl")):
+        dataset = load_object(os.path.join(config.object_dir, "dataset.pkl"))  #!
+    else:
+        raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
+
+    config.resume_sup = True
+    config.display()
+    trainer_mg_replication = Trainer(config, dataset)
+    trainer_mg_replication.load_model(from_latest_checkpoint=True)
+    trainer_mg_replication.finetune_supervised()
+    trainer_mg_replication.add_hparams_to_writer()
+    trainer_mg_replication.get_stats()
+
     """
     --- 
     PRETRAIN MODEL ON DIFFERENT DATASET WITH MG FRAMEWORK
@@ -929,6 +963,12 @@ if __name__ == "__main__":
         kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
         assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
         replicate_acs_results_fcnresnet18_my_cubes(kwargs_dict=kwargs_dict)
+
+    elif command == "resume_replicate_acs_results_fcnresnet18_my_cubes":
+        assert args.run is not None, "You have to specify which --run to resume (int)"
+        kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
+        assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
+        resume_replicate_acs_results_fcnresnet18_my_cubes(run_nr=args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_provided_weights_no_ss":
 
