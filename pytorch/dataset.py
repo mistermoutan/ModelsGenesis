@@ -45,7 +45,7 @@ class Dataset:
 
     def _merge_test_into_val(self):
         """ Test set is never used, it's all in val"""
-        if self.x_test_filenames_original != []:
+        if len(self.x_test_filenames_original) > 0:
             self.x_val_filenames_original = self.x_val_filenames_original + [i for i in self.x_test_filenames_original]
             self.x_test_filenames_original = []
             self.reset()
