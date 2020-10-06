@@ -35,12 +35,20 @@ class Dataset:
             deepcopy(self.x_val_filenames),
             deepcopy(self.x_test_filenames),
         )
+        self._merge_test_into_val()
         self.train_idxs, self.val_idxs, self.test_idxs = [], [], []
         self.cube_dimensions = deepcopy(self.x_filenames[0][-14:-6])
         self.reseted = False
         self.nr_samples_train = None
         self.nr_samples_val = None
         self.nr_samples_test = None
+
+    def _merge_test_into_val(self):
+        """ Test set is never used, it's all in val"""
+        if self.x_test_filenames_original != []:
+            self.x_val_filenames_original = self.x_val_filenames_original + [i for i in self.x_test_filenames_original]
+            self.x_test_filenames_original = []
+            self.reset()
 
     def _load_data(self, tr_vl_ts_prop: tuple, force_load=(False, False, False)):
         """
