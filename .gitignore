@@ -16,6 +16,7 @@ old_env/
 *.vscode
 *.pt
 *.ipynb
+!results.ipynb
 *.json
 *.jpg
 objects/
