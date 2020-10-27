@@ -14,6 +14,7 @@ from dataset import Dataset
 from utils import *
 from full_cube_segmentation import FullCubeSegmentator
 from finetune import Trainer
+from ACSConv.experiments.mylib.utils import categorical_to_one_hot
 
 
 class Tester:
@@ -45,7 +46,7 @@ class Tester:
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
-                if "lidc" not in self.dataset_name.lower():
+                if "lidc" not in self.dataset_name.lower():  # and "fcn_resnet18" not in self.config.model.lower():
                     self._test_on_full_cubes(dataset)
         else:
             self._test_dataset(self.dataset)
@@ -116,16 +117,36 @@ class Tester:
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
                     pred = self.model(x)
                     pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                elif "fcn_resnet18" in self.config.model.lower():
+                    # expects 3 channel input
+                    x = torch.cat((x, x, x), dim=1)
+                    # 2 channel output of network
+                    y = categorical_to_one_hot(y, dim=1, expand_dim=False)
+                    pred = self.model(x)
+
                 else:
                     pred = self.model(x)
 
                 x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
-                x_flat = x[:, 0].contiguous().view(-1)
-                y_flat = y[:, 0].contiguous().view(-1)
-                x_flat = x_flat.cpu()
-                y_flat = y_flat.cpu()
-                jaccard.append(jaccard_score(y_flat, x_flat))
+                if x.shape[1] == 1:
+                    x_flat = x[:, 0].contiguous().view(-1)
+                    y_flat = y[:, 0].contiguous().view(-1)
+                    x_flat = x_flat.cpu()
+                    y_flat = y_flat.cpu()
+                    jaccard.append(jaccard_score(y_flat, x_flat))
+
+                else:
+                    # multi channel jaccard scenario
+                    temp_jac = 0
+                    for channel_idx in range(x.shape[1]):
+                        x_flat = x[:, channel_idx].contiguous().view(-1)
+                        y_flat = y[:, channel_idx].contiguous().view(-1)
+                        x_flat = x_flat.cpu()
+                        y_flat = y_flat.cpu()
+                        temp_jac += jaccard_score(y_flat, x_flat)
+                    jaccard.append(temp_jac / x.shape[1])
+
             dataset.reset()
 
         avg_jaccard = sum(jaccard) / len(jaccard)
@@ -146,16 +167,38 @@ class Tester:
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
                     pred = self.model(x)
                     pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                elif "fcn_resnet18" in self.config.model.lower():
+                    # expects 3 channel input
+                    x = torch.cat((x, x, x), dim=1)
+                    # 2 channel output of network
+                    y = categorical_to_one_hot(y, dim=1, expand_dim=False)
+                    pred = self.model(x)
                 else:
                     pred = self.model(x)
 
                 x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
-                x_flat = x[:, 0].contiguous().view(-1)
-                y_flat = y[:, 0].contiguous().view(-1)
-                x_flat = x_flat.cpu()
-                y_flat = y_flat.cpu()
-                jaccard.append(jaccard_score(y_flat, x_flat))
+
+                # jaccard score
+
+                if x.shape[1] == 1:
+                    x_flat = x[:, 0].contiguous().view(-1)
+                    y_flat = y[:, 0].contiguous().view(-1)
+                    x_flat = x_flat.cpu()
+                    y_flat = y_flat.cpu()
+                    jaccard.append(jaccard_score(y_flat, x_flat))
+
+                else:
+                    # multi channel jaccard scenario
+                    temp_jac = 0
+                    for channel_idx in range(x.shape[1]):
+                        x_flat = x[:, channel_idx].contiguous().view(-1)
+                        y_flat = y[:, channel_idx].contiguous().view(-1)
+                        x_flat = x_flat.cpu()
+                        y_flat = y_flat.cpu()
+                        temp_jac += jaccard_score(y_flat, x_flat)
+                    jaccard.append(temp_jac / x.shape[1])
+
             dataset.reset()
 
         avg_jaccard = sum(jaccard) / len(jaccard)
