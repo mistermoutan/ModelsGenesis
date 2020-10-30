@@ -121,6 +121,8 @@ class Tester:
                     # expects 3 channel input
                     x = torch.cat((x, x, x), dim=1)
                     # 2 channel output of network
+                    if 86 in x.shape:
+                        continue
                     y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
 
@@ -170,9 +172,13 @@ class Tester:
                 elif "fcn_resnet18" in self.config.model.lower():
                     # expects 3 channel input
                     x = torch.cat((x, x, x), dim=1)
+                    if 86 in x.shape:
+                        continue
                     # 2 channel output of network
                     y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
+                    # except RuntimeError:
+                    #    print(x.shape)
                 else:
                     pred = self.model(x)
 
