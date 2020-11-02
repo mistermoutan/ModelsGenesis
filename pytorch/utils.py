@@ -325,6 +325,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         assert args_object.two_dimensional_data is False, "You are going to use 3D Data now"
 
     kwargs_dict["convert_to_acs"] = args_object.convert_to_acs
+    kwargs_dict["new_folder"] = args_object.new_folder
 
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
