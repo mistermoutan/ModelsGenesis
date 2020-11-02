@@ -5,12 +5,22 @@ from utils import make_dir
 
 
 class FineTuneConfig:
-    def __init__(self, data_dir: str, task: str, self_supervised: bool, supervised: bool, model="VNET_MG", extra_info_on_task_dir=True):
+    def __init__(
+        self,
+        data_dir: str,
+        task: str,
+        self_supervised: bool,
+        supervised: bool,
+        model="VNET_MG",
+        extra_info_on_task_dir=True,
+        new_folder=False,
+    ):
 
         self.model = model
         self.self_supervised = self_supervised  # only for stats module
         self.supervised = supervised
         self.extra_info_on_task_dir = extra_info_on_task_dir
+        self.new_folder = new_folder  # to repeat experiments put them on remake folder for separation, used in obtaining task_dir
 
         # resume - The ones to interact with manually in functions of main, rest will come from kwargs
         self.resume_ss = False
@@ -119,8 +129,12 @@ class FineTuneConfig:
         else:
             self.experiment_nr = exp_nr
 
-        print("!==RUN_DIR==!", task_dir + "_" + str(self.experiment_nr) + "/")
-        return task_dir + "_" + str(self.experiment_nr) + "/"
+        if self.new_folder is False:
+            print("!==RUN_DIR==!", task_dir + "_" + str(self.experiment_nr) + "/")
+            return task_dir + "_" + str(self.experiment_nr) + "/"
+        else:
+            print("!==RUN_DIR==!", "new_folder/" + task_dir + "_" + str(self.experiment_nr) + "/")
+            return "new_folder/" + task_dir + "_" + str(self.experiment_nr) + "/"
 
     def override_dirs(self, run_nr):
 
