@@ -265,11 +265,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
     config = FineTuneConfig(
-        data_dir="",
-        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
-        self_supervised=False,
-        supervised=True,
-        new_folder=new_folder
+        data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True, new_folder=new_folder
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
@@ -463,6 +459,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]
+    new_folder = kwargs_dict_["new_folder"]
 
     datasets_used_str = get_datasets_used_str(
         dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs
@@ -475,7 +472,9 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
         self_supervised=False,
         supervised=True,
         model=kwargs_dict_["model"],
+        new_folder=new_folder,
     )
+
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
 
@@ -944,7 +943,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_cv_folds", dest="num_cv_folds", type=int, required=False, default=None)
     parser.add_argument("--two_dimensional_data", dest="two_dimensional_data", action="store_true", required=False)
     parser.add_argument("--convert_to_acs", dest="convert_to_acs", action="store_true", required=False)
-    parser.add_argument("--new_folder," dest="new_folder",action="store_true",required=False)
+    parser.add_argument("--new_folder", dest="new_folder", action="store_true", required=False)
 
     args = parser.parse_args()
 
