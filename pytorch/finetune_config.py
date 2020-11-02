@@ -120,6 +120,10 @@ class FineTuneConfig:
             task_dir = self.task + "/with_self_supervised/run" if self.self_supervised else self.task + "/only_supervised/run"
         else:
             task_dir = self.task + "/run" if self.self_supervised else self.task + "/run"
+
+        if self.new_folder is True:
+            task_dir = "new_folder/" + task_dir
+
         if exp_nr is None:
             self.experiment_nr = 1
             while os.path.isdir(
@@ -129,12 +133,8 @@ class FineTuneConfig:
         else:
             self.experiment_nr = exp_nr
 
-        if self.new_folder is False:
-            print("!==RUN_DIR==!", task_dir + "_" + str(self.experiment_nr) + "/")
-            return task_dir + "_" + str(self.experiment_nr) + "/"
-        else:
-            print("!==RUN_DIR==!", "new_folder/" + task_dir + "_" + str(self.experiment_nr) + "/")
-            return "new_folder/" + task_dir + "_" + str(self.experiment_nr) + "/"
+        print("!==RUN_DIR==!", task_dir + "_" + str(self.experiment_nr) + "/")
+        return task_dir + "_" + str(self.experiment_nr) + "/"
 
     def override_dirs(self, run_nr):
 
