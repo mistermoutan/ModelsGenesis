@@ -306,6 +306,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
+    new_folder = kwargs_dict_["new_folder"]
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(
@@ -313,6 +314,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_without_ss(run_nr: int, 
         task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str),
         self_supervised=False,
         supervised=True,
+        new_folder=new_folder,
     )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
@@ -350,6 +352,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    new_folder = kwargs_dict_["new_folder"]
 
     dataset = build_dataset(dataset_list=dataset_list, split=split)
 
@@ -359,6 +362,7 @@ def use_provided_weights_and_finetune_on_dataset_with_ss(**kwargs):
         self_supervised=True,
         supervised=True,
         model=kwargs_dict_["model"],
+        new_folder=new_folder,
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
@@ -401,6 +405,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
     mode = kwargs_dict_.get("mode", "")
+    new_folder = kwargs_dict_["new_folder"]
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     config = FineTuneConfig(
         data_dir="",
@@ -408,6 +413,7 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
         self_supervised=True,
         supervised=True,
         model=kwargs_dict_["model"],
+        new_folder=new_folder,
     )
     config.override_dirs(run_nr)  # its key we get object_dir corresponding to the run to fetch the correct config object saved
 
@@ -515,6 +521,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     model_weights_dir = kwargs_dict["directory"]  # to find the task dir to resume from
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]  # needs to be called on resume to find task dir
+    new_folder = kwargs_dict_["new_folder"]
 
     datasets_used_str = get_datasets_used_str(
         dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs
@@ -526,6 +533,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
         self_supervised=False,
         supervised=True,
         model=kwargs_dict_["model"],
+        new_folder=kwargs_dict_["new_folder"],
     )
     config.override_dirs(run_nr)
 
@@ -860,7 +868,7 @@ def test(**kwargs):
     for task_dir in task_dirs:
 
         if task_dir_already_has_metric_dict_computed(task_dir) is True:
-            print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED2: ", task_dir)
+            print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
             continue
         if "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG" in task_dir:
             already_done = False
