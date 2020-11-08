@@ -506,26 +506,33 @@ class Trainer:
         from ACSConv.experiments.lidc.resnet import FCNResNet
 
         if self.config.model.lower() == "vnet_mg":
+            print("Loading VNET_MG")
             self.model = UNet3D()
 
         elif self.config.model.lower() == "unet_2d":
+            print("LOADING UNET 2D")
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
 
         elif self.config.model.lower() == "unet_acs":
+            print("LOADING UNET_2D_ACS")
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model)
 
         elif self.config.model.lower() == "unet_3d":
+            print("LOADING UNET 3D")
             self.model = Unet3D_Counterpart_to_2D(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
 
         elif self.config.model.lower() == "fcn_restnet18":
+            print("LOADING FCN_RESNET_18")
             self.model = FCNResNet(pretrained=False, num_classes=2)
 
         elif self.config.model.lower() == "fcn_resnet18_acs":
+            print("LOADING FCN_RESNET_18_ACS")
             self.model = FCNResNet(pretrained=False, num_classes=2)
             self.model = ACSConverter(self.model)
 
         elif self.config.model.lower() == "fcn_resnet18_acs_pretrained_imgnet":
+            print("LOADING FCN_RESNET_18_pretrained_img_net")
             self.model = FCNResNet(pretrained=True, num_classes=2)
             self.mode = ACSConverter(self.model)
 
@@ -537,9 +544,12 @@ class Trainer:
         from_scratch = kwargs.get("from_scratch", False)
         from_directory = kwargs.get("from_directory", False)
         from_path = kwargs.get("from_path", False)
+        ensure_sup_is_completed = kwargs.get("ensure_sup_is_completed", False)
+        
         if from_directory is not False:
             specific_weight_dir = kwargs.get("directory", None)
             assert specific_weight_dir is not None, "Specifiy weight dir to load"
+            
         if from_path is not False:
             specific_weight_path = kwargs.get("path", None)
             phase = kwargs.get("phase", None)
@@ -705,6 +715,8 @@ class Trainer:
                 elif phase == "ss":
                     print("Loaded Model State dict from model_state_dict_ss checkpoint key")
                     state_dict = checkpoint["model_state_dict_ss"]
+            if ensure_sup_is_completed:
+                assert checkpoint["completed_sup"] is True, "Supervison was not completed"
 
             unParalled_state_dict = {}
             for key in state_dict.keys():

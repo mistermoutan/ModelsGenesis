@@ -28,7 +28,9 @@ class Tester:
         self.test_all = test_all
 
         self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
-        self.trainer.load_model(from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup")
+        self.trainer.load_model(
+            from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup", ensure_sup_is_completed=True
+        )
         self.model = self.trainer.model
 
         self.metric_dict = dict()
