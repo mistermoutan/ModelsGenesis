@@ -48,12 +48,12 @@ class Tester:
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
-                if "lidc" not in self.dataset_name.lower():  # and "fcn_resnet18" not in self.config.model.lower():
-                    self._test_on_full_cubes(dataset)
+                # if "lidc" not in self.dataset_name.lower():  # and "fcn_resnet18" not in self.config.model.lower():
+                #    self._test_on_full_cubes(dataset)
         else:
             self._test_dataset(self.dataset)
-            if "lidc" not in self.dataset_name.lower():
-                self._test_on_full_cubes(self.dataset)
+            # if "lidc" not in self.dataset_name.lower():
+            #    self._test_on_full_cubes(self.dataset)
 
         file_nr = 0
         while os.path.isfile(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr))):
