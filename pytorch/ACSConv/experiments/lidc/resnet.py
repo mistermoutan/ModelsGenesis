@@ -185,12 +185,12 @@ class FCNResNet(nn.Module):
         self.conv1 = nn.Conv2d((128 + 512), 512, kernel_size=1, stride=1, padding=0, bias=False)
         self.conv2 = nn.Conv2d(64 + 512, 512, kernel_size=1, stride=1, padding=0, bias=False)
         self.classifier = FCNHead(in_channels=512, channels=num_classes)
-        # self.softmax_output = softmax_output
+        self.softmax_output = softmax_output
 
-        # if num_classes == 1:
-        #    self.softmax = nn.Sigmoid()
-        # else:
-        #    self.softmax = nn.Softmax(dim=1)
+        if num_classes == 1:
+            self.softmax = nn.Sigmoid()
+        else:
+            self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         features, features1, features2 = self.backbone(x)
@@ -201,9 +201,8 @@ class FCNResNet(nn.Module):
         features = features_cat2
 
         # final layer is Conv with out_channels = num_classes therefore requiring one hot enconding of ther result
-
-    # out = self.classifier(features)
-    # return self.softmax(out) if self.softmax_output else out
+        out = self.classifier(features)
+        return self.softmax(out) if self.softmax_output else out
 
 
 class ClsResNet(nn.Module):
