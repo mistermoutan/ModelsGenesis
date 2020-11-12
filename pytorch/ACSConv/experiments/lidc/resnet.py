@@ -13,12 +13,13 @@ import torch.utils.model_zoo as model_zoo
 import torch.nn.functional as F
 
 model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+    "resnet18": "https://download.pytorch.org/models/resnet18-5c106cde.pth",
+    "resnet34": "https://download.pytorch.org/models/resnet34-333f7ec4.pth",
+    "resnet50": "https://download.pytorch.org/models/resnet50-19c8e357.pth",
+    "resnet101": "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth",
+    "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
+
 
 def resnet18(pretrained=False, **kwargs):
     """Constructs a ResNet-18 model.
@@ -28,20 +29,20 @@ def resnet18(pretrained=False, **kwargs):
     """
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
-        state_dict = model_zoo.load_url(model_urls['resnet18'])
+        state_dict = model_zoo.load_url(model_urls["resnet18"])
         for key in list(state_dict.keys()):
-            if 'fc' in key:
+            if "fc" in key:
                 del state_dict[key]
-        model.load_state_dict(state_dict,strict=False)
-        print('resnet18 loaded imagenet pretrained weights')
+        model.load_state_dict(state_dict, strict=False)
+        print("resnet18 loaded imagenet pretrained weights")
     else:
-        print('resnet18 without imagenet pretrained weights')
+        print("resnet18 without imagenet pretrained weights")
     return model
+
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
 class BasicBlock(nn.Module):
@@ -83,8 +84,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
@@ -108,19 +108,18 @@ class Bottleneck(nn.Module):
 
         if self.downsample is not None:
             residual = self.downsample(x)
-        
+
         out += residual
         out = self.relu(out)
 
         return out
 
-class ResNet(nn.Module):
 
+class ResNet(nn.Module):
     def __init__(self, block, layers):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=1, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(block, 64, layers[0])
@@ -131,7 +130,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -140,8 +139,7 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(planes * block.expansion),
             )
         layers = []
@@ -164,8 +162,9 @@ class ResNet(nn.Module):
         x1 = x.clone()
         x = self.layer3(x)
         x = self.layer4(x)
-        
+
         return x, x1, x2
+
 
 class FCNHead(nn.Sequential):
     def __init__(self, in_channels, channels):
@@ -174,18 +173,25 @@ class FCNHead(nn.Sequential):
             nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
             nn.BatchNorm2d(inter_channels),
             nn.ReLU(),
-            nn.Conv2d(inter_channels, channels, 1)
+            nn.Conv2d(inter_channels, channels, 1),
         ]
         super(FCNHead, self).__init__(*layers)
 
+
 class FCNResNet(nn.Module):
-    def __init__(self, pretrained, num_classes, backbone='resnet18'):
+    def __init__(self, pretrained, num_classes, backbone="resnet18", softmax_output=True):
         super().__init__()
         self.backbone = globals()[backbone](pretrained=pretrained)
-        self.conv1 = nn.Conv2d((128+512), 512, kernel_size=1, stride=1, padding=0, bias=False)
-        self.conv2 = nn.Conv2d(64+512, 512, kernel_size=1, stride=1, padding=0, bias=False)
+        self.conv1 = nn.Conv2d((128 + 512), 512, kernel_size=1, stride=1, padding=0, bias=False)
+        self.conv2 = nn.Conv2d(64 + 512, 512, kernel_size=1, stride=1, padding=0, bias=False)
         self.classifier = FCNHead(in_channels=512, channels=num_classes)
-    
+        self.softmax_output = softmax_output
+
+        if num_classes == 1:
+            self.softmax = nn.Sigmoid()
+        else:
+            self.softmax = nn.Softmax(dim=1)
+
     def forward(self, x):
         features, features1, features2 = self.backbone(x)
         features_cat1 = torch.cat([features1, F.interpolate(features, scale_factor=2)], dim=1)
@@ -196,16 +202,21 @@ class FCNResNet(nn.Module):
 
         # final layer is Conv with out_channels = num_classes therefore requiring one hot enconding of ther result
         out = self.classifier(features)
-        return out
+        return self.softmax(out) if self.softmax_output else out
+
 
 class ClsResNet(nn.Module):
-    def __init__(self, pretrained, num_classes, backbone='resnet18'):
+    def __init__(self, pretrained, num_classes, backbone="resnet18"):
         super().__init__()
         self.backbone = globals()[backbone](pretrained=pretrained)
         self.fc = nn.Linear(512, num_classes, bias=True)
-    
+
     def forward(self, x):
         features = self.backbone(x)[0]
         features = F.adaptive_avg_pool3d(features, output_size=1).view(features.shape[0], -1)
         out = self.fc(features)
         return out
+
+
+if __name__ == "__main__":
+    print(globals()["resnet18"])
