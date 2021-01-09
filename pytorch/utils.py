@@ -110,6 +110,7 @@ def replace_config_param_attributes(config_object, kwargs_dict):
 dataset_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
     "lidc_80_80_padded": "/work2/s182312/lidc_mini_cubes_for_acs_replication_padded",
+    "lidc_acs_provided": "/work2/s182312/lidc_acs_provided"
     "task01_ss": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
     "task02_ss": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr/extracted_cubes_64_64_32_ss",
@@ -185,6 +186,27 @@ dataset_full_cubes_labels_map = {
 # /work1/s182312/lidc_idri/np_cubes"}
 # pytorch/datasets/lidc_idri_cubes
 
+def get_files_for_train_and_test_for_provided_acs_lidc():
+    
+    data_path="/work2/s182312/lidc_acs_provided"
+    names_train = (
+        pd.read_csv(os.path.join(data_path, "train_test_split.csv"))["train"]
+        .dropna()
+        .map(lambda x: os.path.join(data_path, "nodule", x))
+        .values
+    )
+    names_test = (
+        pd.read_csv(os.path.join(data_path, "train_test_split.csv"))["test"]
+        .dropna()
+        .map(lambda x: os.path.join(data_path, "nodule", x))
+        .values
+    )
+
+    names_train_ = [j.split("/")[-1] for j in names_train]
+    names_test_ = [j.split("/")[-1] for j in names_test]
+
+    return names_train_, names_test_
+
 
 def get_unused_datasets(dataset):
 
@@ -221,6 +243,12 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False):
             dataset = Dataset(
                 data_dir=dataset_map[dataset_list[0]], train_val_test=(0, 0, 1), file_names=files
             )  # train_val_test is non relevant as is overwritte
+            
+        elif dataset_list[0] == "lidc_acs_provided":
+            x_train_filenames, x_val_filenames = get_files_for_train_and_test_for_provided_acs_lidc()
+            files = [x_train_filenames, x_val_filenames, []]
+            dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0,0,1), file_names=files)
+            
         else:
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
 
