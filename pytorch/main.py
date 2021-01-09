@@ -73,6 +73,46 @@ def resume_replication_of_results_pretrain(run_nr: int, **kwargs):
     trainer_mg_replication.get_stats()
 
 
+def replicate_acs_results_fcnresnet18_their_cubes(**kwargs):
+
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    dataset_list = ["lidc_acs_provided"]
+    split = (0.8, 0.2, 0)
+
+    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=False)
+    dataset.use_acs_paper_transforms = True  # !!
+
+    config = FineTuneConfig(
+        data_dir="",
+        task="REPLICATE_ACS_PAPER_THEIR_EXACT_DATA",
+        self_supervised=False,
+        supervised=True,
+        model=kwargs_dict_["model"],
+    )
+
+    config.batch_size_sup = 8
+    config.nb_epoch_sup = 100
+    config.lr_sup = 0.001
+    config.milestones = [0.5 * config.nb_epoch_sup, 0.75 * config.nb_epoch_sup]
+    config.gamma = 0.1
+    config.scheduler_sup = "MultiStepLR"
+
+    # let it run since > than nb_epochs
+    config.patience_sup_terminate = 120
+    config.from_scratch = True
+
+    config.display()
+
+    save_object(config, "config", config.object_dir)
+    save_object(dataset, "dataset", config.object_dir)
+
+    trainer_mg_replication = Trainer(config, dataset)
+    trainer_mg_replication.load_model(from_scratch=True)
+    trainer_mg_replication.finetune_supervised()
+    trainer_mg_replication.add_hparams_to_writer()
+    trainer_mg_replication.get_stats()
+
+
 def replicate_acs_results_fcnresnet18_my_cubes(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
@@ -969,7 +1009,6 @@ if __name__ == "__main__":
         resume_replication_of_results_pretrain(args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "replicate_acs_results_fcnresnet18_my_cubes":
-
         kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
         assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
         replicate_acs_results_fcnresnet18_my_cubes(kwargs_dict=kwargs_dict)
@@ -979,6 +1018,12 @@ if __name__ == "__main__":
         kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
         assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
         resume_replicate_acs_results_fcnresnet18_my_cubes(run_nr=args.run, kwargs_dict=kwargs_dict)
+
+    elif args.command == "replicate_acs_results_fcnresnet18_their_cubes":
+
+        kwargs_dict = build_kwargs_dict(args, get_dataset=False, search_for_split=False)
+        assert kwargs_dict["model"] is not None and kwargs_dict["model"].lower() != "vnet_mg"
+        replicate_acs_results_fcnresnet18_their_cubes(kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_provided_weights_no_ss":
 
