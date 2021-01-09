@@ -1,4 +1,5 @@
 from warnings import simplefilter
+import torch
 
 simplefilter(action="ignore", category=FutureWarning)
 
@@ -897,6 +898,14 @@ def test(**kwargs):
         if config_object.supervised is False:
             print("SKIPPING, supervised is False in config: \n", task_dir)
             # not testing modules which have not been tuned for segmentation
+            continue
+
+        checkpoint = torch.load(
+            os.path.join(config_object.model_path_save, "weights_sup.pt"),
+            map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        )
+        if checkpoint.get("completed_sup", None) is not True:
+            print("SKIPPING AS SUP IS NOT COMPLETED YET FOR {}".format(config_object.model_path_save))
             continue
 
         dataset_object = get_dataset_object_of_task_dir(task_dir)
