@@ -303,10 +303,16 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, use_supervision_transforms=kwargs_dict["use_supervision_transforms"])
+    dataset = build_dataset(dataset_list=dataset_list, split=split, use_supervision_transforms=kwargs_dict_["use_supervision_transforms"])
 
     config = FineTuneConfig(
-        data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True, new_folder=new_folder
+        data_dir="",
+        task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str)
+        if kwargs_dict_["task_name"] is None
+        else "{}{}".format(kwargs_dict_["task_name"], datasets_used_str),
+        self_supervised=False,
+        supervised=True,
+        new_folder=new_folder,
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_provided_weights = True  # Redundant, just for logging purposes
@@ -502,7 +508,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
-    model_weights_dir = kwargs_dict["directory"]
+    model_weights_dir = kwargs_dict_["directory"]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]
@@ -515,7 +521,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
         dataset_list=dataset_list,
         split=split,
         two_dimensional_data=kwargs_dict_["two_dimensional_data"],
-        use_supervision_transforms=kwargs_dict["use_supervision_transforms"],
+        use_supervision_transforms=kwargs_dict_["use_supervision_transforms"],
     )
 
     config = FineTuneConfig(
@@ -564,7 +570,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
-    model_weights_dir = kwargs_dict["directory"]  # to find the task dir to resume from
+    model_weights_dir = kwargs_dict_["directory"]  # to find the task dir to resume from
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]  # needs to be called on resume to find task dir
     new_folder = kwargs_dict_["new_folder"]
@@ -615,7 +621,7 @@ def use_model_weights_and_finetune_on_dataset_with_ss(**kwargs):
     num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
-    model_weights_dir = kwargs_dict["directory"]
+    model_weights_dir = kwargs_dict_["directory"]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]  # needs to be called on resume to find task dir
@@ -671,7 +677,7 @@ def resume_use_model_weights_and_finetune_on_dataset_with_ss(run_nr: int, **kwar
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
     dataset_list.sort()
-    model_weights_dir = kwargs_dict["directory"]
+    model_weights_dir = kwargs_dict_["directory"]
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]  # needs to be called on resume to find task dir
 
@@ -741,7 +747,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
         dataset_list=dataset_list,
         split=split,
         two_dimensional_data=kwargs_dict_["two_dimensional_data"],
-        use_supervision_transforms=kwargs_dict["use_supervision_transforms"],
+        use_supervision_transforms=kwargs_dict_["use_supervision_transforms"],
     )
     config = FineTuneConfig(
         data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True, model=kwargs_dict_["model"]
