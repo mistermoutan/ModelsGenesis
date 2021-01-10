@@ -338,12 +338,14 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         kwargs_dict["directory"] = args_object.directory
 
     if kwargs.get("test", False):
-        if isinstance(args_object.task_name, str):
-            kwargs_dict["task_name"] = args_object.directory
-        if isinstance(args_object.directory, str):
-            kwargs_dict["directory"] = args_object.directory
-        if args_object.dataset != []:
-            kwargs_dict["dataset"] = args_object.dataset
+        pass
+        # not in use
+        # if isinstance(args_object.task_name, str):
+        #    kwargs_dict["task_name"] = args_object.directory
+        # if isinstance(args_object.directory, str):
+        #    kwargs_dict["directory"] = args_object.directory
+        # if args_object.dataset != []:
+        #    kwargs_dict["dataset"] = args_object.dataset
 
     # model
     assert args_object.model.lower() in (
@@ -365,6 +367,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["convert_to_acs"] = args_object.convert_to_acs
     kwargs_dict["new_folder"] = args_object.new_folder
     kwargs_dict["use_supervision_transforms"] = args_object.use_supervision_transforms
+    kwargs_dict["task_name"] = args_object.task_name
 
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
