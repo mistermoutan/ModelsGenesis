@@ -10,3 +10,4 @@ scipy
 matplotlib
 dill
 pandas
+torchio
