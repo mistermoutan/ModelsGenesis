@@ -14,9 +14,9 @@ class TransformsForSupervision:
 
     def __call__(self, x, binary_target):
 
-        self._ensure_dimensions(x)
         x = np.squeeze(x, axis=0)  # comes as (B=1,C,H,W,D)
         binary_target = np.squeeze(binary_target, axis=0)
+        self._ensure_dimensions(x)
         d = {"x": x, "y": binary_target}
         res = self.transform(d)
         return np.expand_dims(res["x"], axis=(0)).astype(np.float32), np.expand_dims(res["y"], axis=(0)).astype(np.float32)
@@ -24,7 +24,7 @@ class TransformsForSupervision:
     @staticmethod
     def _ensure_dimensions(cube, dim=4):
         # assert 4D input
-        assert len(cube.shape) == dim
+        assert len(cube.shape) == dim, "Expected 4 dim input, got data with shape {}".format(cube.shape)
         assert cube.shape[0] == 1  # 1 channel
 
 
