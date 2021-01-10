@@ -7,6 +7,9 @@ from image_transformations import generate_pair
 from dataset import Dataset
 from dataset_2d import Dataset2D
 
+from generic_supervision_transforms import TransformsForSupervision
+from acs_paper_transforms import ACSPaperTransforms
+
 
 class DatasetPytorch(DatasetP):
     def __init__(self, dataset, config, type_: str, apply_mg_transforms: bool):
@@ -34,6 +37,13 @@ class DatasetPytorch(DatasetP):
         else:
             self.apply_acs_transforms = False
 
+        if hasattr(self.dataset, "use_supervision_transforms") and self.dataset.use_supervision_transforms is True:
+            print("GOING TO USE SUPERVISION TRANSFORMS")
+            self.supervison_transforms = TransformsForSupervision()
+            self.apply_supervison_transforms = True
+        else:
+            self.apply_supervison_transforms = False
+
     def __len__(self):
 
         if self.type == "train":
@@ -50,7 +60,7 @@ class DatasetPytorch(DatasetP):
         if self.type == "train":
             x, y = (
                 self.dataset.get_train(batch_size=1, return_tensor=False)
-                if (self.apply_mg_transforms or self.apply_mg_transforms)
+                if (self.apply_mg_transforms or self.apply_mg_transforms or self.apply_supervison_transforms)
                 else self.dataset.get_train(batch_size=1, return_tensor=True)
             )
             if x is not None:
@@ -74,12 +84,22 @@ class DatasetPytorch(DatasetP):
                         raise NotImplementedError
                     return (Tensor(x_transform), Tensor(y_transform))
 
+                elif self.apply_supervison_transforms:
+                    assert y is not None
+                    if isinstance(self.dataset, Dataset):
+                        x_transform, y_transform = self.supervison_transforms(x, y)
+                        shape_x_transform = x_transform.shape
+                        assert len(shape_x_transform) == 5 and shape_x_transform[0] == 1 and shape_x_transform[1] == 1
+                    elif isinstance(self.dataset, Dataset2D):
+                        raise NotImplementedError
+                    return (Tensor(x_transform), Tensor(y_transform))
+
                 return (x, y)
 
         if self.type == "val":
             x, y = (
                 self.dataset.get_val(batch_size=1, return_tensor=False)
-                if (self.apply_mg_transforms or self.apply_acs_transforms)
+                if (self.apply_mg_transforms or self.apply_acs_transforms or self.apply_supervison_transforms)
                 else self.dataset.get_val(batch_size=1, return_tensor=True)
             )
             if x is not None:
@@ -101,6 +121,9 @@ class DatasetPytorch(DatasetP):
                     elif isinstance(self.dataset, Dataset2D):
                         raise NotImplementedError
                     return (Tensor(x_transform), Tensor(y_transform))
+                elif self.apply_supervison_transforms:
+                    # no transforms for testing
+                    return (Tensor(x), Tensor(y))
                 return (x, y)
 
         if self.type == "test":
@@ -180,45 +203,6 @@ class DatasetPytorch(DatasetP):
                 y_tensor[idx] = y
 
         return (x_tensor, y_tensor)
-
-
-from ACSConv.experiments.mylib.voxel_transform import rotation, reflection, crop, random_center
-from ACSConv.experiments.mylib.utils import _triple
-
-
-class ACSPaperTransforms:
-    def __init__(self, size, move=None, train=True):
-        self.size = _triple(size)
-        self.move = move
-        self.train = train
-
-    def __call__(self, voxel, seg):
-        # workaround items come as (1,1,x, y, z) from get_train from dataset and this was originally designed for x,y,z input
-        voxel = np.squeeze(voxel)
-        seg = np.squeeze(seg)
-        shape = voxel.shape
-        # voxel = voxel / 255.0 - 1 already normalized
-        if self.train:
-            if self.move is not None:
-                center = random_center(shape, self.move)
-            else:
-                center = np.array(shape) // 2
-            voxel_ret = crop(voxel, center, self.size)
-            seg_ret = crop(seg, center, self.size)
-
-            angle = np.random.randint(4, size=3)
-            voxel_ret = rotation(voxel_ret, angle=angle)
-            seg_ret = rotation(seg_ret, angle=angle)
-
-            axis = np.random.randint(4) - 1
-            voxel_ret = reflection(voxel_ret, axis=axis)
-            seg_ret = reflection(seg_ret, axis=axis)
-        else:
-            center = np.array(shape) // 2
-            voxel_ret = crop(voxel, center, self.size)
-            seg_ret = crop(seg, center, self.size)
-
-        return np.expand_dims(voxel_ret, axis=(0, 1)).astype(np.float32), np.expand_dims(seg_ret, axis=(0, 1)).astype(np.float32)
 
 
 if __name__ == "__main__":
