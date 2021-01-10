@@ -225,7 +225,7 @@ def get_unused_datasets(dataset):
     return all_datasets
 
 
-def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False):
+def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False, use_supervision_transforms=False):
     """[summary]
 
     Returns:
@@ -257,6 +257,9 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False):
         if two_dimensional_data is True:
             dataset = Dataset2D(dataset)
 
+        if use_supervision_transforms is True:
+            dataset.use_supervision_transforms = True
+
         return dataset
 
     else:
@@ -278,6 +281,11 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False):
                 if two_dimensional_data:
                     dataset = Dataset2D(dataset)
                 datasets.append(dataset)
+
+        if use_supervision_transforms is True:
+            for idx, dataset in enumerate(datasets):
+                dataset.use_supervision_transforms = True
+                datasets[idx] = dataset
 
         return datasets
 
@@ -356,6 +364,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
 
     kwargs_dict["convert_to_acs"] = args_object.convert_to_acs
     kwargs_dict["new_folder"] = args_object.new_folder
+    kwargs_dict["use_supervision_transforms"] = args_object.use_supervision_transforms
 
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
