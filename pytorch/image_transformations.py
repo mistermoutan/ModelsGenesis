@@ -61,7 +61,7 @@ def bezier_curve(points, nTimes=1000):
 def data_augmentation(x, y, prob=0.5):
     # augmentation by flipping
     # this should fe a for loop on degree, if an axis (degree) is reselected you just get the original inout again
-    cnt = 3
+    cnt = 3 if len(x.shape) == 4 else 2
     is_2d = True if len(x.shape) == 4 else False
     while random.random() < prob and cnt > 0:
         degree = random.choice([1, 2, 3]) if is_2d else random.choice([1, 2])
