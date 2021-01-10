@@ -303,7 +303,7 @@ def use_provided_weights_and_finetune_on_dataset_without_ss(**kwargs):
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split)
+    dataset = build_dataset(dataset_list=dataset_list, split=split, use_supervision_transforms=kwargs_dict["use_supervision_transforms"])
 
     config = FineTuneConfig(
         data_dir="", task="FROM_PROVIDED_WEIGHTS{}".format(datasets_used_str), self_supervised=False, supervised=True, new_folder=new_folder
@@ -511,7 +511,12 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     datasets_used_str = get_datasets_used_str(
         dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs
     )
-    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
+    dataset = build_dataset(
+        dataset_list=dataset_list,
+        split=split,
+        two_dimensional_data=kwargs_dict_["two_dimensional_data"],
+        use_supervision_transforms=kwargs_dict["use_supervision_transforms"],
+    )
 
     config = FineTuneConfig(
         data_dir="",
@@ -732,7 +737,12 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
+    dataset = build_dataset(
+        dataset_list=dataset_list,
+        split=split,
+        two_dimensional_data=kwargs_dict_["two_dimensional_data"],
+        use_supervision_transforms=kwargs_dict["use_supervision_transforms"],
+    )
     config = FineTuneConfig(
         data_dir="", task="FROM_SCRATCH{}".format(datasets_used_str), self_supervised=False, supervised=True, model=kwargs_dict_["model"]
     )
@@ -1001,6 +1011,7 @@ if __name__ == "__main__":
     parser.add_argument("--two_dimensional_data", dest="two_dimensional_data", action="store_true", required=False)
     parser.add_argument("--convert_to_acs", dest="convert_to_acs", action="store_true", required=False)
     parser.add_argument("--new_folder", dest="new_folder", action="store_true", required=False)
+    parser.add_argument("--use_supervision_transforms", dest="use_supervision_transforms", action="store_true", required=False)
 
     args = parser.parse_args()
 
