@@ -740,8 +740,11 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     dataset_list.sort()  # alphabetical, IF YOU DO NOT MAINTAIN ORDER A DIFFERENT TASK DIR IS CREATED FOR SAME DATASETS USED: eg: [lidc , brats] vs [brats, lids]
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
+    make_acs_kernel_split_adaptive_to_input_dimensions = kwargs_dict_.get("make_acs_kernel_split_adaptive_to_input_dimensions", None)
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
+    if make_acs_kernel_split_adaptive_to_input_dimensions is True:
+        datasets_used_str = "_WITH_ADAPTIVE_ACS_KERNEL" + datasets_used_str
 
     dataset = build_dataset(
         dataset_list=dataset_list,
@@ -754,6 +757,17 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     )
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
+
+    if make_acs_kernel_split_adaptive_to_input_dimensions is True:
+        x, y = dataset.get_train(batch_size=1)
+        shape = x.shape[2:]
+        total = 0
+        for i in shape:
+            total += i
+        acs_kernel_split = tuple([float(i / total) for i in shape])
+        dataset.reset()
+    else:
+        acs_kernel_split = None
 
     if num_cv_folds is not None:
         cv = get_cross_validator_object_of_task_dir(config.task_dir)
@@ -778,7 +792,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     save_object(dataset, "dataset", config.object_dir)
 
     trainer = Trainer(config, dataset)
-    trainer.load_model(from_scratch=True)
+    trainer.load_model(from_scratch=True, acs_kernel_split=acs_kernel_split)
     trainer.finetune_supervised()
     trainer.add_hparams_to_writer()
     trainer.get_stats()
@@ -1018,6 +1032,12 @@ if __name__ == "__main__":
     parser.add_argument("--convert_to_acs", dest="convert_to_acs", action="store_true", required=False)
     parser.add_argument("--new_folder", dest="new_folder", action="store_true", required=False)
     parser.add_argument("--use_supervision_transforms", dest="use_supervision_transforms", action="store_true", required=False)
+    parser.add_argument(
+        "--make_acs_kernel_split_adaptive_to_input_dimensions",
+        dest="make_acs_kernel_split_adaptive_to_input_dimensions",
+        action="store_true",
+        required=False,
+    )
 
     args = parser.parse_args()
 

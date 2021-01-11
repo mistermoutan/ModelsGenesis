@@ -14,7 +14,7 @@ from .base_acsconv import _ACSConv
 class ACSConv(_ACSConv):
     """
     Vallina ACS Convolution
-    
+
     Args:
         acs_kernel_split: optional, equally spit if not specified.
 
@@ -50,13 +50,23 @@ class ACSConv(_ACSConv):
                 self.acs_kernel_split = (self.out_channels // 3 + 1, self.out_channels // 3, self.out_channels // 3)
             if self.out_channels % 3 == 2:
                 self.acs_kernel_split = (self.out_channels // 3 + 1, self.out_channels // 3 + 1, self.out_channels // 3)
+
+        # for making kernel partition adaptive to input dimensions in relation to each other
+        elif isinstance(acs_kernel_split, tuple) and len(acs_kernel_split) == 3 and isinstance(acs_kernel_split[0], float):
+            a, b, c = acs_kernel_split  # in proportions
+            assert a + b + c == float(1)
+            i = math.ceil(a * self.out_channels)
+            j = math.ceil(self.out_channels * b)
+            self.acs_kernel_split = (i, j, self.out_channels - j - i)
+
         else:
-            self.acs_kernel_split = acs_kernel_split
+            raise NotImplementedError
+            # self.acs_kernel_split = acs_kernel_split
 
     def forward(self, x):
         """
         Convolution forward function
-        Divide the kernel into three parts on output channels based on acs_kernel_split, 
+        Divide the kernel into three parts on output channels based on acs_kernel_split,
         and conduct convolution on three directions seperately. Bias is added at last.
         """
 

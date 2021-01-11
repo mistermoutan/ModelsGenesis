@@ -505,6 +505,10 @@ class Trainer:
         from ACSConv.acsconv.converters import ACSConverter
         from ACSConv.experiments.lidc.resnet import FCNResNet
 
+        acs_kernel_split = kwargs.get("acs_kernel_split", None)
+        if self.config.model.lower() != "unet_acs":
+            assert acs_kernel_split is None
+
         if self.config.model.lower() == "vnet_mg":
             print("Loading VNET_MG")
             self.model = UNet3D()
@@ -516,7 +520,7 @@ class Trainer:
         elif self.config.model.lower() == "unet_acs":
             print("LOADING UNET_2D_ACS")
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
-            self.model = ACSConverter(self.model)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_3d":
             print("LOADING UNET 3D")
@@ -529,12 +533,12 @@ class Trainer:
         elif self.config.model.lower() == "fcn_resnet18_acs":
             print("LOADING FCN_RESNET_18_ACS")
             self.model = FCNResNet(pretrained=False, num_classes=2)
-            self.model = ACSConverter(self.model)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "fcn_resnet18_acs_pretrained_imgnet":
             print("LOADING FCN_RESNET_18_pretrained_img_net")
             self.model = FCNResNet(pretrained=True, num_classes=2)
-            self.mode = ACSConverter(self.model)
+            self.mode = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         self.model.to(self.device)
 
@@ -545,11 +549,11 @@ class Trainer:
         from_directory = kwargs.get("from_directory", False)
         from_path = kwargs.get("from_path", False)
         ensure_sup_is_completed = kwargs.get("ensure_sup_is_completed", False)
-        
+
         if from_directory is not False:
             specific_weight_dir = kwargs.get("directory", None)
             assert specific_weight_dir is not None, "Specifiy weight dir to load"
-            
+
         if from_path is not False:
             specific_weight_path = kwargs.get("path", None)
             phase = kwargs.get("phase", None)
@@ -727,7 +731,7 @@ class Trainer:
         if convert_acs is True:
             # can only convert from 2D to ACS
             assert isinstance(self.model, UNet)
-            self.model = ACSConverter(self.model)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
             print("CONVERTED MODEL FROM UNET 2D WITH ACS CONVERTER")
             # override config for from now on to use ACS MODEL
             if "unet" in self.config.model.lower():

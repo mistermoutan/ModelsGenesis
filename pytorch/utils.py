@@ -368,6 +368,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["new_folder"] = args_object.new_folder
     kwargs_dict["use_supervision_transforms"] = args_object.use_supervision_transforms
     kwargs_dict["task_name"] = args_object.task_name
+    kwargs_dict["make_acs_kernel_split_adaptive_to_input_dimensions"] = args_object.make_acs_kernel_split_adaptive_to_input_dimensions
 
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
