@@ -241,6 +241,10 @@ class Dataset:
         self._load_data((True, False, False))
         return self.x_array_tr[self.train_idxs[0]].shape[-1]
 
+    def get_cube_dimensions(self):
+        self._load_data((True, False, False))
+        return self.x_array_tr[self.train_idxs[0]].shape[1:]
+
     @staticmethod
     def do_file_split(file_names: list, proportions: tuple) -> ([], [], []):
 
