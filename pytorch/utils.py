@@ -112,6 +112,7 @@ dataset_map = {
     "lidc": "/work1/s182312/lidc_idri/np_cubes",
     "lidc_80_80_padded": "/work2/s182312/lidc_mini_cubes_for_acs_replication_padded",
     "lidc_acs_provided": "/work2/s182312/lidc_acs_provided",
+    "lidc_mg_provided": "/work1/s182312/luna16_extracted_cubes/scale_32",
     "task01_ss": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_ss",
     "task01_sup": "/work1/s182312/medical_decathlon/Task01_BrainTumour/imagesTr/extracted_cubes_64_64_32_sup",
     "task02_ss": "/work1/s182312/medical_decathlon/Task02_Heart/imagesTr/extracted_cubes_64_64_32_ss",
@@ -248,6 +249,12 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False, 
 
         elif dataset_list[0] == "lidc_acs_provided":
             x_train_filenames, x_val_filenames = get_files_for_train_and_test_for_provided_acs_lidc()
+            files = [x_train_filenames, x_val_filenames, []]
+            dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0, 0, 1), file_names=files)
+
+        elif dataset_list[0] == "lidc_mg_provided":
+            x_train_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in range(5)]
+            x_val_filenames = ["bat_32_s_64x64x32_" + str(i) + ".npy" for i in range(5, 10)]
             files = [x_train_filenames, x_val_filenames, []]
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=(0, 0, 1), file_names=files)
 
