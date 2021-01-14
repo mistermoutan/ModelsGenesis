@@ -6,13 +6,13 @@ import os
 
 def conv3D_output_shape_f(i, input_shape, kernel_size, dilation, padding, stride):
     """
-    Calculate the original output size assuming the convolution is nn.Conv3d based on 
+    Calculate the original output size assuming the convolution is nn.Conv3d based on
     input size, kernel size, dilation, padding and stride.
     """
     return math.floor((input_shape[i] - kernel_size[i] - (dilation[i] - 1) * (kernel_size[i] - 1) + 2 * padding[i]) / stride[i]) + 1
 
 
-def acs_conv_f(x, weight, bias, kernel_size, dilation, padding, stride, groups, out_channels, acs_kernel_split):
+def acs_conv_f(x, weight, bias, kernel_size, dilation, padding, stride, groups, out_channels, acs_kernel_split, return_splits=False):
     B, C_in, *input_shape = x.shape
     conv3D_output_shape = (
         conv3D_output_shape_f(0, input_shape, kernel_size, dilation, padding, stride),
@@ -82,6 +82,8 @@ def acs_conv_f(x, weight, bias, kernel_size, dilation, padding, stride, groups, 
         )
         f_out.append(s)
     f = torch.cat(f_out, dim=1)
+
     if bias is not None:
         f += bias.view(1, out_channels, 1, 1, 1)
-    return f
+
+    return f if return_splits is True else (f, f_out[0], f_out[1], f_out[2])

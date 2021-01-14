@@ -41,7 +41,10 @@ class ACSConv(_ACSConv):
         acs_kernel_split=None,
         bias=True,
         padding_mode="zeros",
+        return_splits=False,
     ):
+
+        self.return_splits = return_splits
         super().__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, False, 0, groups, bias, padding_mode)
         if acs_kernel_split is None:
             if self.out_channels % 3 == 0:
@@ -81,6 +84,7 @@ class ACSConv(_ACSConv):
             self.groups,
             self.out_channels,
             self.acs_kernel_split,
+            return_splits=self.return_splits,
         )
 
     def extra_repr(self):
