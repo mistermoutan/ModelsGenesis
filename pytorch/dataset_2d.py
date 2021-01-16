@@ -33,14 +33,10 @@ class Dataset2D:
                 return (None, None)
             assert self.x_train_cube.shape[0] == 1 and self.x_train_cube.shape[1] == 1
             self.x_train_cube = self.x_train_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
-            self.y_train_cube = self.y_train_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
 
             self.x_train_cube_x_view = np.transpose(self.x_train_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_train_cube_x_view = np.transpose(self.y_train_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_train_cube_y_view = np.transpose(self.x_train_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_train_cube_y_view = np.transpose(self.y_train_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_train_cube_z_view = np.transpose(self.x_train_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_train_cube_z_view = np.transpose(self.y_train_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
 
             self.train_idxs = [
                 [i for i in range(self.x_train_cube_x_view.shape[0])],
@@ -62,6 +58,12 @@ class Dataset2D:
             x = Tensor(x)
 
         if self.dataset3d.has_target:
+
+            self.y_train_cube = self.y_train_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
+            self.y_train_cube_x_view = np.transpose(self.y_train_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
+            self.y_train_cube_y_view = np.transpose(self.y_train_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
+            self.y_train_cube_z_view = np.transpose(self.y_train_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
+
             if self.train_sampling_idx == 0:
                 y = self.y_train_cube_x_view[self.train_idxs[self.train_sampling_idx][:batch_size]]
             elif self.train_sampling_idx == 1:
@@ -72,6 +74,7 @@ class Dataset2D:
             if return_tensor:
                 y = Tensor(y)
         else:
+            assert self.y_train_cube is None
             y = None
 
         del self.train_idxs[self.train_sampling_idx][:batch_size]
@@ -87,14 +90,10 @@ class Dataset2D:
 
             assert self.x_val_cube.shape[0] == 1 and self.x_val_cube.shape[1] == 1
             self.x_val_cube = self.x_val_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
-            self.y_val_cube = self.y_val_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
 
             self.x_val_cube_x_view = np.transpose(self.x_val_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_val_cube_x_view = np.transpose(self.y_val_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_val_cube_y_view = np.transpose(self.x_val_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_val_cube_y_view = np.transpose(self.y_val_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_val_cube_z_view = np.transpose(self.x_val_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_val_cube_z_view = np.transpose(self.y_val_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
 
             self.val_idxs = [
                 [i for i in range(self.x_val_cube_x_view.shape[0])],
@@ -114,7 +113,14 @@ class Dataset2D:
 
         if return_tensor:
             x = Tensor(x)
+
         if self.dataset3d.has_target:
+
+            self.y_val_cube = self.y_val_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
+            self.y_val_cube_x_view = np.transpose(self.y_val_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
+            self.y_val_cube_y_view = np.transpose(self.y_val_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
+            self.y_val_cube_z_view = np.transpose(self.y_val_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
+
             if self.val_sampling_idx == 0:
                 y = self.y_val_cube_x_view[self.val_idxs[self.val_sampling_idx][:batch_size]]
             elif self.val_sampling_idx == 1:
@@ -125,6 +131,7 @@ class Dataset2D:
             if return_tensor:
                 y = Tensor(y)
         else:
+            assert self.y_val_cube is None
             y = None
 
         del self.val_idxs[self.val_sampling_idx][:batch_size]
