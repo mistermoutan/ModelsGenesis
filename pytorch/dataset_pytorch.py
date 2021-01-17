@@ -10,6 +10,8 @@ from dataset_2d import Dataset2D
 from generic_supervision_transforms import TransformsForSupervision
 from acs_paper_transforms import ACSPaperTransforms
 
+from collections import Counter
+
 
 class DatasetPytorch(DatasetP):
     def __init__(self, dataset, config, type_: str, apply_mg_transforms: bool):
@@ -60,12 +62,13 @@ class DatasetPytorch(DatasetP):
         if self.type == "train":
             x, y = (
                 self.dataset.get_train(batch_size=1, return_tensor=False)
-                if (self.apply_mg_transforms or self.apply_mg_transforms or self.apply_supervison_transforms)
+                if (self.apply_mg_transforms or self.apply_acs_transforms or self.apply_supervison_transforms)
                 else self.dataset.get_train(batch_size=1, return_tensor=True)
             )
             if x is not None:
                 self.nr_samples_used += 1
                 self._check_reset()
+
                 if self.apply_mg_transforms:
                     if isinstance(self.dataset, Dataset):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
@@ -105,6 +108,7 @@ class DatasetPytorch(DatasetP):
             if x is not None:
                 self.nr_samples_used += 1
                 self._check_reset()
+
                 if self.apply_mg_transforms:
                     if isinstance(self.dataset, Dataset):
                         x_transform, y = generate_pair(x, 1, self.config, make_tensors=True)
@@ -127,6 +131,7 @@ class DatasetPytorch(DatasetP):
                 return (x, y)
 
         if self.type == "test":
+            # not used
             x, y = (
                 self.dataset.get_test(batch_size=1, return_tensor=False)
                 if self.apply_mg_transforms
@@ -190,12 +195,23 @@ class DatasetPytorch(DatasetP):
             x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
             y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3], dims[4])
         elif len(dims) == 4:
-            x_tensor = torch.zeros(len(batch), 1, dims[2], dims[3])
-            y_tensor = torch.zeros(len(batch), 1, dims[2], dims[3])
+            shapes_counter = Counter([i[0].shape for i in batch])
+            batch_size = max(shapes_counter.values())
+            shapes_to_remain = max(shapes_counter, key=shapes_counter.get)
+            # print("SHAPES COUNTER", shapes_counter)
+            # print("NEW BATCH SIZE", batch_size)
+            # print("SHAPE TO REMAIN", shapes_to_remain)
+            # print(shapes_to_remain)
+            x_tensor = torch.zeros(batch_size, 1, dims[2], dims[3])
+            y_tensor = torch.zeros(batch_size, 1, dims[2], dims[3])
+            # print(len(batch), "/ ")
+            batch = [i for i in batch if i[0].shape == shapes_to_remain]
+            # print(len(batch))
         else:
             raise ValueError
 
         for idx, (x, y) in enumerate(batch):  # y can be none in ss case
+            # print(x.shape)
             x_tensor[idx] = x
             if y is None:
                 y_tensor = None
