@@ -37,7 +37,9 @@ class Dataset2D:
             self.x_train_cube_x_view = np.transpose(self.x_train_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_train_cube_y_view = np.transpose(self.x_train_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_train_cube_z_view = np.transpose(self.x_train_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
-
+            self.x_train_cube_x_view, self.x_train_cube_y_view, self.x_train_cube_z_view = self._pad_if_necessary(
+                [self.x_train_cube_x_view, self.x_train_cube_y_view, self.x_train_cube_z_view]
+            )
             self.train_idxs = [
                 [i for i in range(self.x_train_cube_x_view.shape[0])],
                 [i for i in range(self.x_train_cube_y_view.shape[0])],
@@ -47,6 +49,14 @@ class Dataset2D:
             for idxs_list in self.train_idxs:
                 shuffle(idxs_list)
 
+            if self.y_train_cube is not None:
+                self.y_train_cube = self.y_train_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
+                self.y_train_cube_x_view = np.transpose(self.y_train_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
+                self.y_train_cube_y_view = np.transpose(self.y_train_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
+                self.y_train_cube_z_view = np.transpose(self.y_train_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
+                self.y_train_cube_x_view, self.y_train_cube_y_view, self.y_train_cube_z_view = self._pad_if_necessary(
+                    [self.y_train_cube_x_view, self.y_train_cube_y_view, self.y_train_cube_z_view]
+                )
         if self.train_sampling_idx == 0:
             x = self.x_train_cube_x_view[self.train_idxs[self.train_sampling_idx][:batch_size]]
         elif self.train_sampling_idx == 1:
@@ -58,12 +68,6 @@ class Dataset2D:
             x = Tensor(x)
 
         if self.dataset3d.has_target:
-
-            self.y_train_cube = self.y_train_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
-            self.y_train_cube_x_view = np.transpose(self.y_train_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_train_cube_y_view = np.transpose(self.y_train_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_train_cube_z_view = np.transpose(self.y_train_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
-
             if self.train_sampling_idx == 0:
                 y = self.y_train_cube_x_view[self.train_idxs[self.train_sampling_idx][:batch_size]]
             elif self.train_sampling_idx == 1:
@@ -94,7 +98,9 @@ class Dataset2D:
             self.x_val_cube_x_view = np.transpose(self.x_val_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_val_cube_y_view = np.transpose(self.x_val_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
             self.x_val_cube_z_view = np.transpose(self.x_val_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
-
+            self.x_val_cube_x_view, self.x_val_cube_y_view, self.x_val_cube_z_view = self._pad_if_necessary(
+                [self.x_val_cube_x_view, self.x_val_cube_y_view, self.x_val_cube_z_view]
+            )
             self.val_idxs = [
                 [i for i in range(self.x_val_cube_x_view.shape[0])],
                 [i for i in range(self.x_val_cube_y_view.shape[0])],
@@ -104,6 +110,14 @@ class Dataset2D:
             for idxs_list in self.val_idxs:
                 shuffle(idxs_list)
 
+            if self.y_val_cube is not None:
+                self.y_val_cube = self.y_val_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
+                self.y_val_cube_x_view = np.transpose(self.y_val_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
+                self.y_val_cube_y_view = np.transpose(self.y_val_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
+                self.y_val_cube_z_view = np.transpose(self.y_val_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
+                self.y_val_cube_x_view, self.y_val_cube_y_view, self.y_val_cube_z_view = self._pad_if_necessary(
+                    [self.y_val_cube_x_view, self.y_val_cube_y_view, self.y_val_cube_z_view]
+                )
         if self.val_sampling_idx == 0:
             x = self.x_val_cube_x_view[self.val_idxs[self.val_sampling_idx][:batch_size]]
         elif self.val_sampling_idx == 1:
@@ -115,11 +129,6 @@ class Dataset2D:
             x = Tensor(x)
 
         if self.dataset3d.has_target:
-
-            self.y_val_cube = self.y_val_cube[0]  # (1,C,x,y,z) -> (C,x,y,z)
-            self.y_val_cube_x_view = np.transpose(self.y_val_cube, (1, 0, 2, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_val_cube_y_view = np.transpose(self.y_val_cube, (2, 0, 1, -1))  # (C,x,y,z) -> (z,C,x,y)
-            self.y_val_cube_z_view = np.transpose(self.y_val_cube, (-1, 0, 1, 2))  # (C,x,y,z) -> (z,C,x,y)
 
             if self.val_sampling_idx == 0:
                 y = self.y_val_cube_x_view[self.val_idxs[self.val_sampling_idx][:batch_size]]
@@ -188,6 +197,45 @@ class Dataset2D:
                 self.val_sampling_idx = 0
             if self.val_idxs[self.val_sampling_idx] == []:
                 self._advance_index("val")
+
+    @staticmethod
+    def _pad_if_necessary(arrays: list) -> list:
+
+        max_dim_x = max(arrays[0].shape[-2], arrays[1].shape[-2], arrays[2].shape[-2])
+        max_dim_y = max(arrays[0].shape[-1], arrays[1].shape[-1], arrays[2].shape[-1])
+
+        for idx, array in enumerate(arrays):
+            pad = []
+            if array.shape[-1] != max_dim_y:
+                diff = max_dim_y - array.shape[-1]
+                assert diff > 0
+                if diff % 2 == 0:
+                    pad.insert(0, (int(diff / 2), int(diff / 2)))
+                else:
+                    maior = int((diff - 1) / 2)
+                    menor = int(diff - maior)
+                    pad.insert(0, (maior, menor))
+            else:
+                pad.insert(0, (0, 0))
+
+            if array.shape[-2] != max_dim_x:
+                diff = max_dim_x - array.shape[-2]
+                if diff % 2 == 0:
+                    pad.insert(0, (int(diff / 2), int(diff / 2)))
+                else:
+                    maior = int((diff - 1) / 2)
+                    menor = int(diff - maior)
+                    pad.insert(0, (maior, menor))
+            else:
+                pad.insert(0, (0, 0))
+
+            if pad != []:
+                pad.insert(0, (0, 0))
+                pad.insert(0, (0, 0))
+                # print("PAD ", pad)
+                arrays[idx] = np.pad(array, pad, "constant", constant_values=0)
+
+        return arrays
 
 
 if __name__ == "__main__":
