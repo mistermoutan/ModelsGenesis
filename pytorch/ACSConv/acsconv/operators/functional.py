@@ -86,4 +86,4 @@ def acs_conv_f(x, weight, bias, kernel_size, dilation, padding, stride, groups, 
     if bias is not None:
         f += bias.view(1, out_channels, 1, 1, 1)
 
-    return f if return_splits is True else (f, f_out[0], f_out[1], f_out[2])
+    return f if return_splits is False else (f, f_out[0], f_out[1], f_out[2])
