@@ -6,7 +6,7 @@ from dataset import Dataset
 
 
 class Dataset2D:
-    def __init__(self, dataset3d):
+    def __init__(self, dataset3d, limit_of_samples=100000):
 
         self.dataset3d = dataset3d
         # pointers
@@ -22,8 +22,15 @@ class Dataset2D:
         self.nr_samples_train = None
         self.nr_samples_val = None
         self.nr_samples_test = None
+        self.allowed_slices_per_cube_train = None
+        self.allowed_slices_per_cube_val = None
         print("INSTANCIATED DATASET 2D CLASS FOR {}".format(self.x_data_dir))
         self.train_sampling_idx, self.val_sampling_idx = 0, 0
+
+        self.limit_of_samples = limit_of_samples
+        self._calculate_nr_samples_train()
+        self._calculate_nr_samples_val()
+        self._set_cube_trimming()
 
     def get_train(self, batch_size: int, return_tensor=True) -> tuple():
 
@@ -45,6 +52,9 @@ class Dataset2D:
                 [i for i in range(self.x_train_cube_y_view.shape[0])],
                 [i for i in range(self.x_train_cube_z_view.shape[0])],
             ]
+
+            if self.allowed_slices_per_cube_train is not None:
+                self._trim_train_idxs()
 
             for idxs_list in self.train_idxs:
                 shuffle(idxs_list)
@@ -106,6 +116,8 @@ class Dataset2D:
                 [i for i in range(self.x_val_cube_y_view.shape[0])],
                 [i for i in range(self.x_val_cube_z_view.shape[0])],
             ]
+            if self.allowed_slices_per_cube_val is not None:
+                self._trim_val_idxs()
 
             for idxs_list in self.val_idxs:
                 shuffle(idxs_list)
@@ -148,23 +160,22 @@ class Dataset2D:
         return (x, y)
 
     def get_len_train(self):
-        # ATTENTION: May result in fuck up if nr_z_slices are not all the same for all cubes as I think happened in soem cube extractions
-        if self.nr_samples_train is None:
-            self.nr_samples_train = 0
+
+        self._calculate_nr_samples_train()
+        if self.nr_samples_train < self.limit_of_samples:
+            return self.nr_samples_train
+        else:
             nr_cubes_train = self.dataset3d.get_len_train()
-            cube_dims = self.dataset3d.get_cube_dimensions()
-            nr_slices = sum(cube_dims)
-            self.nr_samples_train = nr_cubes_train * nr_slices
-        return self.nr_samples_train
+            return nr_cubes_train * self.allowed_slices_per_cube_train
 
     def get_len_val(self):
-        # ATTENTION: May result in fuck up if nr_z_slices are not all the same for all cubes as I think happened in soem cube extractions
-        if self.nr_samples_val is None:
+
+        self._calculate_nr_samples_val()
+        if self.nr_samples_val < self.limit_of_samples:
+            return self.nr_samples_val
+        else:
             nr_cubes_val = self.dataset3d.get_len_val()
-            cube_dims = self.dataset3d.get_cube_dimensions()
-            nr_slices = sum(cube_dims)
-            self.nr_samples_val = nr_cubes_val * nr_slices
-        return self.nr_samples_val
+            return nr_cubes_val * self.allowed_slices_per_cube_val
 
     def reset(self):
         self.dataset3d.reset()
@@ -173,6 +184,68 @@ class Dataset2D:
         self.dataset3d.x_train_filenames_original = self.x_train_filenames_original
         self.dataset3d.x_val_filenames_original = self.x_val_filenames_original
         self.dataset3d.x_test_filenames_original = self.x_test_filenames_original
+
+    def _calculate_nr_samples_train(self):
+
+        if self.nr_samples_train is None:
+            self.nr_samples_train = 0
+            nr_cubes_train = self.dataset3d.get_len_train()
+            print("NR 3D CUBES TRAIN:", nr_cubes_train)
+            cube_dims = self.dataset3d.get_cube_dimensions()
+            nr_slices = sum(cube_dims)
+            self.nr_samples_train = nr_cubes_train * nr_slices
+
+    def _calculate_nr_samples_val(self):
+
+        if self.nr_samples_val is None:
+            nr_cubes_val = self.dataset3d.get_len_val()
+            print("NR 3D CUBES VAL:", nr_cubes_val)
+            cube_dims = self.dataset3d.get_cube_dimensions()
+            nr_slices = sum(cube_dims)
+            self.nr_samples_val = nr_cubes_val * nr_slices
+
+    def _set_cube_trimming(self):
+
+        if self.nr_samples_train > self.limit_of_samples:
+            nr_cubes_train = self.dataset3d.get_len_train()
+            self.allowed_slices_per_cube_train = int(np.ceil(self.limit_of_samples / nr_cubes_train))
+            print("ALLOWED SLICES PER CUBE: ", self.allowed_slices_per_cube_train)
+
+        if self.nr_samples_val > self.limit_of_samples:
+            nr_cubes_val = self.dataset3d.get_len_val()
+            self.allowed_slices_per_cube_val = int(np.ceil(self.limit_of_samples / nr_cubes_val))
+
+    def _trim_train_idxs(self):
+
+        len_idxs = [len(i) for i in self.train_idxs]
+        total_idxs = sum(i for i in len_idxs)
+        proportions = [i / total_idxs for i in len_idxs]
+
+        # print("PRE TRIMMING", sum(len(i) for i in self.train_idxs))
+        nr_to_trim = total_idxs - self.allowed_slices_per_cube_train  # how many slices must be deleted
+        # print("NUMBER TO TRIM:", nr_to_trim)
+        trim_each_view = [int(np.floor(i * nr_to_trim)) for i in proportions]
+        while sum(i for i in trim_each_view) < nr_to_trim:
+            trim_each_view[1] += 1
+        for idx, nr_to_trim in enumerate(trim_each_view):
+            del self.train_idxs[idx][:nr_to_trim]
+        # print("POST TRIMMING", sum(len(i) for i in self.train_idxs))
+
+    def _trim_val_idxs(self):
+
+        len_idxs = [len(i) for i in self.val_idxs]
+        total_idxs = sum(i for i in len_idxs)
+        proportions = [i / total_idxs for i in len_idxs]
+
+        # print("PRE TRIMMING", sum(len(i) for i in self.val_idxs))
+        nr_to_trim = total_idxs - self.allowed_slices_per_cube_val  # how many slices must be deleted
+        # print("NUMBER TO TRIM:", nr_to_trim)
+        trim_each_view = [int(np.floor(i * nr_to_trim)) for i in proportions]
+        while sum(i for i in trim_each_view) < nr_to_trim:
+            trim_each_view[1] += 1
+        for idx, nr_to_trim in enumerate(trim_each_view):
+            del self.val_idxs[idx][:nr_to_trim]
+        # print("POST TRIMMING", sum(len(i) for i in self.val_idxs))
 
     def _advance_index(self, type: str):
 
