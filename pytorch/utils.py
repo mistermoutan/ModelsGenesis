@@ -226,7 +226,7 @@ def get_unused_datasets(dataset):
     return all_datasets
 
 
-def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False, use_supervision_transforms=False):
+def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False, use_supervision_transforms=False, data_limit_2d=None):
     """[summary]
 
     Returns:
@@ -262,7 +262,7 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False, 
             dataset = Dataset(data_dir=dataset_map[dataset_list[0]], train_val_test=split, file_names=None)
 
         if two_dimensional_data is True:
-            dataset = Dataset2D(dataset)
+            dataset = Dataset2D(dataset, limit_of_samples=data_limit_2d)
 
         if use_supervision_transforms is True:
             dataset.use_supervision_transforms = True
@@ -286,7 +286,7 @@ def build_dataset(dataset_list: list, split: tuple, two_dimensional_data=False, 
             else:
                 dataset = Dataset(data_dir=dataset_map[dataset_list[idx]], train_val_test=split, file_names=None)
                 if two_dimensional_data:
-                    dataset = Dataset2D(dataset)
+                    dataset = Dataset2D(dataset, limit_of_samples=data_limit_2d)
                 datasets.append(dataset)
 
         if use_supervision_transforms is True:
@@ -376,7 +376,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["use_supervision_transforms"] = args_object.use_supervision_transforms
     kwargs_dict["task_name"] = args_object.task_name
     kwargs_dict["make_acs_kernel_split_adaptive_to_input_dimensions"] = args_object.make_acs_kernel_split_adaptive_to_input_dimensions
-
+    kwargs_dict["data_limit_2d"] = args_object.data_limit_2d
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):

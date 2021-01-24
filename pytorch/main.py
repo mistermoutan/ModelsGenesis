@@ -212,7 +212,6 @@ def resume_replicate_acs_results_fcnresnet18_my_cubes(run_nr, **kwargs):
 
 
 def pretrain_mg_framework_specific_dataset(**kwargs):
-    # TODO SUPPORT DIFFERENT MODELS, 2d  -> switch to finetuneconfig
 
     kwargs_dict_ = kwargs["kwargs_dict"]
     dataset_list = kwargs_dict_["dataset"]
@@ -222,7 +221,13 @@ def pretrain_mg_framework_specific_dataset(**kwargs):
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
 
-    dataset = build_dataset(dataset_list=dataset_list, split=split, two_dimensional_data=kwargs_dict_["two_dimensional_data"])
+    dataset = build_dataset(
+        dataset_list=dataset_list,
+        split=split,
+        two_dimensional_data=kwargs_dict_["two_dimensional_data"],
+        data_limit_2d=kwargs_dict_["data_limit_2d"],
+    )
+
     # config = models_genesis_config(True, task="PRETRAIN_MG_FRAMEWORK{}".format(datasets_used_str))
     config = FineTuneConfig(
         data_dir="",
@@ -758,6 +763,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     replace_config_param_attributes(config, kwargs_dict_)
     config.from_scratch = True  # Redundant, just for logging purposes
 
+    # TODO: move to function call
     if make_acs_kernel_split_adaptive_to_input_dimensions is True:
         x, y = dataset.get_train(batch_size=1)
         shape = x.shape[2:]
@@ -1038,6 +1044,7 @@ if __name__ == "__main__":
         action="store_true",
         required=False,
     )
+    parser.add_argument("--data_limit_2d", dest="data_limit_2d", required=False, default=None, type=int)
 
     args = parser.parse_args()
 

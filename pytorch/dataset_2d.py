@@ -6,7 +6,7 @@ from dataset import Dataset
 
 
 class Dataset2D:
-    def __init__(self, dataset3d, limit_of_samples=100000):
+    def __init__(self, dataset3d, limit_of_samples=50000):
 
         self.dataset3d = dataset3d
         # pointers
@@ -27,7 +27,11 @@ class Dataset2D:
         print("INSTANCIATED DATASET 2D CLASS FOR {}".format(self.x_data_dir))
         self.train_sampling_idx, self.val_sampling_idx = 0, 0
 
-        self.limit_of_samples = limit_of_samples
+        if isinstance(limit_of_samples, int):
+            self.limit_of_samples = limit_of_samples
+        else:
+            self.limit_of_samples = 1000000000000
+
         self._calculate_nr_samples_train()
         self._calculate_nr_samples_val()
         self._set_cube_trimming()
