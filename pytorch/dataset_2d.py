@@ -232,6 +232,7 @@ class Dataset2D:
         while sum(i for i in trim_each_view) < nr_to_trim:
             trim_each_view[1] += 1
         for idx, nr_to_trim in enumerate(trim_each_view):
+            shuffle(self.train_idxs[idx])
             del self.train_idxs[idx][:nr_to_trim]
         # print("POST TRIMMING", sum(len(i) for i in self.train_idxs))
 
@@ -248,6 +249,7 @@ class Dataset2D:
         while sum(i for i in trim_each_view) < nr_to_trim:
             trim_each_view[1] += 1
         for idx, nr_to_trim in enumerate(trim_each_view):
+            shuffle(self.val_idxs[idx])
             del self.val_idxs[idx][:nr_to_trim]
         # print("POST TRIMMING", sum(len(i) for i in self.val_idxs))
 
