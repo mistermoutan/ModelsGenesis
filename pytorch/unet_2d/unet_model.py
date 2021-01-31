@@ -158,7 +158,6 @@ class UnetACSAxisAwareDecoder(nn.Module):
         x3_a, x3_c, x3_s = x3[:, :shape1_3], x3[:, shape1_3 : shape1_3 + shape2_3], x3[:, shape1_3 + shape2_3 :]
         x4_a, x4_c, x4_s = x4[:, :shape1_4], x4[:, shape1_4 : shape1_4 + shape2_4], x4[:, shape1_4 + shape2_4 :]
         x5_a, x5_c, x5_s = x5[:, :shape1_5], x5[:, shape1_5 : shape1_5 + shape2_5], x5[:, shape1_5 + shape2_5 :]
-        print(x5_a.shape, x4_a.shape)
 
         # HACK: needs to be here as we need to know kernel split
         if not hasattr(self, "up1"):
