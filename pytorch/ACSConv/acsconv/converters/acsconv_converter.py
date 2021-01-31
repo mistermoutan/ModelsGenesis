@@ -36,5 +36,5 @@ class ACSConverter(BaseConverter):
 
     def convert_conv_kwargs(self, kwargs):
         kwargs["bias"] = True if kwargs["bias"] is not None else False
-        kwargs["return_splits"] = True if kwargs.get("stop_criteria_alternate", None) is not None else False
+        kwargs["return_splits"] = True if kwargs.get("return_splits", False) is not False else False
         return kwargs
