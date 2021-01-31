@@ -13,6 +13,8 @@ from ACSConv.experiments.mylib.utils import categorical_to_one_hot
 
 from unet_2d import UNet
 from unet_3d import UNet3D as Unet3D_Counterpart_to_2D
+from unet_2d import UnetACSWithClassifier
+from unet_2d import UnetACSAxisAwareDecoder
 
 from unet3d import UNet3D
 from dataset import Dataset
@@ -109,6 +111,8 @@ class Trainer:
 
         criterion = nn.MSELoss()
         criterion.to(self.device)
+        if self.config.model.lower() == "unet_acs_with_cls":
+            criterion_cls = nn.CrossEntropyLoss()
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
@@ -128,10 +132,12 @@ class Trainer:
         for self.epoch_ss_current in range(self.epoch_ss_check, self.config.nb_epoch_ss):
             self.stats.training_losses_ss = []
             self.stats.validation_losses_ss = []
+            if self.config.model.lower() == "unet_acs_with_cls":
+                self.stats.training_losses_ss_cls = []
+                self.stats.validation_losses_ss_cls = []
             self.model.train()
 
             for iteration, (x_transform, y) in enumerate(train_data_loader):
-
                 if iteration == 0 and ((self.epoch_ss_current) % 20 == 0):
                     start_time = time.time()
 
@@ -140,20 +146,48 @@ class Trainer:
                     x_transform, y = pad_if_necessary(x_transform, y)
 
                 pred = self.model(x_transform)
+
+                if self.config.model.lower() == "unet_acs_with_cls":
+                    pred_, x_cls, targets_cls = pred
+                    pred = pred_  # for reconstruction
+                    loss_cls = criterion_cls(x_cls, targets_cls)
+                    self.stats.training_losses_ss_cls.append(loss_cls.item())
+                    loss_cls.to(self.device)
+                    loss_cls *= 0.1
+                    # print("CLS", loss_cls.item())
+                    # if self.epoch_ss_current >= 20:
+
                 loss = criterion(pred, y)
                 loss.to(self.device)
                 self.optimizer_ss.zero_grad()
+                if self.config.model.lower() == "unet_acs_with_cls":
+                    loss += loss_cls
                 loss.backward()
                 self.optimizer_ss.step()
                 self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
+                if self.config.model.lower() == "unet_acs_with_cls":
+                    self.tb_writer.add_scalar("Loss/train CLS: Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
                 if (iteration + 1) % int((int(train_dataset.__len__() / self.config.batch_size_ss)) / 5) == 0:
-                    print(
-                        "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(
-                            self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
+
+                    if self.config.model.lower() == "unet_acs_with_cls":
+                        print(
+                            "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}, TRAINING Loss(CLS): {:.6f}".format(
+                                self.epoch_ss_current + 1,
+                                self.config.nb_epoch_ss,
+                                iteration + 1,
+                                np.average(self.stats.training_losses_ss),
+                                np.average(self.stats.training_losses_ss_cls),
+                            )
                         )
-                    )
+                    else:
+                        print(
+                            "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}".format(
+                                self.epoch_ss_current + 1, self.config.nb_epoch_ss, iteration + 1, np.average(self.stats.training_losses_ss)
+                            )
+                        )
+
                 if iteration == 0 and ((self.epoch_ss_current) % 20 == 0):
                     timedelta_iter = timedelta(seconds=time.time() - start_time)
                     print("TIMEDELTA FOR ITERATION {}".format(str(timedelta_iter)))
@@ -169,8 +203,20 @@ class Trainer:
                     if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
                         x_transform, y = pad_if_necessary(x_transform, y)
                     pred = self.model(x_transform)
+                    if self.config.model.lower() == "unet_acs_with_cls":
+                        pred_, x_cls, targets_cls = pred
+                        pred = pred_  # for reconstruction
+                        loss_cls = criterion_cls(x_cls, targets_cls)
+                        self.stats.validation_losses_ss_cls.append(loss_cls.item())
+                        loss_cls.to(self.device)
+                        loss_cls *= 0.1
+
                     loss = criterion(pred, y)
+                    if self.config.model.lower() == "unet_acs_with_cls":
+                        loss += loss_cls
+
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
+                    self.tb_writer.add_scalar("Loss/train : Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
 
             # a bunch of checks but think its pointless in an MP context
@@ -189,6 +235,15 @@ class Trainer:
             self.tb_writer.add_scalar(
                 "Avg Loss Epoch/Validation : Self Supervised", avg_validation_loss_of_epoch, self.epoch_ss_current + 1
             )
+            if self.config.model.lower() == "unet_acs_with_cls":
+                avg_training_loss_of_epoch_cls = np.average(self.stats.training_losses_ss_cls)
+                self.tb_writer.add_scalar(
+                    "Avg Loss Epoch/Training CLS : Self Supervised", avg_training_loss_of_epoch_cls, self.epoch_ss_current + 1
+                )
+                avg_validation_loss_of_epoch_cls = np.average(self.stats.validation_losses_ss_cls)
+                self.tb_writer.add_scalar(
+                    "Avg Loss Epoch/Validation CLS: Self Supervised", avg_validation_loss_of_epoch_cls, self.epoch_ss_current + 1
+                )
 
             self.stats.avg_training_loss_per_epoch_ss.append(avg_training_loss_of_epoch)
             self.stats.avg_validation_loss_per_epoch_ss.append(avg_validation_loss_of_epoch)
@@ -200,11 +255,22 @@ class Trainer:
                 self.scheduler_ss.step(self.epoch_ss_current)
 
             print("###### SELF SUPERVISED#######")
-            print(
-                "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
-                    self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
+            if self.config.model.lower() == "unet_acs_with_cls":
+                print(
+                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}. \n Validation Loss Cls is {}, training loss cls is {:.4f}".format(
+                        self.epoch_ss_current + 1,
+                        avg_validation_loss_of_epoch,
+                        avg_training_loss_of_epoch,
+                        avg_validation_loss_of_epoch_cls,
+                        avg_training_loss_of_epoch_cls,
+                    )
                 )
-            )
+            else:
+                print(
+                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
+                        self.epoch_ss_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
+                    )
+                )
 
             try:
                 print("CURRENT SS LR: {}, SCHEDULER: {}".format(self.scheduler_ss.get_last_lr(), self.config.scheduler_ss))
@@ -506,7 +572,7 @@ class Trainer:
         from ACSConv.experiments.lidc.resnet import FCNResNet
 
         acs_kernel_split = kwargs.get("acs_kernel_split", None)
-        if self.config.model.lower() != "unet_acs":
+        if "unet_acs" not in self.config.model.lower():
             assert acs_kernel_split is None
 
         if self.config.model.lower() == "vnet_mg":
@@ -520,6 +586,14 @@ class Trainer:
         elif self.config.model.lower() == "unet_acs":
             print("LOADING UNET_2D_ACS")
             self.model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
+
+        elif self.config.model.lower() == "unet_acs_with_cls":
+            self.model = UnetACSWithClassifier(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
+
+        elif self.config.model.lower() == "unet_acs_axis_aware_decoder":
+            self.model = UnetACSAxisAwareDecoder(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_3d":
@@ -721,6 +795,7 @@ class Trainer:
                     state_dict = checkpoint["model_state_dict_ss"]
             if ensure_sup_is_completed:
                 assert checkpoint["completed_sup"] is True, "Supervison was not completed"
+            # assert checkpoint["completed_sup"] is True, "Supervison was not completed, {}".format(kwargs)
 
             unParalled_state_dict = {}
             for key in state_dict.keys():
