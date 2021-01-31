@@ -119,7 +119,6 @@ class AxisAwareUpBlock(nn.Module):
 
         while any(in_channel < mid_channels for in_channel in [in_channels_a, in_channels_c, in_channels_s]):
             mid_channels -= 1
-            print("reduciing mid chan")
 
         # reduce filers before expensive conv3d as in going deeper with covolutions ala google inception
         print(

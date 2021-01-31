@@ -144,14 +144,6 @@ class UnetACSAxisAwareDecoder(nn.Module):
         self.factor = 2 if bilinear else 1
         self.down4 = DownACS(512, 1024 // self.factor, return_splits=True)
 
-        self.up1 = ACSConverter(AxisAwareUpBlock((342, 342, 340), 512 // self.factor, bilinear=self.bilinear))
-        self.up2 = ACSConverter(AxisAwareUpBlock((172, 170, 170), 256 // self.factor, bilinear=self.bilinear))
-        self.up3 = ACSConverter(AxisAwareUpBlock((86, 86, 84), 128 // self.factor, bilinear=self.bilinear))
-        self.up4 = ACSConverter(AxisAwareUpBlock((44, 42, 42), 64, bilinear=self.bilinear))
-        self.outc = ACSConverter(
-            OutConv(64, self.n_classes) if self.apply_sigmoid_to_output is False else OutConv(64, self.n_classes, sigmoid=True)
-        )
-
     def forward(self, x):
 
         x1, shape1_1, shape2_1, shape3_1 = self.inc(x)
@@ -196,10 +188,10 @@ class UnetACSAxisAwareDecoder(nn.Module):
         x = self.up3((x_a, x2_a, x_c, x2_c, x_s, x2_s))
         x, shape1, shape2, shape3 = x
         x_a, x_c, x_s = x[:, :shape1], x[:, shape1 : shape1 + shape2], x[:, shape1 + shape2 :]
-        print("PRE UP 4: {} {} {}, OUT FROM UP 3 was {}".format(x_a.shape, x_c.shape, x_s.shape, x.shape))
+        # print("PRE UP 4: {} {} {}, OUT FROM UP 3 was {}".format(x_a.shape, x_c.shape, x_s.shape, x.shape))
         x, shape1, shape2, shape3 = self.up4((x_a, x1_a, x_c, x1_c, x_s, x1_s))
         logits = self.outc(x)
-        print("SHAPE LOGITS", logits.shape)
+        # print("SHAPE LOGITS", logits.shape)
         return logits
 
 
