@@ -362,6 +362,8 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         "unet_3d",
         "fcn_resnet18_acs",
         "fcn_resnet18_acs_pretrained_imgnet",
+        "unet_acs_with_cls",
+        "unet_acs_axis_aware_decoder",
     )
     kwargs_dict["model"] = args_object.model
     if args_object.model.lower() == "unet_2d":
