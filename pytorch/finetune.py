@@ -216,7 +216,8 @@ class Trainer:
                         loss += loss_cls
 
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
-                    self.tb_writer.add_scalar("Loss/train : Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
+                    if self.config.model.lower() == "unet_acs_with_cls":
+                        self.tb_writer.add_scalar("Loss/train : Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
 
             # a bunch of checks but think its pointless in an MP context
@@ -235,6 +236,7 @@ class Trainer:
             self.tb_writer.add_scalar(
                 "Avg Loss Epoch/Validation : Self Supervised", avg_validation_loss_of_epoch, self.epoch_ss_current + 1
             )
+
             if self.config.model.lower() == "unet_acs_with_cls":
                 avg_training_loss_of_epoch_cls = np.average(self.stats.training_losses_ss_cls)
                 self.tb_writer.add_scalar(
