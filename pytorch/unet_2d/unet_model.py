@@ -132,6 +132,7 @@ class UnetACSAxisAwareDecoder(nn.Module):
 
     def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False):
         super(UnetACSAxisAwareDecoder, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
@@ -164,16 +165,21 @@ class UnetACSAxisAwareDecoder(nn.Module):
             self.up1 = ACSConverter(
                 AxisAwareUpBlock((shape1_5 * 2, shape2_5 * 2, shape3_5 * 2), 512 // self.factor, bilinear=self.bilinear)
             )
+            self.up1.to(self.device)
             self.up2 = ACSConverter(
                 AxisAwareUpBlock((shape1_3 * 2, shape2_3 * 2, shape3_3 * 2), 256 // self.factor, bilinear=self.bilinear)
             )
+            self.up2.to(self.device)
             self.up3 = ACSConverter(
                 AxisAwareUpBlock((shape1_2 * 2, shape2_2 * 2, shape3_2 * 2), 128 // self.factor, bilinear=self.bilinear)
             )
+            self.up3.to(self.device)
             self.up4 = ACSConverter(AxisAwareUpBlock((shape1_1 * 2, shape2_1 * 2, shape3_1 * 2), 64, bilinear=self.bilinear))
+            self.up4.to(self.device)
             self.outc = ACSConverter(
                 OutConv(64, self.n_classes) if self.apply_sigmoid_to_output is False else OutConv(64, self.n_classes, sigmoid=True)
             )
+            self.outc.to(self.device)
 
         x = self.up1((x5_a, x4_a, x5_c, x4_c, x5_s, x4_s))
         x, shape1, shape2, shape3 = x

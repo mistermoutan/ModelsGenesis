@@ -151,6 +151,13 @@ class AxisAwareUpBlock(nn.Module):
         # self.global_conv = ACSConverter(self.global_conv)
 
         self.to(self.device)
+        self.bn1_a.to(self.device)
+        self.bn1_c.to(self.device)
+        self.bn1_s.to(self.device)
+        self.bn2_a.to(self.device)
+        self.bn2_c.to(self.device)
+        self.bn2_s.to(self.device)
+        self.bn3.to(self.device)
 
     def forward(self, x_tuples: tuple):
 
