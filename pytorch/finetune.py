@@ -614,7 +614,7 @@ class Trainer:
         elif self.config.model.lower() == "fcn_resnet18_acs_pretrained_imgnet":
             print("LOADING FCN_RESNET_18_pretrained_img_net")
             self.model = FCNResNet(pretrained=True, num_classes=2)
-            self.mode = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         self.model.to(self.device)
 
