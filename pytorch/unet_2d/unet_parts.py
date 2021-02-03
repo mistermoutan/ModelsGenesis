@@ -107,6 +107,8 @@ class AxisAwareUpBlock(nn.Module):
 
         super(AxisAwareUpBlock, self).__init__()
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         in_channels_a, in_channels_c, in_channels_s = shapes
 
         self.up = nn.Upsample(scale_factor=2, mode="trilinear", align_corners=True)
@@ -147,6 +149,8 @@ class AxisAwareUpBlock(nn.Module):
         self.global_conv = nn.Conv2d(out_channels * 3, out_channels, kernel_size=3, padding=1)
         setattr(self.global_conv, "return_splits", True)
         # self.global_conv = ACSConverter(self.global_conv)
+
+        self.to(self.device)
 
     def forward(self, x_tuples: tuple):
 
