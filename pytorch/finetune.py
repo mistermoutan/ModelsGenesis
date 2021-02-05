@@ -136,6 +136,8 @@ class Trainer:
             if self.config.model.lower() == "unet_acs_with_cls":
                 self.stats.training_losses_ss_cls = []
                 self.stats.validation_losses_ss_cls = []
+                self.stats.training_losses_ss_ae = []
+                self.stats.validation_losses_ss_ae = []
             self.model.train()
 
             for iteration, (x_transform, y) in enumerate(train_data_loader):
@@ -155,31 +157,34 @@ class Trainer:
                     loss_cls = criterion_cls(x_cls, targets_cls)
                     loss_cls.to(self.device)
                     loss_cls *= 0.1
+                    self.tb_writer.add_scalar("Loss/train CLS: Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.training_losses_ss_cls.append(loss_cls.item())
                     # print("CLS", loss_cls.item())
                     # if self.epoch_ss_current >= 20:
 
                 loss = criterion(pred, y)
                 loss.to(self.device)
-                self.optimizer_ss.zero_grad()
+
                 if self.config.model.lower() == "unet_acs_with_cls":
+                    self.tb_writer.add_scalar("Loss/train AE : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
+                    self.stats.training_losses_ss_ae.append(loss.item())
                     loss += loss_cls
+
+                self.optimizer_ss.zero_grad()
                 loss.backward()
                 self.optimizer_ss.step()
-                self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
-                if self.config.model.lower() == "unet_acs_with_cls":
-                    self.tb_writer.add_scalar("Loss/train CLS: Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
                 self.stats.training_losses_ss.append(loss.item())
 
                 if (iteration + 1) % int((int(train_dataset.__len__() / self.config.batch_size_ss)) / 5) == 0:
 
                     if self.config.model.lower() == "unet_acs_with_cls":
                         print(
-                            "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}, TRAINING Loss(CLS): {:.6f}".format(
+                            "Epoch [{}/{}], iteration {}, TRAINING Loss: {:.6f}, TRAINING Loss(AE): {:.6f}, TRAINING Loss(CLS): {:.6f}".format(
                                 self.epoch_ss_current + 1,
                                 self.config.nb_epoch_ss,
                                 iteration + 1,
                                 np.average(self.stats.training_losses_ss),
+                                np.average(self.stats.training_losses_ss_ae),
                                 np.average(self.stats.training_losses_ss_cls),
                             )
                         )
@@ -210,17 +215,21 @@ class Trainer:
                         x_cls, targets_cls = x_cls.to(self.device), targets_cls.to(self.device)
                         pred = pred_  # for reconstruction
                         loss_cls = criterion_cls(x_cls, targets_cls)
-                        self.stats.validation_losses_ss_cls.append(loss_cls.item())
-                        loss_cls.to(self.device)
                         loss_cls *= 0.1
+                        self.tb_writer.add_scalar(
+                            "Loss/Validation CLS: Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration
+                        )
+                        self.stats.validation_losses_ss_cls.append(loss_cls.item())
 
                     loss = criterion(pred, y)
                     if self.config.model.lower() == "unet_acs_with_cls":
+                        self.tb_writer.add_scalar(
+                            "Loss/Validation AE : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration
+                        )
+                        self.stats.validation_losses_ss_ae.append(loss.item())
                         loss += loss_cls
 
                     self.tb_writer.add_scalar("Loss/Validation : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
-                    if self.config.model.lower() == "unet_acs_with_cls":
-                        self.tb_writer.add_scalar("Loss/train : Self Supervised", loss_cls.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.validation_losses_ss.append(loss.item())
 
             # a bunch of checks but think its pointless in an MP context
@@ -241,11 +250,21 @@ class Trainer:
             )
 
             if self.config.model.lower() == "unet_acs_with_cls":
+
+                avg_training_loss_of_epoch_ae = np.average(self.stats.training_losses_ss_ae)
                 avg_training_loss_of_epoch_cls = np.average(self.stats.training_losses_ss_cls)
+                self.tb_writer.add_scalar(
+                    "Avg Loss Epoch/Training AE : Self Supervised", avg_training_loss_of_epoch_ae, self.epoch_ss_current + 1
+                )
                 self.tb_writer.add_scalar(
                     "Avg Loss Epoch/Training CLS : Self Supervised", avg_training_loss_of_epoch_cls, self.epoch_ss_current + 1
                 )
+
+                avg_validation_loss_of_epoch_ae = np.average(self.stats.validation_losses_ss_ae)
                 avg_validation_loss_of_epoch_cls = np.average(self.stats.validation_losses_ss_cls)
+                self.tb_writer.add_scalar(
+                    "Avg Loss Epoch/Validation AE : Self Supervised", avg_validation_loss_of_epoch_ae, self.epoch_ss_current + 1
+                )
                 self.tb_writer.add_scalar(
                     "Avg Loss Epoch/Validation CLS: Self Supervised", avg_validation_loss_of_epoch_cls, self.epoch_ss_current + 1
                 )
@@ -262,10 +281,12 @@ class Trainer:
             print("###### SELF SUPERVISED#######")
             if self.config.model.lower() == "unet_acs_with_cls":
                 print(
-                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}. \n Validation Loss Cls is {}, training loss cls is {:.4f}".format(
+                    "Epoch {}, Validation loss is {:.4f}, training loss is {:.4f}. \n Validation Loss AE is {}, Training loss AE is {:.4f} \n Validation Loss Cls is {}, Training loss cls is {:.4f}".format(
                         self.epoch_ss_current + 1,
                         avg_validation_loss_of_epoch,
                         avg_training_loss_of_epoch,
+                        avg_validation_loss_of_epoch_ae,
+                        avg_training_loss_of_epoch_ae,
                         avg_validation_loss_of_epoch_cls,
                         avg_training_loss_of_epoch_cls,
                     )
