@@ -505,6 +505,70 @@ def resume_use_provided_weights_and_finetune_on_dataset_with_ss(run_nr: int, **k
     """
 
 
+def use_model_weights_and_do_self_supervision(**kwargs):
+    # pass it the directory of the task that the model you want to resume from is
+
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    num_cv_folds = kwargs_dict_.get("num_cv_folds", None)
+    dataset_list = kwargs_dict_["dataset"]
+    dataset_list.sort()
+    model_weights_dir = kwargs_dict_["directory"]
+    split = kwargs_dict_.get("split", (0.8, 0.2, 0))
+    mode = kwargs_dict_.get("mode", "")
+    convert_acs = kwargs_dict_["convert_to_acs"]
+    new_folder = kwargs_dict_["new_folder"]
+
+    datasets_used_str = get_datasets_used_str(
+        dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs
+    )
+    dataset = build_dataset(
+        dataset_list=dataset_list,
+        split=split,
+        two_dimensional_data=kwargs_dict_["two_dimensional_data"],
+        use_supervision_transforms=kwargs_dict_["use_supervision_transforms"],
+    )
+
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_{}_DO_SS_ON_{}".format(model_weights_dir, datasets_used_str),
+        self_supervised=True,
+        supervised=False,
+        model=kwargs_dict_["model"],
+        new_folder=new_folder,
+    )
+
+    replace_config_param_attributes(config, kwargs_dict_)
+    config.resume_from_specific_model = True  # Redundant, just for logging purposes
+
+    if num_cv_folds is not None:
+        cv = get_cross_validator_object_of_task_dir(config.task_dir)
+        if cv is None:
+            if config.experiment_nr == 1:
+                cv = CrossValidator(config, dataset, nr_splits=num_cv_folds)
+                cv.override_dataset_files_with_splits()
+                save_object(cv, "cross_validator", config.object_dir)
+                print("RUN 1: Building cross validator")
+            else:
+                print("TOO LATE TO BRING CROSS VALIDATON IN")
+
+        else:
+            cv.set_dataset(dataset)
+            cv.override_dataset_files_with_splits()
+            # to "loose" used splits as they're popped and needs to be saved in run1 objects
+            save_cross_validator_object_of_task_dir(cv, config.task_dir)
+
+    config.display()
+
+    save_object(config, "config", config.object_dir)
+    save_object(dataset, "dataset", config.object_dir)
+
+    trainer = Trainer(config, dataset)
+    trainer.load_model(from_directory=True, directory=model_weights_dir, convert_acs=convert_acs)
+    trainer.finetune_self_supervised()
+    trainer.add_hparams_to_writer()
+    trainer.get_stats()
+
+
 def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     # pass it the directory of the task that the model you want to resume from is
 
@@ -1124,6 +1188,9 @@ if __name__ == "__main__":
         """
         ---
         """
+    elif args.command == "do_ss_from_model":
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True, get_directory=True)
+        use_model_weights_and_do_self_supervision(kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_model_no_ss":
 
