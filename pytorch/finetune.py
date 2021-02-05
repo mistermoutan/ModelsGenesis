@@ -151,9 +151,9 @@ class Trainer:
                     pred_, x_cls, targets_cls = pred
                     pred = pred_  # for reconstruction
                     loss_cls = criterion_cls(x_cls, targets_cls)
-                    self.stats.training_losses_ss_cls.append(loss_cls.item())
                     loss_cls.to(self.device)
                     loss_cls *= 0.1
+                    self.stats.training_losses_ss_cls.append(loss_cls.item())
                     # print("CLS", loss_cls.item())
                     # if self.epoch_ss_current >= 20:
 
