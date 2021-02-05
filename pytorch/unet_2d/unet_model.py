@@ -48,6 +48,7 @@ class UnetACSWithClassifier(nn.Module):
 
     def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False):
         super(UnetACSWithClassifier, self).__init__()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
@@ -65,6 +66,8 @@ class UnetACSWithClassifier(nn.Module):
         self.up4 = Up(128, 64, bilinear)
         self.outc = OutConv(64, n_classes) if apply_sigmoid_to_output is False else OutConv(64, n_classes, sigmoid=True)
 
+        self.fc1 = nn.Linear(170, 3, bias=True)
+
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
@@ -81,19 +84,17 @@ class UnetACSWithClassifier(nn.Module):
         # do the classificationa as well
         # x_a, x_c, x_s = x5[:, :shape1], x5[:, shape1 : shape1 + shape2], x5[:, shape1 + shape2 :]
         x_cls, targets, nr_feat = self._get_data_for_classification(last_down_features=x5, shape1=shape1, shape2=shape2, shape3=shape3)
-
-        if not hasattr(self, "fc1"):
-            self.fc1 = nn.Linear(nr_feat, 3, bias=True)
+        # print("NUMBE FEAT:", nr_feat)
 
         # make spatial dimensions unitary and flatten them into (B,N)
         x_cls = F.adaptive_avg_pool3d(x_cls, output_size=1).view(x_cls.size(0), -1)
         x_cls = self.fc1(x_cls)
         return (logits, x_cls, targets)
 
-    @staticmethod
-    def _get_data_for_classification(last_down_features, shape1, shape2, shape3):
+    def _get_data_for_classification(self, last_down_features, shape1, shape2, shape3):
 
-        x5 = last_down_features  # (B,C,H,W,D)
+        x5 = last_down_features.detach().clone()  # (B,C,H,W,D)
+        x5.to(self.device)
         batch_size = x5.shape[0]
         # equal split in relation to batch of how many examples from each view go to classifier
         # so from the elemensts of btach, how many featuers from each view will follow
@@ -123,6 +124,8 @@ class UnetACSWithClassifier(nn.Module):
 
         targets = torch.LongTensor([0 for i in range(each_view[0])] + [1 for i in range(each_view[1])] + [2 for i in range(each_view[2])])
         res_out = torch.cat(res, dim=0)  # concatenate on batch
+        res_out.to(self.device)
+        targets.to(self.device)
         # print(res_out.shape)
         return res_out, targets, allowed_number_features
 
@@ -198,13 +201,16 @@ if __name__ == "__main__":
     from ACSConv.acsconv.converters import ACSConverter
 
     r2d = torch.randn(1, 1, 64, 64)
-    r3d = torch.randn(5, 1, 32, 32, 16)
+    r3d = torch.randn(5, 1, 16, 16, 16)
     u_2d = UNet(1, 1)
     # u_2d(r2d)
     # u_2d_acs = ACSConverter(u_2d)
     # u_2d_acs(r3d)
 
-    # u = UnetACSWithClassifier(1, 1, mode="ss")
-    u = UnetACSAxisAwareDecoder(1, 1)
+    u = UnetACSWithClassifier(
+        1,
+        1,
+    )
+    # u = UnetACSAxisAwareDecoder(1, 1)
     u_acs = ACSConverter(u)
     u_acs(r3d)
