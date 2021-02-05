@@ -367,7 +367,8 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     )
     kwargs_dict["model"] = args_object.model
     if args_object.model.lower() == "unet_2d":
-        assert args_object.two_dimensional_data is True, "Need to work with 2d Data for Unet_2d, pass --two_dimensional_data argument"
+        if args_object.convert_to_acs is not True:
+            assert args_object.two_dimensional_data is True, "Need to work with 2d Data for Unet_2d, pass --two_dimensional_data argument"
 
     kwargs_dict["two_dimensional_data"] = args_object.two_dimensional_data
     if args_object.convert_to_acs is True:
