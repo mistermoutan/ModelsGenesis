@@ -536,7 +536,7 @@ def use_model_weights_and_do_self_supervision(**kwargs):
         model=kwargs_dict_["model"],
         new_folder=new_folder,
     )
-
+    config.make_config_as_original_mg()
     replace_config_param_attributes(config, kwargs_dict_)
     config.resume_from_specific_model = True  # Redundant, just for logging purposes
 
