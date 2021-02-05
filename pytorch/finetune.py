@@ -113,6 +113,7 @@ class Trainer:
         criterion.to(self.device)
         if self.config.model.lower() == "unet_acs_with_cls":
             criterion_cls = nn.CrossEntropyLoss()
+            criterion_cls.to(self.device)
 
         if self.epoch_ss_check > 0:
             print("RESUMING SS TRAINING FROM EPOCH {} out of max {}".format(self.epoch_ss_check, self.config.nb_epoch_ss))
