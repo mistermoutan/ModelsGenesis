@@ -150,9 +150,10 @@ class Trainer:
 
                 if self.config.model.lower() == "unet_acs_with_cls":
                     pred_, x_cls, targets_cls = pred
+                    x_cls, targets_cls = x_cls.to(self.device), targets_cls.to(self.device)
                     pred = pred_  # for reconstruction
                     loss_cls = criterion_cls(x_cls, targets_cls)
-                    # loss_cls.to(self.device)
+                    loss_cls.to(self.device)
                     loss_cls *= 0.1
                     self.stats.training_losses_ss_cls.append(loss_cls.item())
                     # print("CLS", loss_cls.item())

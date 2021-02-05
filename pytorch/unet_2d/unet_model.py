@@ -85,7 +85,6 @@ class UnetACSWithClassifier(nn.Module):
         # x_a, x_c, x_s = x5[:, :shape1], x5[:, shape1 : shape1 + shape2], x5[:, shape1 + shape2 :]
         x_cls, targets, nr_feat = self._get_data_for_classification(last_down_features=x5, shape1=shape1, shape2=shape2, shape3=shape3)
         # print("NUMBE FEAT:", nr_feat)
-
         # make spatial dimensions unitary and flatten them into (B,N)
         x_cls = F.adaptive_avg_pool3d(x_cls, output_size=1).view(x_cls.size(0), -1)
         x_cls = self.fc1(x_cls)
@@ -94,7 +93,7 @@ class UnetACSWithClassifier(nn.Module):
     def _get_data_for_classification(self, last_down_features, shape1, shape2, shape3):
 
         x5 = last_down_features.detach().clone()  # (B,C,H,W,D)
-        x5.to(self.device)
+        x5 = x5.to(self.device)
         batch_size = x5.shape[0]
         # equal split in relation to batch of how many examples from each view go to classifier
         # so from the elemensts of btach, how many featuers from each view will follow
@@ -124,8 +123,6 @@ class UnetACSWithClassifier(nn.Module):
 
         targets = torch.LongTensor([0 for i in range(each_view[0])] + [1 for i in range(each_view[1])] + [2 for i in range(each_view[2])])
         res_out = torch.cat(res, dim=0)  # concatenate on batch
-        res_out.to(self.device)
-        targets.to(self.device)
         # print(res_out.shape)
         return res_out, targets, allowed_number_features
 
