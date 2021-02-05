@@ -145,6 +145,19 @@ class UnetACSAxisAwareDecoder(nn.Module):
         self.factor = 2 if bilinear else 1
         self.down4 = DownACS(512, 1024 // self.factor, return_splits=True)
 
+        self.up1 = ACSConverter(AxisAwareUpBlock((342, 342, 340), 512 // self.factor, bilinear=self.bilinear))
+        self.up1.to(self.device)
+        self.up2 = ACSConverter(AxisAwareUpBlock((172, 170, 170), 256 // self.factor, bilinear=self.bilinear))
+        self.up2.to(self.device)
+        self.up3 = ACSConverter(AxisAwareUpBlock((86, 86, 84), 128 // self.factor, bilinear=self.bilinear))
+        self.up3.to(self.device)
+        self.up4 = ACSConverter(AxisAwareUpBlock((44, 42, 42), 64, bilinear=self.bilinear))
+        self.up4.to(self.device)
+        self.outc = ACSConverter(
+            OutConv(64, self.n_classes) if self.apply_sigmoid_to_output is False else OutConv(64, self.n_classes, sigmoid=True)
+        )
+        self.outc.to(self.device)
+
     def forward(self, x):
 
         x1, shape1_1, shape2_1, shape3_1 = self.inc(x)
@@ -159,27 +172,6 @@ class UnetACSAxisAwareDecoder(nn.Module):
         x3_a, x3_c, x3_s = x3[:, :shape1_3], x3[:, shape1_3 : shape1_3 + shape2_3], x3[:, shape1_3 + shape2_3 :]
         x4_a, x4_c, x4_s = x4[:, :shape1_4], x4[:, shape1_4 : shape1_4 + shape2_4], x4[:, shape1_4 + shape2_4 :]
         x5_a, x5_c, x5_s = x5[:, :shape1_5], x5[:, shape1_5 : shape1_5 + shape2_5], x5[:, shape1_5 + shape2_5 :]
-
-        # HACK: needs to be here as we need to know kernel split
-        if not hasattr(self, "up1"):
-            self.up1 = ACSConverter(
-                AxisAwareUpBlock((shape1_5 * 2, shape2_5 * 2, shape3_5 * 2), 512 // self.factor, bilinear=self.bilinear)
-            )
-            self.up1.to(self.device)
-            self.up2 = ACSConverter(
-                AxisAwareUpBlock((shape1_3 * 2, shape2_3 * 2, shape3_3 * 2), 256 // self.factor, bilinear=self.bilinear)
-            )
-            self.up2.to(self.device)
-            self.up3 = ACSConverter(
-                AxisAwareUpBlock((shape1_2 * 2, shape2_2 * 2, shape3_2 * 2), 128 // self.factor, bilinear=self.bilinear)
-            )
-            self.up3.to(self.device)
-            self.up4 = ACSConverter(AxisAwareUpBlock((shape1_1 * 2, shape2_1 * 2, shape3_1 * 2), 64, bilinear=self.bilinear))
-            self.up4.to(self.device)
-            self.outc = ACSConverter(
-                OutConv(64, self.n_classes) if self.apply_sigmoid_to_output is False else OutConv(64, self.n_classes, sigmoid=True)
-            )
-            self.outc.to(self.device)
 
         x = self.up1((x5_a, x4_a, x5_c, x4_c, x5_s, x4_s))
         x, shape1, shape2, shape3 = x
