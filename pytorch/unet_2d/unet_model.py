@@ -103,7 +103,8 @@ class UnetACSWithClassifier(nn.Module):
             increment_choice = choice([0, 1, 2])
             each_view[increment_choice] += 1
         assert sum(each_view) == batch_size
-        assert 0 not in each_view
+        if 0 in each_view:
+            print("EACH VIEW {}, because batch is of size {}".format(each_view, batch_size))
 
         # features belonging to each view
         x_a, x_c, x_s = x5[:, :shape1], x5[:, shape1 : shape1 + shape2], x5[:, shape1 + shape2 :]
