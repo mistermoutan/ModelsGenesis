@@ -569,6 +569,50 @@ def use_model_weights_and_do_self_supervision(**kwargs):
     trainer.get_stats()
 
 
+def resume_use_model_weights_and_do_self_supervision(run_nr: int, **kwargs):
+
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    dataset_list = kwargs_dict_["dataset"]
+    dataset_list.sort()
+    model_weights_dir = kwargs_dict_["directory"]  # to find the task dir to resume from
+    mode = kwargs_dict_.get("mode", "")
+    convert_acs = kwargs_dict_["convert_to_acs"]  # needs to be called on resume to find task dir
+
+    datasets_used_str = get_datasets_used_str(
+        dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs
+    )
+
+    config = FineTuneConfig(
+        data_dir="",
+        task="FROM_{}_DO_SS_ON_{}".format(model_weights_dir, datasets_used_str),
+        self_supervised=True,
+        supervised=False,
+        model=kwargs_dict_["model"],
+        new_folder=kwargs_dict_["new_folder"],
+    )
+    config.override_dirs(run_nr)
+
+    if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
+        config = load_object(os.path.join(config.object_dir, "config.pkl"))  #!
+    else:
+        raise FileNotFoundError("Could not find CONFIG object pickle. Did you specify a valid run number?")
+
+    if os.path.isfile(os.path.join(config.object_dir, "dataset.pkl")):
+        dataset = load_object(os.path.join(config.object_dir, "dataset.pkl"))  #!
+    else:
+        raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
+
+    replace_config_param_attributes(config, kwargs_dict_)
+    config.resume_ss = True
+    config.display()
+
+    trainer = Trainer(config, dataset)
+    trainer.load_model(from_latest_checkpoint=True)  # if convert ACS the resume should already hae unet_acs as model
+    trainer.finetune_self_supervised()
+    trainer.add_hparams_to_writer()
+    trainer.get_stats()
+
+
 def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     # pass it the directory of the task that the model you want to resume from is
 
@@ -1191,6 +1235,13 @@ if __name__ == "__main__":
     elif args.command == "do_ss_from_model":
         kwargs_dict = build_kwargs_dict(args, get_dataset=True, search_for_split=True, get_directory=True)
         use_model_weights_and_do_self_supervision(kwargs_dict=kwargs_dict)
+
+    elif args.command == "resume_do_ss_from_model":
+        assert args.run is not None, "You have to specify which --run to resume (int)"
+        kwargs_dict = build_kwargs_dict(args, get_dataset=True, get_directory=True)
+        print("RESUMING SS FINETUNING FROM {} WEIGHTS SS FROM RUN {}".format(args.directory, args.run))
+        print("DATASET: {} // MODE: {}".format(kwargs_dict["dataset"], args.mode))
+        resume_use_model_weights_and_do_self_supervision(args.run, kwargs_dict=kwargs_dict)
 
     elif args.command == "finetune_from_model_no_ss":
 
