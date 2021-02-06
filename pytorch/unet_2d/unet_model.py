@@ -146,17 +146,16 @@ class UnetACSAxisAwareDecoder(nn.Module):
         self.factor = 2 if bilinear else 1
         self.down4 = DownACS(512, 1024 // self.factor, return_splits=True)
 
-        self.up1 = ACSConverter(AxisAwareUpBlock((342, 342, 340), 512 // self.factor, bilinear=self.bilinear))
+        self.up1 = AxisAwareUpBlock((342, 342, 340), 512 // self.factor, bilinear=self.bilinear)
         self.up1.to(self.device)
-        self.up2 = ACSConverter(AxisAwareUpBlock((172, 170, 170), 256 // self.factor, bilinear=self.bilinear))
+        self.up2 = AxisAwareUpBlock((172, 170, 170), 256 // self.factor, bilinear=self.bilinear)
         self.up2.to(self.device)
-        self.up3 = ACSConverter(AxisAwareUpBlock((86, 86, 84), 128 // self.factor, bilinear=self.bilinear))
+        self.up3 = AxisAwareUpBlock((86, 86, 84), 128 // self.factor, bilinear=self.bilinear)
         self.up3.to(self.device)
-        self.up4 = ACSConverter(AxisAwareUpBlock((44, 42, 42), 64, bilinear=self.bilinear))
+        self.up4 = AxisAwareUpBlock((44, 42, 42), 64, bilinear=self.bilinear)
         self.up4.to(self.device)
-        self.outc = ACSConverter(
-            OutConv(64, self.n_classes) if self.apply_sigmoid_to_output is False else OutConv(64, self.n_classes, sigmoid=True)
-        )
+        self.outc = OutConv(64, self.n_classes) if self.apply_sigmoid_to_output is False else OutConv(64, self.n_classes, sigmoid=True)
+
         self.outc.to(self.device)
 
     def forward(self, x):
