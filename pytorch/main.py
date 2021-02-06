@@ -595,7 +595,11 @@ def resume_use_model_weights_and_do_self_supervision(run_nr: int, **kwargs):
     if os.path.isfile(os.path.join(config.object_dir, "config.pkl")):
         config = load_object(os.path.join(config.object_dir, "config.pkl"))  #!
     else:
-        raise FileNotFoundError("Could not find CONFIG object pickle. Did you specify a valid run number?")
+        raise FileNotFoundError(
+            "Could not find CONFIG object pickle. Did you specify a valid run number? Path was {}".format(
+                os.path.join(config.object_dir, "config.pkl")
+            )
+        )
 
     if os.path.isfile(os.path.join(config.object_dir, "dataset.pkl")):
         dataset = load_object(os.path.join(config.object_dir, "dataset.pkl"))  #!
