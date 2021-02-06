@@ -606,7 +606,7 @@ def resume_use_model_weights_and_do_self_supervision(run_nr: int, **kwargs):
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
-    replace_config_param_attributes(config, kwargs_dict_)
+    replace_config_param_attributes(config, kwargs_dict_, ilegal=["model"])
     config.resume_ss = True
     config.display()
 

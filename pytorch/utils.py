@@ -74,7 +74,7 @@ def task_dir_already_has_metric_dict_computed(task_dir):
         return False
 
 
-def replace_config_param_attributes(config_object, kwargs_dict):
+def replace_config_param_attributes(config_object, kwargs_dict, ilegal=None):
 
     #!!!
     possible_keys = {
@@ -98,6 +98,9 @@ def replace_config_param_attributes(config_object, kwargs_dict):
         assert isinstance(key, str)
         if key not in possible_keys:
             continue
+        if ilegal is not None:
+            if key in ilegal:
+                continue
         if not hasattr(config_object, key):
             raise AttributeError("Config does not have this attribute")
         assert type(value) == type(getattr(config_object, key)), "{}: Trying to replace a {} attribute by a {}".format(
