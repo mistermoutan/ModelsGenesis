@@ -164,13 +164,14 @@ class Trainer:
 
                 loss = criterion(pred, y)
                 loss.to(self.device)
+                self.optimizer_ss.zero_grad()
 
                 if self.config.model.lower() == "unet_acs_with_cls":
                     self.tb_writer.add_scalar("Loss/train AE : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                     self.stats.training_losses_ss_ae.append(loss.item())
                     loss += loss_cls
 
-                self.optimizer_ss.zero_grad()
+                self.tb_writer.add_scalar("Loss/train : Self Supervised", loss.item(), (self.epoch_ss_current + 1) * iteration)
                 loss.backward()
                 self.optimizer_ss.step()
                 self.stats.training_losses_ss.append(loss.item())
@@ -615,10 +616,12 @@ class Trainer:
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_acs_with_cls":
+            print("LOADING UNET_ACS_CLS")
             self.model = UnetACSWithClassifier(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_acs_axis_aware_decoder":
+            print("LOADING UNET_ACS_AXIS_AWARE_DECODER")
             self.model = UnetACSAxisAwareDecoder(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
