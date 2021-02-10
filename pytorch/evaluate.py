@@ -18,7 +18,7 @@ from ACSConv.experiments.mylib.utils import categorical_to_one_hot
 
 
 class Tester:
-    def __init__(self, config, dataset, test_all=True):
+    def __init__(self, config, dataset, use_threshold=True, test_all=True):
 
         self.dataset = dataset
         self.config = config
@@ -26,7 +26,11 @@ class Tester:
         self.test_results_dir = os.path.join("test_results/", self.config.task_dir)
         make_dir(self.test_results_dir)
         self.test_all = test_all
-
+        self.use_threshold = use_threshold
+        if self.use_threshold is True:
+            print("GONNA USE THRESHOLD TO MAKE SINGLE CHANNElLOGITS BINARY MASK")
+        else:
+            print("GONNA DO SOFT DICE as no threshold")
         self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
         self.trainer.load_model(
             from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup", ensure_sup_is_completed=True
@@ -45,6 +49,10 @@ class Tester:
 
     def test_segmentation(self):
 
+        if self.use_threshold is False and "fcn_resnet18" in self.config.model.lower():
+            # if no threshold there will be mismatch between 3 channel logits and 1 or 2 channel target
+            # to get for this model arch just do with thershold as with does like they did in acs paper with 2 channel argmax
+            return
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
@@ -56,11 +64,12 @@ class Tester:
             #    self._test_on_full_cubes(self.dataset)
 
         file_nr = 0
-        while os.path.isfile(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr))):
+        filename = "test_results_no_threshold" if self.use_threshold is False else "test_results_w_threshold"
+        while os.path.isfile(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr))):
             file_nr += 1
 
         # to check if testing remains consistent
-        with open(os.path.join(self.test_results_dir, "test_results{}.json".format(file_nr)), "w") as f:
+        with open(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr)), "w") as f:
             json.dump(self.metric_dict, f)
 
         if self.test_all:
@@ -122,17 +131,21 @@ class Tester:
                 elif "fcn_resnet18" in self.config.model.lower():
                     # expects 3 channel input
                     x = torch.cat((x, x, x), dim=1)
-                    # 2 channel output of network
                     if 86 in x.shape:
                         continue
-                    y = categorical_to_one_hot(y, dim=1, expand_dim=False)
+                    # 2 channel output of network
+                    # y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
 
                 else:
                     pred = self.model(x)
 
-                x = self._make_pred_mask_from_pred(pred)
+                if self.use_threshold is True:
+                    x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
+                # jaccard needs binary
+                if self.use_threshold is False:
+                    x = self._make_pred_mask_from_pred(pred)
                 if x.shape[1] == 1:
                     x_flat = x[:, 0].contiguous().view(-1)
                     y_flat = y[:, 0].contiguous().view(-1)
@@ -177,16 +190,18 @@ class Tester:
                     if 86 in x.shape:
                         continue
                     # 2 channel output of network
-                    y = categorical_to_one_hot(y, dim=1, expand_dim=False)
+                    # y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
                     # except RuntimeError:
                     #    print(x.shape)
                 else:
                     pred = self.model(x)
 
-                x = self._make_pred_mask_from_pred(pred)
+                if self.use_threshold is True:
+                    x = self._make_pred_mask_from_pred(pred)
                 dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
-
+                if self.use_threshold is False:
+                    x = self._make_pred_mask_from_pred(pred)
                 # jaccard score
 
                 if x.shape[1] == 1:
@@ -262,11 +277,20 @@ class Tester:
             unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
         self.model.load_state_dict(unParalled_state_dict)
 
-    def _make_pred_mask_from_pred(self, pred, threshold=0.5):
-        pred_mask_idxs = pred >= threshold
-        pred_non_mask_idxs = pred < threshold
-        pred[pred_mask_idxs] = float(1)
-        pred[pred_non_mask_idxs] = float(0)
+    def _make_pred_mask_from_pred(self, pred, threshold=0.5, print_=True):
+        if pred.shape[1] == 1:
+            if print_:
+                print("1 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING THRESHOLD {} TO DETERMINE BINARY MASK".format(threshold))
+            pred_mask_idxs = pred >= threshold
+            pred_non_mask_idxs = pred < threshold
+            pred[pred_mask_idxs] = float(1)
+            pred[pred_non_mask_idxs] = float(0)
+        elif pred.shape[1] == 2:
+            if print_:
+                print("2 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING ARGMAX TO DETERMINE BINARY MASK")
+            pred = pred.argmax(1).unsqueeze(0)
+        else:
+            raise ValueError
         return pred
 
     @staticmethod
