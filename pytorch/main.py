@@ -1052,27 +1052,34 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
 def test(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
+    use_threshold = kwargs["use_threshold"]
+    task_name = kwargs["task_name"]
     task_dirs = get_task_dirs()
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
-
+        if task_name not in task_dir:
+            print("{} not in {}\n Continuing".format(task_name, task_dir))
+            continue
         if task_dir_already_has_metric_dict_computed(task_dir) is True:
             print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
             continue
         if "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG" in task_dir:
-            already_done = False
-            split = task_dir.split("/")
-            split[0] = "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG"
-            path = "/".join(split)
-            if task_dir_already_has_metric_dict_computed(path):
-                already_done = True
-            split = task_dir.split("/")
-            split[0] = "FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG"
-            path = "/".join(split)
-            if task_dir_already_has_metric_dict_computed(path):
-                already_done = True
-            if already_done is True:
-                continue
+            if "new_folder" in task_dir:
+                pass
+            else:
+                already_done = False
+                split = task_dir.split("/")
+                split[0] = "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG"
+                path = "/".join(split)
+                if task_dir_already_has_metric_dict_computed(path):
+                    already_done = True
+                split = task_dir.split("/")
+                split[0] = "FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG"
+                path = "/".join(split)
+                if task_dir_already_has_metric_dict_computed(path):
+                    already_done = True
+                if already_done is True:
+                    continue
 
         print("\n\n TESTING WEIGHTS FROM: ", task_dir)
 
@@ -1107,7 +1114,7 @@ def test(**kwargs):
             dataset_object = Dataset(
                 config_object.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
             )  # train_val_test is non relevant as is overwritten by files
-        tester = Tester(config_object, dataset_object, test_all=False)
+        tester = Tester(config_object, dataset_object, use_threshold=use_threshold, test_all=False)
         tester.test_segmentation()
 
 
@@ -1157,6 +1164,7 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument("--data_limit_2d", dest="data_limit_2d", required=False, default=None, type=int)
+    parser.add_argument("--use_threshold", dest="use_threshold", action="store_true", required=False)
 
     args = parser.parse_args()
 
