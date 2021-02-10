@@ -1052,14 +1052,15 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
 def test(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
-    use_threshold = kwargs["use_threshold"]
-    task_name = kwargs["task_name"]
+    use_threshold = kwargs_dict_["use_threshold"]
+    task_name = kwargs_dict_["task_name"]
     task_dirs = get_task_dirs()
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
-        if task_name not in task_dir:
-            print("{} not in {}\n Continuing".format(task_name, task_dir))
-            continue
+        if task_name is not None:
+            if task_name not in task_dir:
+                print("{} not in {}\n Continuing".format(task_name, task_dir))
+                continue
         if task_dir_already_has_metric_dict_computed(task_dir) is True:
             print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
             continue
