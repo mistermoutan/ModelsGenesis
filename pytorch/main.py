@@ -1115,6 +1115,9 @@ def test(**kwargs):
             dataset_object = Dataset(
                 config_object.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
             )  # train_val_test is non relevant as is overwritten by files
+
+        if use_threshold is False and "fcn_resnet18" in config_object.model.lower():
+            continue
         tester = Tester(config_object, dataset_object, use_threshold=use_threshold, test_all=False)
         tester.test_segmentation()
 
