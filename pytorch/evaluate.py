@@ -18,15 +18,15 @@ from ACSConv.experiments.mylib.utils import categorical_to_one_hot
 
 
 class Tester:
-    def __init__(self, config, dataset, use_threshold=True, test_all=True):
+    def __init__(self, config, dataset, use_threshold: bool = True, test_all: bool = True):
 
         self.dataset = dataset
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.test_results_dir = os.path.join("test_results/", self.config.task_dir)
         make_dir(self.test_results_dir)
-        self.test_all = test_all
         self.use_threshold = use_threshold
+        self.test_all = test_all
         if self.use_threshold is True:
             print("GONNA USE THRESHOLD TO MAKE SINGLE CHANNElLOGITS BINARY MASK")
         else:
@@ -46,6 +46,8 @@ class Tester:
                 self.dataset_name = key
                 break
         assert self.dataset_name is not None, "Could not find dataset name key in dataset_map dictionary"
+
+        self.print_yet = False
 
     def test_segmentation(self):
 
@@ -280,14 +282,18 @@ class Tester:
     def _make_pred_mask_from_pred(self, pred, threshold=0.5, print_=True):
         if pred.shape[1] == 1:
             if print_:
-                print("1 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING THRESHOLD {} TO DETERMINE BINARY MASK".format(threshold))
+                if not self.print_yet:
+                    print("1 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING THRESHOLD {} TO DETERMINE BINARY MASK".format(threshold))
+                    self.print_yet = True
             pred_mask_idxs = pred >= threshold
             pred_non_mask_idxs = pred < threshold
             pred[pred_mask_idxs] = float(1)
             pred[pred_non_mask_idxs] = float(0)
         elif pred.shape[1] == 2:
             if print_:
-                print("2 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING ARGMAX TO DETERMINE BINARY MASK")
+                if not self.print_yet:
+                    print("2 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING ARGMAX TO DETERMINE BINARY MASK")
+                    self.print_yet = True
             pred = pred.argmax(1).unsqueeze(0)
         else:
             raise ValueError
