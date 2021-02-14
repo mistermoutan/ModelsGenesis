@@ -1054,6 +1054,7 @@ def test(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     use_threshold = kwargs_dict_["use_threshold"]
     task_name = kwargs_dict_["task_name"]
+    enforce_test_again = kwargs_dict_["enforce_test_again"]
     task_dirs = get_task_dirs()
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
@@ -1061,9 +1062,10 @@ def test(**kwargs):
             if task_name not in task_dir:
                 print("{} not in {}\n Continuing".format(task_name, task_dir))
                 continue
-        if task_dir_already_has_metric_dict_computed(task_dir) is True:
-            print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
-            continue
+        if not enforce_test_again:
+            if task_dir_already_has_metric_dict_computed(task_dir) is True:
+                print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
+                continue
         if "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG" in task_dir:
             if "new_folder" in task_dir:
                 pass
@@ -1169,6 +1171,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--data_limit_2d", dest="data_limit_2d", required=False, default=None, type=int)
     parser.add_argument("--use_threshold", dest="use_threshold", action="store_true", required=False)
+    parser.add_argument("--enforce_test_again", dest="enforce_test_again", action="store_true", required=False)
 
     args = parser.parse_args()
 

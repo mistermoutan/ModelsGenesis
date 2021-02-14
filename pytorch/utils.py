@@ -138,6 +138,7 @@ dataset_map = {
     "task10_sup": "/work1/s182312/medical_decathlon/Task10_Colon/imagesTr/extracted_cubes_64_64_32_sup",
     "cellari_heart_sup": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_64_64_12_sup",
     "cellari_heart_sup_10_192": "/work1/s182312/heart_mri/datasets/x_cubes_full/extracted_cubes_10_192_192_12_sup",
+    "fake_small": "/home/moutan/Programming/thesis/ModelGenesis_Fork/ModelsGenesis/pytorch/datasets/fake_small",
 }
 
 """ dataset_map = {
@@ -384,6 +385,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["make_acs_kernel_split_adaptive_to_input_dimensions"] = args_object.make_acs_kernel_split_adaptive_to_input_dimensions
     kwargs_dict["data_limit_2d"] = args_object.data_limit_2d
     kwargs_dict["use_threshold"] = args_object.use_threshold
+    kwargs_dict["enforce_test_again"] = args_object.enforce_test_again
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):
