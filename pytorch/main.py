@@ -716,7 +716,7 @@ def resume_use_model_weights_and_finetune_on_dataset_without_ss(run_nr: int, **k
     else:
         raise FileNotFoundError("Could not find DATASET object pickle. Did you specify a valid run number?")
 
-    replace_config_param_attributes(config, kwargs_dict_)
+    replace_config_param_attributes(config, kwargs_dict_, ilegal=["model"])
     config.resume_sup = True
     config.display()
 
