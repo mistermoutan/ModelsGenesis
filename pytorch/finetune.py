@@ -829,8 +829,8 @@ class Trainer:
             unParalled_state_dict = {}
             for key in state_dict.keys():
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
-            self.model.load_state_dict(unParalled_state_dict)
-
+            res = self.model.load_state_dict(unParalled_state_dict)
+            print("LOAD STATE DICT OUTPUT:", res)
         convert_acs = kwargs.get("convert_acs", False)
         if convert_acs is True:
             # can only convert from 2D to ACS
