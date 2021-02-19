@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from sklearn.metrics import jaccard_score
 import numpy as np
+from copy import deepcopy
 
 from finetune import Trainer
 from utils import *
@@ -87,14 +88,20 @@ class FullCubeSegmentator:
 
         return corresponding_full_cubes
 
-    def sample_k_full_cubes_which_were_used_for_training(self, k):
+    def sample_k_full_cubes_which_were_used_for_training(self, k, deterministic=True):
         corresponding_full_cubes = self.get_all_cubes_which_were_used_for_training()
-        samp = sample(corresponding_full_cubes, k=k)
+        if deterministic:
+            samp = corresponding_full_cubes[:k]
+        else:
+            samp = sample(corresponding_full_cubes, k=k)
         return samp
 
-    def sample_k_full_cubes_which_were_used_for_testing(self, k):
+    def sample_k_full_cubes_which_were_used_for_testing(self, k, deterministic=True):
         corresponding_full_cubes = self.get_all_cubes_which_were_used_for_testing()
-        samp = sample(corresponding_full_cubes, k=k)
+        if deterministic:
+            samp = corresponding_full_cubes[:k]
+        else:
+            samp = sample(corresponding_full_cubes, k=k)
         return samp
 
     def compute_metrics_for_all_cubes(self, inference_full_image=True):
@@ -109,6 +116,9 @@ class FullCubeSegmentator:
         torch.cuda.empty_cache()
         dump_tensors()
         torch.cuda.empty_cache()
+
+        if "lidc" in self.dataset_name:
+            return
 
         if hasattr(self.trainer, "model"):
             del self.trainer.model
@@ -274,11 +284,9 @@ class FullCubeSegmentator:
 
         # deal with recursion when defaulting to patchign
 
-        dump_tensors()
-        torch.cuda.ipc_collect()
-        torch.cuda.empty_cache()
-        dump_tensors()
-        dump_tensors()
+        if "lidc" in self.dataset_name:
+            return
+
         torch.cuda.ipc_collect()
         torch.cuda.empty_cache()
         dump_tensors()
@@ -335,7 +343,7 @@ class FullCubeSegmentator:
 
                         pred = self._unpad_3d_array(pred, pad_tuple)
                         pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
-                        pred_mask = self._make_pred_mask_from_pred(pred)
+                        pred_mask = pred  # self._make_pred_mask_from_pred(pred)
                         del pred
 
                         patcher.predicitons_to_reconstruct_from[
@@ -373,7 +381,7 @@ class FullCubeSegmentator:
                                 pred = self._unpad_3d_array(pred, pad_tuple)
                                 pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                                 pred = torch.squeeze(pred, dim=0)
-                                pred_mask_full_cube = self._make_pred_mask_from_pred(pred)
+                                pred_mask_full_cube = pred  # self._make_pred_mask_from_pred(pred)
                                 torch.cuda.ipc_collect()
                                 torch.cuda.empty_cache()
                                 del pred
@@ -398,7 +406,7 @@ class FullCubeSegmentator:
                             pred = self.trainer.model(tensor_slice)
                             pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
                             pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
-                            pred_mask_slice = self._make_pred_mask_from_pred(pred)
+                            pred_mask_slice = pred  # self._make_pred_mask_from_pred(pred)
                             pred_mask_full_cube[..., z_idx] = pred_mask_slice
 
                         # segmentations.append(pred_mask_full_cube)
@@ -408,37 +416,100 @@ class FullCubeSegmentator:
             print(cube_idx)
 
             if cube_idx < nr_cubes:
-                save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples/", cubes_to_use[cube_idx][:-4])
+                if inference_full_image is True:
+                    save_dir = os.path.join(self.save_dir, self.dataset_name, "testing_examples_full/", cubes_to_use[cube_idx][:-4])
+                else:
+                    save_dir = os.path.join(
+                        self.save_dir, self.dataset_name, "testing_examples_full/", cubes_to_use[cube_idx][:-4] + "_with_patcher"
+                    )
             else:
-                save_dir = os.path.join(self.save_dir, self.dataset_name, "training_examples/", cubes_to_use[cube_idx][:-4])
+                if inference_full_image is True:
+                    save_dir = os.path.join(self.save_dir, self.dataset_name, "training_examples_full/", cubes_to_use[cube_idx][:-4])
+                else:
+                    save_dir = os.path.join(
+                        self.save_dir, self.dataset_name, "training_examples_full/", cubes_to_use[cube_idx][:-4] + "_with_patcher"
+                    )
 
             make_dir(save_dir)
 
             # save nii of segmentation
-            pred_mask_full_cube = pred_mask_full_cube.cpu()
+            pred_mask_full_cube = pred_mask_full_cube.cpu()  # logits mask
+            pred_mask_full_cube_binary = self._make_pred_mask_from_pred(pred_mask_full_cube)  # binary mask
+
             nifty_img = nibabel.Nifti1Image(np.array(pred_mask_full_cube).astype(np.float32), np.eye(4))
-            nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + ".nii.gz"))
+            nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "_logits_mask.nii.gz"))
+
+            nifty_img = nibabel.Nifti1Image(np.array(pred_mask_full_cube_binary).astype(np.float32), np.eye(4))
+            nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "_binary_mask.nii.gz"))
+
+            # save .nii.gz of cube if is npy original full cube file
+            if ".npy" in cube_path:
+                nifty_img = nibabel.Nifti1Image(np_array.astype(np.float32), np.eye(4))
+                nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "cube.nii.gz"))
 
             # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx])))
 
             label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))
             label_tensor_of_cube = self.adjust_label_cube_acording_to_dataset(label_tensor_of_cube)
+            label_tensor_of_cube_masked = np.array(label_tensor_of_cube)
+            label_tensor_of_cube_masked = np.ma.masked_where(
+                label_tensor_of_cube_masked < 0.5, label_tensor_of_cube_masked
+            )  # it's binary anyway
+
+            pred_mask_full_cube_binary_masked = np.array(pred_mask_full_cube_binary)
+            pred_mask_full_cube_binary_masked = np.ma.masked_where(
+                pred_mask_full_cube_binary_masked < 0.5, pred_mask_full_cube_binary_masked
+            )  # it's binary anyway
+
+            pred_mask_full_cube_logits_masked = np.array(pred_mask_full_cube)
+            pred_mask_full_cube_logits_masked = np.ma.masked_where(
+                pred_mask_full_cube_logits_masked < 0.3, pred_mask_full_cube_logits_masked
+            )  # it's binary anyway
 
             make_dir(os.path.join(save_dir, "slices/"))
+
             for z_idx in range(pred_mask_full_cube.shape[-1]):
+
+                # binary
                 fig = plt.figure(figsize=(10, 5))
-                plt.imshow(pred_mask_full_cube[:, :, z_idx], cmap=cm.Greys_r)
+                plt.imshow(np_array[:, :, z_idx], cmap=cm.Greys_r)
+                plt.imshow(pred_mask_full_cube_binary_masked[:, :, z_idx], cmap="Accent")
+                plt.axis("off")
                 fig.savefig(
-                    os.path.join(save_dir, "slices/", "slice_{}.jpg".format(z_idx + 1)),
+                    os.path.join(save_dir, "slices/", "slice_{}_binary.jpg".format(z_idx + 1)),
                     bbox_inches="tight",
                     dpi=150,
                 )
                 plt.close(fig=fig)
 
-                # save ground truth as well
-
+                # logits
                 fig = plt.figure(figsize=(10, 5))
-                plt.imshow(label_tensor_of_cube[:, :, z_idx], cmap=cm.Greys_r)
+                plt.imshow(np_array[:, :, z_idx], cmap=cm.Greys_r)
+                plt.imshow(pred_mask_full_cube_logits_masked[:, :, z_idx], cmap="Blues", alpha=0.5)
+                plt.axis("off")
+                fig.savefig(
+                    os.path.join(save_dir, "slices/", "slice_{}_logits.jpg".format(z_idx + 1)),
+                    bbox_inches="tight",
+                    dpi=150,
+                )
+                plt.close(fig=fig)
+
+                # dist of logits histogram
+                distribution_logits = np.array(pred_mask_full_cube[:, :, z_idx].contiguous().view(-1))
+                fig = plt.figure(figsize=(10, 5))
+                plt.hist(distribution_logits, bins=np.arange(min(distribution_logits), max(distribution_logits) + 0.05, 0.05))
+                fig.savefig(
+                    os.path.join(save_dir, "slices/", "slice_{}_logits_histogram.jpg".format(z_idx + 1)),
+                    bbox_inches="tight",
+                    dpi=150,
+                )
+                plt.close(fig=fig)
+
+                # save ground truth as wel, overlayed on original
+                fig = plt.figure(figsize=(10, 5))
+                plt.imshow(np_array[:, :, z_idx], cmap=cm.Greys_r)
+                plt.imshow(label_tensor_of_cube_masked[:, :, z_idx], cmap="jet")
+                plt.axis("off")
                 fig.savefig(
                     os.path.join(save_dir, "slices/", "slice_{}_gt.jpg".format(z_idx + 1)),
                     bbox_inches="tight",
@@ -446,13 +517,14 @@ class FullCubeSegmentator:
                 )
                 plt.close(fig=fig)
 
-            dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, label_tensor_of_cube, return_loss=False))
-            x_flat = pred_mask_full_cube.contiguous().view(-1)
-            y_flat = label_tensor_of_cube.contiguous().view(-1)
+            dice_score_soft = float(DiceLoss.dice_loss(pred_mask_full_cube, label_tensor_of_cube, return_loss=False))
+            dice_score_binary = float(DiceLoss.dice_loss(pred_mask_full_cube_binary, label_tensor_of_cube, return_loss=False))
+            x_flat = pred_mask_full_cube_binary.contiguous().view(-1)
+            y_flat = pred_mask_full_cube_binary.contiguous().view(-1)
             x_flat = x_flat.cpu()
             y_flat = y_flat.cpu()
             jaccard_scr = jaccard_score(y_flat, x_flat)
-            metrics = {"dice": dice_score, "jaccard": jaccard_scr}
+            metrics = {"dice_logits": dice_score_soft, "dice_binary": dice_score_binary, "jaccard": jaccard_scr}
             # print(dice)
             with open(os.path.join(save_dir, "dice.json"), "w") as f:
                 json.dump(metrics, f)
