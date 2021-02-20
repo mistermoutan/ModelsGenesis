@@ -108,7 +108,6 @@ class FullCubeSegmentator:
 
     def compute_metrics_for_all_cubes(self, inference_full_image=True):
 
-        segmentations = []
         cubes_to_use = []
 
         dump_tensors()
@@ -156,9 +155,6 @@ class FullCubeSegmentator:
             if sum([i for i in np_array.shape]) > 500 and self.two_dim is False:
                 print("CUBE TOO BIG, PATCHING")
                 inference_full_image = False
-
-            # np_array = self._normalize_cube(np_array, modality="mri")
-            # patcher = Patcher(np_array, two_dim=self.two_dim)
 
             if inference_full_image is False:
 
