@@ -8,7 +8,9 @@ from copy import deepcopy
 from collections import defaultdict
 import os
 import torch
-
+import nibabel
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 from dataset import Dataset
 from utils import *
