@@ -165,7 +165,7 @@ class FullCubeSegmentator:
                     for patch_idx, patch in patcher:
 
                         patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
-                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder"):
                             patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
 
                         pred = self.trainer.model(patch)
@@ -176,12 +176,11 @@ class FullCubeSegmentator:
 
                         pred = self._unpad_3d_array(pred, pad_tuple)
                         pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
-                        pred_mask = self._make_pred_mask_from_pred(pred)
-                        del pred
+                        # pred_mask = self._make_pred_mask_from_pred(pred)
                         patcher.predicitons_to_reconstruct_from[
                             :, patch_idx
-                        ] = pred_mask  # update array in patcher that will construct full cube predicted mask
-
+                        ] = pred  # update array in patcher that will construct full cube predicted mask
+                        del pred
                         dump_tensors()
                         torch.cuda.ipc_collect()
                         torch.cuda.empty_cache()
@@ -213,7 +212,7 @@ class FullCubeSegmentator:
                                 pred = self._unpad_3d_array(pred, pad_tuple)
                                 pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H,W) -> (1,C,H,W)
                                 pred = torch.squeeze(pred, dim=0)
-                                pred_mask_full_cube = self._make_pred_mask_from_pred(pred)
+                                pred_mask_full_cube = pred  # self._make_pred_mask_from_pred(pred)
                                 torch.cuda.ipc_collect()
                                 torch.cuda.empty_cache()
                                 del pred
@@ -237,7 +236,7 @@ class FullCubeSegmentator:
                             pred = self.trainer.model(tensor_slice)
                             pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
                             pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
-                            pred_mask_slice = self._make_pred_mask_from_pred(pred)
+                            pred_mask_slice = pred  # self._make_pred_mask_from_pred(pred)
                             pred_mask_full_cube[..., z_idx] = pred_mask_slice
 
             # full_cube_segmentation_mask = patcher.get_pred_mask_full_cube()
