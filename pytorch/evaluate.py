@@ -64,8 +64,10 @@ class Tester:
             if self.dataset_name.lower() in full_cubes_datasets:
                 self._test_on_full_cubes(self.dataset)
 
+        self.save_segmentation_examples()
+
         file_nr = 0
-        filename = "test_results_both"
+        filename = "test_results_new"
         while os.path.isfile(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr))):
             file_nr += 1
 
