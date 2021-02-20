@@ -68,7 +68,7 @@ def get_cross_validator_object_of_task_dir(task_dir):
 
 def task_dir_already_has_metric_dict_computed(task_dir):
 
-    if os.path.isfile(os.path.join("test_results/", task_dir, "test_results_no_threshold0.json")):
+    if os.path.isfile(os.path.join("test_results/", task_dir, "test_results_new0.json")):
         return True
     else:
         return False
@@ -384,7 +384,6 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["task_name"] = args_object.task_name
     kwargs_dict["make_acs_kernel_split_adaptive_to_input_dimensions"] = args_object.make_acs_kernel_split_adaptive_to_input_dimensions
     kwargs_dict["data_limit_2d"] = args_object.data_limit_2d
-    kwargs_dict["use_threshold"] = args_object.use_threshold
     kwargs_dict["enforce_test_again"] = args_object.enforce_test_again
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
