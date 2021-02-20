@@ -156,6 +156,9 @@ class FullCubeSegmentator:
                 print("CUBE TOO BIG, PATCHING")
                 inference_full_image = False
 
+            if "cellari_heart_sup" in self.dataset_name:
+                inference_full_image = True
+
             if inference_full_image is False:
 
                 patcher = Patcher(np_array, two_dim=self.two_dim)
@@ -165,7 +168,13 @@ class FullCubeSegmentator:
                     for patch_idx, patch in patcher:
 
                         patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
-                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder"):
+                        if self.config.model.lower() in (
+                            "vnet_mg",
+                            "unet_3d",
+                            "unet_acs",
+                            "unet_acs_axis_aware_decoder",
+                            "unet_acs_with_cls",
+                        ):
                             patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
 
                         pred = self.trainer.model(patch)
@@ -197,7 +206,13 @@ class FullCubeSegmentator:
                 with torch.no_grad():
                     self.trainer.model.eval()
                     if self.two_dim is False:
-                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                        if self.config.model.lower() in (
+                            "vnet_mg",
+                            "unet_3d",
+                            "unet_acs",
+                            "unet_acs_axis_aware_decoder",
+                            "unet_acs_with_cls",
+                        ):
                             full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
                             try:
                                 p = self.trainer.model(full_cube_tensor)
@@ -339,7 +354,13 @@ class FullCubeSegmentator:
                     for idx, patch in patcher:
 
                         patch = torch.unsqueeze(patch, 0)  # (1,C,H,W or 1) -> (1,1,C,H,W or 1)
-                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                        if self.config.model.lower() in (
+                            "vnet_mg",
+                            "unet_3d",
+                            "unet_acs",
+                            "unet_acs_axis_aware_decoder",
+                            "unet_acs_with_cls",
+                        ):
                             patch, pad_tuple = pad_if_necessary_one_array(patch, return_pad_tuple=True)
 
                         pred = self.trainer.model(patch)
@@ -373,7 +394,13 @@ class FullCubeSegmentator:
                 with torch.no_grad():
                     self.trainer.model.eval()
                     if self.two_dim is False:
-                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                        if self.config.model.lower() in (
+                            "vnet_mg",
+                            "unet_3d",
+                            "unet_acs",
+                            "unet_acs_axis_aware_decoder",
+                            "unet_acs_with_cls",
+                        ):
                             full_cube_tensor, pad_tuple = pad_if_necessary_one_array(full_cube_tensor, return_pad_tuple=True)
                             try:
                                 p = self.trainer.model(full_cube_tensor)
