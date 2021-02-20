@@ -92,7 +92,8 @@ class Tester:
         dataset_dict = dict()
         dataset_dict.setdefault("mini_cubes", {})
         jaccard = []
-        dice = []
+        dice_binary = []
+        dice_logits = []
 
         if dataset.x_test_filenames_original != []:
             previous_len = len(dataset.x_val_filenames_original)
@@ -125,14 +126,19 @@ class Tester:
                 else:
                     pred = self.model(x)
 
-                if self.use_threshold is True:
-                    x = self._make_pred_mask_from_pred(pred)
-                dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
-                # jaccard needs binary
-                if self.use_threshold is False:
-                    x = self._make_pred_mask_from_pred(pred)
+                if "fcn_resnet18" not in self.config.model.lower():
+                    dice_logits.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
+                else:
+                    # match 2 channel output of network
+                    y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
+                    dice_logits.append(float(DiceLoss.dice_loss(pred, y_one_hot, return_loss=False, skip_zero_sum=True)))
+
+                pred = self._make_pred_mask_from_pred(pred)
+                dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
+
                 if x.shape[1] == 1:
-                    x_flat = x[:, 0].contiguous().view(-1)
+                    # pred is binary here
+                    x_flat = pred[:, 0].contiguous().view(-1)
                     y_flat = y[:, 0].contiguous().view(-1)
                     x_flat = x_flat.cpu()
                     y_flat = y_flat.cpu()
@@ -142,7 +148,7 @@ class Tester:
                     # multi channel jaccard scenario
                     temp_jac = 0
                     for channel_idx in range(x.shape[1]):
-                        x_flat = x[:, channel_idx].contiguous().view(-1)
+                        x_flat = pred[:, channel_idx].contiguous().view(-1)
                         y_flat = y[:, channel_idx].contiguous().view(-1)
                         x_flat = x_flat.cpu()
                         y_flat = y_flat.cpu()
@@ -152,12 +158,15 @@ class Tester:
             dataset.reset()
 
         avg_jaccard = sum(jaccard) / len(jaccard)
-        avg_dice = sum(dice) / len(dice)
+        avg_dice_soft = sum(dice_logits) / len(dice_logits)
+        avg_dice_binary = sum(dice_binary) / len(dice_binary)
         dataset_dict["mini_cubes"]["jaccard_test"] = avg_jaccard
-        dataset_dict["mini_cubes"]["dice_test"] = avg_dice
+        dataset_dict["mini_cubes"]["dice_test_soft"] = avg_dice_soft
+        dataset_dict["mini_cubes"]["dice_test_binary"] = avg_dice_binary
 
         jaccard = []
-        dice = []
+        dice_logits = []
+        dice_binary = []
         with torch.no_grad():
             self.model.eval()
             while True:
@@ -177,15 +186,18 @@ class Tester:
                 else:
                     pred = self.model(x)
 
-                if self.use_threshold is True:
-                    x = self._make_pred_mask_from_pred(pred)
-                dice.append(float(DiceLoss.dice_loss(x, y, return_loss=False)))
-                if self.use_threshold is False:
-                    x = self._make_pred_mask_from_pred(pred)
-                # jaccard score
+                if "fcn_resnet18" not in self.config.model.lower():
+                    dice_logits.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
+                else:
+                    # match 2 channel output of network
+                    y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
+                    dice_logits.append(float(DiceLoss.dice_loss(pred, y_one_hot, return_loss=False, skip_zero_sum=True)))
+
+                pred = self._make_pred_mask_from_pred(pred)
+                dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
 
                 if x.shape[1] == 1:
-                    x_flat = x[:, 0].contiguous().view(-1)
+                    x_flat = pred[:, 0].contiguous().view(-1)
                     y_flat = y[:, 0].contiguous().view(-1)
                     x_flat = x_flat.cpu()
                     y_flat = y_flat.cpu()
@@ -195,7 +207,7 @@ class Tester:
                     # multi channel jaccard scenario
                     temp_jac = 0
                     for channel_idx in range(x.shape[1]):
-                        x_flat = x[:, channel_idx].contiguous().view(-1)
+                        x_flat = pred[:, channel_idx].contiguous().view(-1)
                         y_flat = y[:, channel_idx].contiguous().view(-1)
                         x_flat = x_flat.cpu()
                         y_flat = y_flat.cpu()
@@ -205,9 +217,11 @@ class Tester:
             dataset.reset()
 
         avg_jaccard = sum(jaccard) / len(jaccard)
-        avg_dice = sum(dice) / len(dice)
+        avg_dice_soft = sum(dice_logits) / len(dice_logits)
+        avg_dice_binary = sum(dice_binary) / len(dice_binary)
         dataset_dict["mini_cubes"]["jaccard_train"] = avg_jaccard
-        dataset_dict["mini_cubes"]["dice_train"] = avg_dice
+        dataset_dict["mini_cubes"]["dice_train_soft"] = avg_dice_soft
+        dataset_dict["mini_cubes"]["dice_train_binary"] = avg_dice_binary
 
         if unused is False:
             self.metric_dict[self.dataset_name] = dataset_dict
