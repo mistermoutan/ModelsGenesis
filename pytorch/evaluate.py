@@ -52,19 +52,20 @@ class Tester:
 
     def test_segmentation(self):
 
+        full_cubes_datasets = ("task04_sup",)
 
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
-                # if "lidc" not in self.dataset_name.lower():  # and "fcn_resnet18" not in self.config.model.lower():
-                #    self._test_on_full_cubes(dataset)
+                if self.dataset_name.lower() in full_cubes_datasets:
+                    self._test_on_full_cubes(dataset)
         else:
             self._test_dataset(self.dataset)
-            # if "lidc" not in self.dataset_name.lower():
-            #    self._test_on_full_cubes(self.dataset)
+            if self.dataset_name.lower() in full_cubes_datasets:
+                self._test_on_full_cubes(self.dataset)
 
         file_nr = 0
-        filename = "test_results_no_threshold" if self.use_threshold is False else "test_results_w_threshold"
+        filename = "test_results_both"
         while os.path.isfile(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr))):
             file_nr += 1
 
