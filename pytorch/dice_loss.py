@@ -3,10 +3,14 @@ import torch
 
 class DiceLoss:
     @staticmethod
-    def dice_loss(pred, target, smooth=0, eps=1e-7, return_loss=True):
+    def dice_loss(pred, target, smooth=0, eps=1e-7, return_loss=True, skip_zero_sum: bool = False):
         """
         pred: tensor with first dimension as batch
         target: tensor with first dimension as batch
+        VERIFIED THAT WORKS EXACT SAME AS ACS soft dice except that they do not square the logits in the denominator and skip a channle computation if the sum of target for that specific channel is 0
+
+        EVEN THEIR DICE GLOBAL IS THE SAME FOR 1 CHANNEL OUTPUTS THAT ARE BINARY
+
         """
         if not torch.is_tensor(pred) or not torch.is_tensor(target):
             raise TypeError("Input type is not a torch.Tensor. Got {} and {}".format(type(pred), type(target)))
@@ -28,7 +32,9 @@ class DiceLoss:
 
         if len(pred.shape) != 3:
             for channel_idx in range(pred_shape[1]):
-                # if target[:, channel_idx].sum() > 0:
+                if skip_zero_sum is True:
+                    if target[:, channel_idx].sum() <= 0:
+                        continue
                 iflat = pred[:, channel_idx].contiguous().view(-1)  # one channel only N x 1 x H x D X W -> N x H x D x W
                 tflat = target[:, channel_idx].contiguous().view(-1)
                 list_of_flattened_channels.append((iflat, tflat))
