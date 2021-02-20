@@ -90,19 +90,9 @@ class Tester:
     def _test_dataset(self, dataset, unused=False):
         # mini cubes settting
         dataset_dict = dict()
-
-        # for model_file in self.model_weights_saved:
-        #    dataset_dict.setdefault(model_file, {})
-        #    self._load_model(model_file)
-        #    if self.continue_to_testing is False:
-        #        continue
-
         dataset_dict.setdefault("mini_cubes", {})
         jaccard = []
         dice = []
-
-        # MAKE TRAINING VS TESTING differentiation on metrics
-        # raise ValueError
 
         if dataset.x_test_filenames_original != []:
             previous_len = len(dataset.x_val_filenames_original)
@@ -115,9 +105,6 @@ class Tester:
         with torch.no_grad():
             self.model.eval()
             while True:
-                # if dataset.x_test_filenames:
-                #    print("USINGdataset.x_test_filenames)
-
                 # batch size > 1 plus random shuffle of indexes in Dataset results in no having the exact same
                 # testins result each time as batches are flattened and act "as one"
                 # so you would be giving the metrics different tensors to work with
@@ -130,12 +117,9 @@ class Tester:
                     pred = self.model(x)
                     pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
                 elif "fcn_resnet18" in self.config.model.lower():
-                    # expects 3 channel input
                     x = torch.cat((x, x, x), dim=1)
                     if 86 in x.shape:
                         continue
-                    # 2 channel output of network
-                    # y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
 
                 else:
@@ -186,15 +170,10 @@ class Tester:
                     pred = self.model(x)
                     pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
                 elif "fcn_resnet18" in self.config.model.lower():
-                    # expects 3 channel input
                     x = torch.cat((x, x, x), dim=1)
                     if 86 in x.shape:
                         continue
-                    # 2 channel output of network
-                    # y = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     pred = self.model(x)
-                    # except RuntimeError:
-                    #    print(x.shape)
                 else:
                     pred = self.model(x)
 
