@@ -243,27 +243,28 @@ class Tester:
         self.metric_dict[self.dataset_name]["full_cubes"] = metric_dict
         fcs.save_segmentation_examples()
 
-    def _load_model(self, checkpoint_name: str):
+    def sample_k_mini_cubes_which_were_used_for_testing(self, k):
 
-        # NOT USED; CALLED TRAINER ISNTEAD
+        # inside these cubes are N SAMPLES
+        test_minicubes_filenames = self.dataset.x_val_filenames_original
+        if self.dataset.x_test_filenames_original != []:
+            test_minicubes_filenames.extend(self.dataset.x_test_filenames_original)
+        test_minicubes_filenames.sort()
+        if self.dataset_name == "lidc":
+            assert len(test_minicubes_filenames) == 2
+            return test_minicubes_filenames
+        return test_minicubes_filenames[:k]
 
-        checkpoint = torch.load(os.path.join(self.config.model_path_save, checkpoint_name), map_location=self.device)
-        self.continue_to_testing = True
+    def sample_k_mini_cubes_which_were_used_for_training(self, k):
 
-        if "ss" in checkpoint_name:
-            completed_ss = checkpoint.get("completed_ss", False)
-            if completed_ss is False:
-                self.continue_to_testing = False
-                # print("TRAINING NOT COMPLETED FOR {}. NOT TESTING".format(checkpoint_name))
-            state_dict = checkpoint["model_state_dict_ss"]
-        elif "sup" in checkpoint_name:
-            completed_sup = checkpoint.get("completed_sup", False)
-            if completed_sup is False:
-                self.continue_to_testing = False
-                # print("TRAINING NOT COMPLETED FOR {}. NOT TESTING".format(checkpoint_name))
+        # inside these cubes are N SAMPLES
+        train_minicubes_filenames = self.dataset.x_train_filenames_original
+        train_minicubes_filenames.sort()
+        if self.dataset_name == "lidc":
+            assert len(train_minicubes_filenames) == 1
+            return train_minicubes_filenames
 
-            state_dict = checkpoint["model_state_dict_sup"]
-        else:
+        return train_minicubes_filenames[:k]
             state_dict = checkpoint["state_dict"]
 
         unParalled_state_dict = {}
