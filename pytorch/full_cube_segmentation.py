@@ -147,7 +147,7 @@ class FullCubeSegmentator:
         label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in cubes_to_use]
 
         metric_dict = dict()
-        dice_test, dice_train, jaccard_test, jaccard_train = [], [], [], []
+        dice_logits_test, dice_logits_train, dice_binary_test, dice_binary_train, jaccard_test, jaccard_train = [], [], [], [], [], []
 
         for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
@@ -239,23 +239,28 @@ class FullCubeSegmentator:
                             pred_mask_slice = pred  # self._make_pred_mask_from_pred(pred)
                             pred_mask_full_cube[..., z_idx] = pred_mask_slice
 
-            # full_cube_segmentation_mask = patcher.get_pred_mask_full_cube()
             full_cube_label_tensor = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[idx]))
             full_cube_label_tensor = self.adjust_label_cube_acording_to_dataset(full_cube_label_tensor)
-            # full_cube_label_tensor = full_cube_label_tensor.to("cuda:0")
+
             pred_mask_full_cube = pred_mask_full_cube.to("cpu")
-            dice_score = float(DiceLoss.dice_loss(pred_mask_full_cube, full_cube_label_tensor, return_loss=False))
-            x_flat = pred_mask_full_cube.contiguous().view(-1)
+            pred_mask_full_cube_binary = self._make_pred_mask_from_pred(pred_mask_full_cube)
+
+            dice_score_soft = float(DiceLoss.dice_loss(pred_mask_full_cube, full_cube_label_tensor, return_loss=False))
+            dice_score_binary = float(DiceLoss.dice_loss(pred_mask_full_cube_binary, full_cube_label_tensor, return_loss=False))
+
+            x_flat = pred_mask_full_cube_binary.contiguous().view(-1)
             y_flat = full_cube_label_tensor.contiguous().view(-1)
             x_flat = x_flat.cpu()
             y_flat = y_flat.cpu()
             jac_score = jaccard_score(y_flat, x_flat)
 
             if idx < len(full_cubes_used_for_testing):
-                dice_test.append(dice_score)
+                dice_logits_test.append(dice_score_soft)
+                dice_binary_test.append(dice_score_binary)
                 jaccard_test.append(jac_score)
             else:
-                dice_train.append(dice_score)
+                dice_logits_train.append(dice_score_soft)
+                dice_binary_train.append(dice_score_binary)
                 jaccard_train.append(jac_score)
 
             dump_tensors()
@@ -267,11 +272,17 @@ class FullCubeSegmentator:
 
         avg_jaccard_test = sum(jaccard_test) / len(jaccard_test)
         avg_jaccard_train = sum(jaccard_train) / len(jaccard_train)
-        avg_dice_test = sum(dice_test) / len(dice_test)
-        avg_dice_train = sum(dice_train) / len(dice_train)
 
-        metric_dict["dice_test"] = avg_dice_test
-        metric_dict["dice_train"] = avg_dice_train
+        avg_dice_test_soft = sum(dice_logits_test) / len(dice_logits_test)
+        avg_dice_test_binary = sum(dice_binary_test) / len(dice_binary_test)
+
+        avg_dice_train_soft = sum(dice_logits_train) / len(dice_logits_train)
+        avg_dice_train_binary = sum(dice_binary_train) / len(dice_binary_train)
+
+        metric_dict["dice_test_soft"] = avg_dice_test_soft
+        metric_dict["dice_test_binary"] = avg_dice_test_binary
+        metric_dict["dice_train_soft"] = avg_dice_train_soft
+        metric_dict["dice_train_binary"] = avg_dice_train_binary
         metric_dict["jaccard_test"] = avg_jaccard_test
         metric_dict["jaccard_train"] = avg_jaccard_train
 
