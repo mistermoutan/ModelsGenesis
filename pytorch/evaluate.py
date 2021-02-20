@@ -52,7 +52,7 @@ class Tester:
 
     def test_segmentation(self):
 
-        full_cubes_datasets = ("task04_sup",)
+        full_cubes_datasets = ("task04_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
 
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
@@ -115,7 +115,7 @@ class Tester:
                 if x is None:
                     break
                 x, y = x.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
                     pred = self.model(x)
                     pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
@@ -176,7 +176,7 @@ class Tester:
                 if x is None:
                     break
                 x, y = x.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
                     pred = self.model(x)
                     pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
@@ -301,7 +301,13 @@ class Tester:
                 with torch.no_grad():
                     self.trainer.model.eval()
                     if self.two_dim is False:
-                        if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                        if self.config.model.lower() in (
+                            "vnet_mg",
+                            "unet_3d",
+                            "unet_acs",
+                            "unet_acs_axis_aware_decoder",
+                            "unet_acs_with_cls",
+                        ):
                             mini_cube_tensor, pad_tuple = pad_if_necessary_one_array(mini_cube_tensor, return_pad_tuple=True)
                             pred = self.model(mini_cube_tensor)
                             pred.to("cpu")
