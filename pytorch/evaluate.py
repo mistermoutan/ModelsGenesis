@@ -18,19 +18,18 @@ from ACSConv.experiments.mylib.utils import categorical_to_one_hot
 
 
 class Tester:
-    def __init__(self, config, dataset, use_threshold: bool = True, test_all: bool = True):
+    def __init__(self, config, dataset, test_all: bool = False):
 
         self.dataset = dataset
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.test_results_dir = os.path.join("test_results/", self.config.task_dir)
         make_dir(self.test_results_dir)
-        self.use_threshold = use_threshold
         self.test_all = test_all
-        if self.use_threshold is True:
-            print("GONNA USE THRESHOLD TO MAKE SINGLE CHANNElLOGITS BINARY MASK")
-        else:
-            print("GONNA DO SOFT DICE as no threshold")
+        model_path = os.path.join(self.config.model_path_save, "weights_sup.pt")
+        self.task_dir = "/".join(i for i in model_path.split("/")[1:-1])
+        self.save_dir = os.path.join("viz_samples/", self.task_dir)
+
         self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
         self.trainer.load_model(
             from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup", ensure_sup_is_completed=True
@@ -51,10 +50,7 @@ class Tester:
 
     def test_segmentation(self):
 
-        if self.use_threshold is False and "fcn_resnet18" in self.config.model.lower():
-            # if no threshold there will be mismatch between 3 channel logits and 1 or 2 channel target
-            # to get for this model arch just do with thershold as with does like they did in acs paper with 2 channel argmax
-            return
+
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
                 self._test_dataset(dataset)
