@@ -145,7 +145,7 @@ class Trainer:
                     start_time = time.time()
 
                 x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                     x_transform, y = pad_if_necessary(x_transform, y)
 
                 pred = self.model(x_transform)
@@ -208,7 +208,7 @@ class Trainer:
                         raise RuntimeError("THIS SHOULD NOT HAPPEN")
 
                     x_transform, y = x_transform.float().to(self.device), y.float().to(self.device)
-                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                         x_transform, y = pad_if_necessary(x_transform, y)
                     pred = self.model(x_transform)
                     if self.config.model.lower() == "unet_acs_with_cls":
@@ -427,7 +427,7 @@ class Trainer:
                     raise RuntimeError
 
                 x, y = x.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                     x, y = pad_if_necessary(x, y)
                 if "fcn_resnet18" in self.config.model.lower():
                     # expects 3 channel input
@@ -462,7 +462,7 @@ class Trainer:
                     # if x is None:
                     #    break
                     x, y = x.float().to(self.device), y.float().to(self.device)
-                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs"):
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                         x, y = pad_if_necessary(x, y)
                     if "fcn_resnet18" in self.config.model.lower():
                         # expects 3 channel input
