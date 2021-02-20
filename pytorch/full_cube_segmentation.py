@@ -91,6 +91,7 @@ class FullCubeSegmentator:
     def sample_k_full_cubes_which_were_used_for_training(self, k, deterministic=True):
         corresponding_full_cubes = self.get_all_cubes_which_were_used_for_training()
         if deterministic:
+            corresponding_full_cubes.sort()
             samp = corresponding_full_cubes[:k]
         else:
             samp = sample(corresponding_full_cubes, k=k)
@@ -99,6 +100,7 @@ class FullCubeSegmentator:
     def sample_k_full_cubes_which_were_used_for_testing(self, k, deterministic=True):
         corresponding_full_cubes = self.get_all_cubes_which_were_used_for_testing()
         if deterministic:
+            corresponding_full_cubes.sort()
             samp = corresponding_full_cubes[:k]
         else:
             samp = sample(corresponding_full_cubes, k=k)
