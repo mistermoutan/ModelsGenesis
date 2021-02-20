@@ -1052,7 +1052,6 @@ def resume_train_from_scratch_on_dataset_with_ss(run_nr: int, **kwargs):
 def test(**kwargs):
 
     kwargs_dict_ = kwargs["kwargs_dict"]
-    use_threshold = kwargs_dict_["use_threshold"]
     task_name = kwargs_dict_["task_name"]
     enforce_test_again = kwargs_dict_["enforce_test_again"]
     task_dirs = get_task_dirs()
@@ -1118,9 +1117,7 @@ def test(**kwargs):
                 config_object.data_dir, train_val_test=(0.8, 0.2, 0), file_names=files
             )  # train_val_test is non relevant as is overwritten by files
 
-        if use_threshold is False and "fcn_resnet18" in config_object.model.lower():
-            continue
-        tester = Tester(config_object, dataset_object, use_threshold=use_threshold, test_all=False)
+        tester = Tester(config_object, dataset_object)
         tester.test_segmentation()
 
 
@@ -1170,7 +1167,6 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument("--data_limit_2d", dest="data_limit_2d", required=False, default=None, type=int)
-    parser.add_argument("--use_threshold", dest="use_threshold", action="store_true", required=False)
     parser.add_argument("--enforce_test_again", dest="enforce_test_again", action="store_true", required=False)
 
     args = parser.parse_args()
