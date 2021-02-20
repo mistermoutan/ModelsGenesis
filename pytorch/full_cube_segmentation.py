@@ -306,7 +306,6 @@ class FullCubeSegmentator:
 
         self.trainer.load_model(from_path=True, path=self.model_path, phase="sup")
 
-        segmentations = []
         cubes_to_use = []
         cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
         cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_training(nr_cubes))
@@ -443,7 +442,7 @@ class FullCubeSegmentator:
             # save .nii.gz of cube if is npy original full cube file
             if ".npy" in cube_path:
                 nifty_img = nibabel.Nifti1Image(np_array.astype(np.float32), np.eye(4))
-                nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "cube.nii.gz"))
+                nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "_cube.nii.gz"))
 
             # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx])))
 
