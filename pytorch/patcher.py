@@ -24,16 +24,26 @@ class Patcher:
         print("CUBE DIMENSIONS: {}".format(self.original_cube_dimensions))
 
         if self.two_dim is False:
-            self.kernel_size = [200, 200, 100]  # kernel size
+            self.kernel_size = [300, 300, 100]  # kernel size
             stride = self.kernel_size  # stride
         else:
             # patches for two dimensional model
             raise ValueError("Should not use patching in two dim as there should not be memory issues")
-
+        dif = [0, 0, 0]
         for idx in range(len(self.kernel_size)):
             if self.kernel_size[idx] > self.original_cube_dimensions[idx]:
+                dif[idx] += self.kernel_size[idx] - self.original_cube_dimensions[idx]
                 self.kernel_size[idx] = self.original_cube_dimensions[idx]
                 stride[idx] = self.kernel_size[idx]
+
+        for idx, d in enumerate(dif):
+            if d > 0:
+                for k_idx, _ in enumerate(self.kernel_size):
+                    if k_idx == idx:
+                        continue
+                    self.kernel_size[k_idx] += int(d / 2)
+                    stride[k_idx] = self.kernel_size[k_idx]
+
         print("KERNEL: ", self.kernel_size)
 
         self.cube = torch.Tensor(self.cube)
@@ -77,7 +87,7 @@ class Patcher:
     def _unpad(self, tensor):
 
         # (x,y,z)
-        #get back to original cube
+        # get back to original cube
         if hasattr(self, "pad_tuple"):
             assert len(self.pad_tuple) == 2 * len(tensor.size())
             pt = self.pad_tuple
