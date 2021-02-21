@@ -10,7 +10,7 @@ class ResultHanlder:
     def get_df(self):
         self._build_dataframe()
         self._add_experimet_id_and_task_name()
-        self._add_experiment_details()
+        # self._add_experiment_details()
         return self.df
 
     def _get_task_names_and_corresponding_metric_files(self):
@@ -67,10 +67,10 @@ class ResultHanlder:
                     full_cubes_jaccard_testing.append(mini_and_full_cubes_dict["full_cubes"]["jaccard_test"])
                 except KeyError:
                     # not all full_cubes were tested
-                    full_cubes_dice_training.append("nAn")
-                    full_cubes_dice_testing.append("nAn")
-                    full_cubes_jaccard_training.append("nAn")
-                    full_cubes_jaccard_testing.append("nAn")
+                    full_cubes_dice_training.append(-1)
+                    full_cubes_dice_testing.append(-1)
+                    full_cubes_jaccard_training.append(-1)
+                    full_cubes_jaccard_testing.append(-1)
 
                 mini_cubes_dice_training.append(mini_and_full_cubes_dict["mini_cubes"]["dice_train"])
                 mini_cubes_dice_testing.append(mini_and_full_cubes_dict["mini_cubes"]["dice_test"])
@@ -95,19 +95,25 @@ class ResultHanlder:
     def _add_experimet_id_and_task_name(self):
 
         exp_map = dict()
+        number_of_runs = dict()
         exp_num = 0
         exp_num_list = []
         task_name_list = []
         run_number_list = []
+
         for idx, row_series in self.df.iterrows():
             task_name_with_run = row_series.task_name_with_run
             task_name = "/".join(i for i in task_name_with_run.split("/")[:-1])
             run_number = task_name_with_run.split("/")[-1]
             run_number_list.append(run_number)
+            if task_name == "FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG/only_supervised":
+                task_name = "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG/only_supervised"  # fix initial early days fuck up
             task_name_list.append(task_name)
             if task_name in exp_map:
                 exp_num_list.append(exp_map[task_name])
+                number_of_runs[exp_map[task_name]] += 1  # increment experiment id/num number of runs by 1
             else:
+                number_of_runs[exp_num] = 1
                 exp_map[task_name] = exp_num
                 exp_num_list.append(exp_num)
                 exp_num += 1
@@ -115,6 +121,12 @@ class ResultHanlder:
         self.df["experiment_id"] = exp_num_list
         self.df["task_name"] = task_name_list
         self.df["run_number"] = run_number_list
+
+        number_of_runs_list = []
+        for experiment_id in exp_num_list:
+            number_of_runs_list.append(number_of_runs[experiment_id])
+
+        self.df["number_of_runs"] = number_of_runs_list
 
     def _add_experiment_details(self):
 
@@ -132,8 +144,8 @@ class ResultHanlder:
         pretrain_ss_on_same_dataset_before_supervised = []
 
         for idx, row_series in self.df.iterrows():
-
             task_name = row_series.task_name
+            print("task name ", task_name)
 
             if "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG/with_self_supervised" == task_name:
 
