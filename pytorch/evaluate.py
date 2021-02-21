@@ -52,7 +52,7 @@ class Tester:
 
     def test_segmentation(self):
 
-        full_cubes_datasets = ("task04_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
+        full_cubes_datasets = ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
 
         if isinstance(self.dataset, list):
             for dataset in self.dataset:
