@@ -133,7 +133,7 @@ class FullCubeSegmentator:
         torch.cuda.empty_cache()
         dump_tensors()
 
-        self.trainer.load_model(from_path=True, path=self.model_path, phase="sup")
+        self.trainer.load_model(from_path=True, path=self.model_path, phase="sup", ensure_sup_is_completed=True)
 
         if inference_full_image is False:
             print("PATCHING Will be Done")
@@ -329,7 +329,7 @@ class FullCubeSegmentator:
         torch.cuda.empty_cache()
         dump_tensors()
 
-        self.trainer.load_model(from_path=True, path=self.model_path, phase="sup")
+        self.trainer.load_model(from_path=True, path=self.model_path, phase="sup", ensure_sup_is_completed=True)
 
         cubes_to_use = []
         cubes_to_use.extend(self.sample_k_full_cubes_which_were_used_for_testing(nr_cubes))
