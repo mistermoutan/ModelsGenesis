@@ -24,7 +24,7 @@ class Patcher:
         print("CUBE DIMENSIONS: {}".format(self.original_cube_dimensions))
 
         if self.two_dim is False:
-            self.kernel_size = [300, 300, 100]  # kernel size
+            self.kernel_size = [250, 250, 100]  # kernel size
             stride = self.kernel_size  # stride
         else:
             # patches for two dimensional model
@@ -43,6 +43,12 @@ class Patcher:
                         continue
                     self.kernel_size[k_idx] += int(d / 2)
                     stride[k_idx] = self.kernel_size[k_idx]
+
+        # recheck patch dimensions due to the dif that was done before
+        for idx in range(len(self.kernel_size)):
+            if self.kernel_size[idx] > self.original_cube_dimensions[idx]:
+                self.kernel_size[idx] = self.original_cube_dimensions[idx]
+                stride[idx] = self.kernel_size[idx]
 
         print("KERNEL: ", self.kernel_size)
 
