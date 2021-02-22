@@ -55,6 +55,7 @@ class Tester:
         full_cubes_datasets = ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
 
         if isinstance(self.dataset, list):
+            assert False, "SUPERVISION ON MULTIPLE DATASETS???"
             for dataset in self.dataset:
                 self._test_dataset(dataset)
                 if self.dataset_name.lower() in full_cubes_datasets:
