@@ -138,7 +138,7 @@ class Tester:
                 pred = self._make_pred_mask_from_pred(pred)
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
 
-                if x.shape[1] == 1:
+                if pred.shape[1] == 1:
                     # pred is binary here
                     x_flat = pred[:, 0].contiguous().view(-1)
                     y_flat = y[:, 0].contiguous().view(-1)
@@ -198,7 +198,7 @@ class Tester:
                 pred = self._make_pred_mask_from_pred(pred)
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
 
-                if x.shape[1] == 1:
+                if pred.shape[1] == 1:
                     x_flat = pred[:, 0].contiguous().view(-1)
                     y_flat = y[:, 0].contiguous().view(-1)
                     x_flat = x_flat.cpu()
