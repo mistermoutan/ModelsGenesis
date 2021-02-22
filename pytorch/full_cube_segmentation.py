@@ -152,14 +152,14 @@ class FullCubeSegmentator:
         for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
-            if sum([i for i in np_array.shape]) > 500 and self.two_dim is False:
-                print("CUBE TOO BIG, PATCHING")
+            if sum([i for i in np_array.shape]) > 600 and self.two_dim is False:
                 inference_full_image = False
 
-            if "cellari_heart_sup" in self.dataset_name:
+            if self.dataset_name.lower() in ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup"):
                 inference_full_image = True
 
             if inference_full_image is False:
+                print("CUBE TOO BIG, PATCHING")
 
                 patcher = Patcher(np_array, two_dim=self.two_dim)
 
