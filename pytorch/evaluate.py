@@ -295,7 +295,7 @@ class Tester:
             )  # use number of samples lidc is different as training are all in the same file
             self.original_cube_dimensions = np_array.shape[1:]
 
-            for sample_idx in np_array.shape[0]:
+            for sample_idx in range(np_array.shape[0]):
                 mini_cube_tensor = torch.Tensor(np_array[sample_idx])  # (N,x,y,z) -> (x,y,z)
                 mini_cube_tensor = torch.unsqueeze(mini_cube_tensor, 0)  # (x,y,z) -> (1,x,y,z)
                 mini_cube_tensor = torch.unsqueeze(mini_cube_tensor, 0)  # (1,x,y,z) -> (1,1,x,y,z)
