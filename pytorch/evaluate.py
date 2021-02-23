@@ -484,7 +484,7 @@ class Tester:
                     print("2 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING ARGMAX TO DETERMINE BINARY MASK")
                     self.print_yet = True
             pred = pred.argmax(1).unsqueeze(0)
-        elif len(pred.shape == 3):  # (just as x,y,z)
+        elif len(pred.shape) == 3:  # (just as x,y,z)
             pred_mask_idxs = pred >= threshold
             pred_non_mask_idxs = pred < threshold
             pred[pred_mask_idxs] = float(1)
