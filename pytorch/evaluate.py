@@ -282,7 +282,7 @@ class Tester:
             if os.path.isfile(os.path.join(self.dataset.y_data_dir, cube_name)):
                 label_cubes_of_cubes_to_use_path.append(os.path.join(self.dataset.y_data_dir, cube_name))
             elif os.path.isfile(os.path.join(self.dataset.y_data_dir, cube_name[:-4] + "_target.npy")):
-                label_cubes_of_cubes_to_use_path.append(os.path.join(self.dataset.y_data_dir, cube_name))
+                label_cubes_of_cubes_to_use_path.append(os.path.join(self.dataset.y_data_dir, cube_name[:-4] + "_target.npy"))
             else:
                 raise FileNotFoundError
 
