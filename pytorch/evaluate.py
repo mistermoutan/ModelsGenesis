@@ -291,7 +291,7 @@ class Tester:
         for cube_idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (N,x,y,z)
             np_array = (
-                np_array[:3] if self.dataset_name != "lidc" else np_array[:10]
+                np_array[:1] if self.dataset_name != "lidc" else np_array[:nr_cubes]
             )  # use number of samples lidc is different as training are all in the same file
             self.original_cube_dimensions = np_array.shape[1:]
 
