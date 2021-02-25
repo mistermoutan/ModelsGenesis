@@ -469,29 +469,31 @@ class Tester:
         return img_array
 
     def _make_pred_mask_from_pred(self, pred, threshold=0.5, print_=True):
-        if pred.shape[1] == 1:
+        
+        res = deepcopy(pred)
+        if res.shape[1] == 1:
             if print_:
                 if not self.print_yet:
                     print("1 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING THRESHOLD {} TO DETERMINE BINARY MASK".format(threshold))
                     self.print_yet = True
-            pred_mask_idxs = pred >= threshold
-            pred_non_mask_idxs = pred < threshold
-            pred[pred_mask_idxs] = float(1)
-            pred[pred_non_mask_idxs] = float(0)
-        elif pred.shape[1] == 2:
+            pred_mask_idxs = res >= threshold
+            pred_non_mask_idxs = res < threshold
+            res[pred_mask_idxs] = float(1)
+            res[pred_non_mask_idxs] = float(0)
+        elif res.shape[1] == 2:
             if print_:
                 if not self.print_yet:
                     print("2 CHANNEL OUTPUT FOR BINARY SEGMENTATION, USING ARGMAX TO DETERMINE BINARY MASK")
                     self.print_yet = True
-            pred = pred.argmax(1).unsqueeze(0)
+            res = pred.argmax(1).unsqueeze(0)
         elif len(pred.shape) == 3:  # (just as x,y,z)
-            pred_mask_idxs = pred >= threshold
-            pred_non_mask_idxs = pred < threshold
-            pred[pred_mask_idxs] = float(1)
-            pred[pred_non_mask_idxs] = float(0)
+            pred_mask_idxs = res >= threshold
+            pred_non_mask_idxs = res < threshold
+            res[pred_mask_idxs] = float(1)
+            res[pred_non_mask_idxs] = float(0)
         else:
             assert False, "got {}".format(pred.shape)
-        return pred
+        return res
 
     @staticmethod
     def iou(prediction, target_mask):
