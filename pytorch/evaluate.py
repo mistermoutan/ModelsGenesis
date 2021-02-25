@@ -339,14 +339,16 @@ class Tester:
                         self.save_dir,
                         self.dataset_name,
                         "testing_examples_mini/",
-                        cubes_to_use[cube_idx][:-4] + "_sample{}".format(sample_idx),
+                        cubes_to_use[cube_idx][:-4],
+                        "sample{}/".format(sample_idx),
                     )
                 else:
                     save_dir = os.path.join(
                         self.save_dir,
                         self.dataset_name,
                         "training_examples_mini/",
-                        cubes_to_use[cube_idx][:-4] + "_sample{}".format(sample_idx),
+                        cubes_to_use[cube_idx][:-4],
+                        "sample{}".format(sample_idx),
                     )
 
                 make_dir(save_dir)
@@ -365,18 +367,18 @@ class Tester:
                 # save nii's
                 nifty_img = nibabel.Nifti1Image(np.array(pred_mask_mini_cube).astype(np.float32), np.eye(4))
                 nibabel.save(
-                    nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "_sample{}_logits_mask.nii.gz".format(sample_idx))
+                    nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "sample{}_logits_mask.nii.gz".format(sample_idx))
                 )
 
                 nifty_img = nibabel.Nifti1Image(np.array(pred_mask_mini_cube_binary).astype(np.float32), np.eye(4))
                 nibabel.save(
-                    nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "_sample{}_binary_mask.nii.gz".format(sample_idx))
+                    nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "sample{}_binary_mask.nii.gz".format(sample_idx))
                 )
 
                 # save .nii.gz of cube if is npy original full cube file
                 if ".npy" in cube_path:
                     nifty_img = nibabel.Nifti1Image(np_array[sample_idx].astype(np.float32), np.eye(4))
-                    nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "_mini_cube{}.nii.gz".format(sample_idx)))
+                    nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "sample{}.nii.gz".format(sample_idx)))
 
                 # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx]))))
 
