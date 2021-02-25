@@ -649,11 +649,12 @@ class FullCubeSegmentator:
 
     @staticmethod
     def _make_pred_mask_from_pred(pred, threshold=0.5):
-        pred_mask_idxs = pred >= threshold
-        pred_non_mask_idxs = pred < threshold
-        pred[pred_mask_idxs] = float(1)
-        pred[pred_non_mask_idxs] = float(0)
-        return pred
+        res = deepcopy(pred)
+        pred_mask_idxs = res >= threshold
+        pred_non_mask_idxs = res < threshold
+        res[pred_mask_idxs] = float(1)
+        res[pred_non_mask_idxs] = float(0)
+        return res
 
     def save_3d_plot(self, mask_array, save_dir, figsize=(15, 10), step=1, edgecolor="0.2", cmap="viridis", backend="matplotlib"):
 
