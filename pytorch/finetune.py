@@ -16,6 +16,7 @@ from unet_2d import UNet
 from unet_3d import UNet3D as Unet3D_Counterpart_to_2D
 from unet_2d import UnetACSWithClassifier
 from unet_2d import UnetACSAxisAwareDecoder
+from unet_2d import UnetACSWithClassifierOnly
 
 from unet3d import UNet3D
 from dataset import Dataset
@@ -421,6 +422,14 @@ class Trainer:
             self.stats.validation_losses_sup = []
             self.model.train()
 
+            if self.config.model.lower() == "unet_acs_cls_only":
+                self.stats.training_recall = []
+                self.stats.training_precision = []
+                self.stats.training_f1 = []
+                self.stats.testing_recall = []
+                self.stats.testing_precision = []
+                self.stats.testing_f1 = []
+
             for iteration, (x, y) in enumerate(train_data_loader):
 
                 if iteration == 0 and ((self.epoch_sup_current + 1) % 20 == 0):
@@ -430,7 +439,14 @@ class Trainer:
                     raise RuntimeError
 
                 x, y = x.float().to(self.device), y.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
+                if self.config.model.lower() in (
+                    "vnet_mg",
+                    "unet_3d",
+                    "unet_acs",
+                    "unet_acs_axis_aware_decoder",
+                    "unet_acs_with_cls",
+                    "unet_acs_cls_only",
+                ):
                     x, y = pad_if_necessary(x, y)
                 if "fcn_resnet18" in self.config.model.lower():
                     # expects 3 channel input
@@ -439,6 +455,16 @@ class Trainer:
                     y = categorical_to_one_hot(y, dim=1, expand_dim=False)
 
                 pred = self.model(x)
+
+                if self.config.model.lower() == "unet_acs_cls_only":
+                    x_cls, y = pred
+                    x_cls, y = x_cls.to(self.device), y.to(self.device)
+                    pred = x_cls
+                    pr, rc, f1 = self.compute_precision_recall_f1(pred, y)
+                    self.stats.training_precision.append(pr)
+                    self.stats.training_recall.append(rc)
+                    self.stats.training_f1.append(f1)
+
                 loss = criterion(pred, y)
                 loss.to(self.device)
                 self.optimizer_sup.zero_grad()
@@ -465,14 +491,32 @@ class Trainer:
                     # if x is None:
                     #    break
                     x, y = x.float().to(self.device), y.float().to(self.device)
-                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
+                    if self.config.model.lower() in (
+                        "vnet_mg",
+                        "unet_3d",
+                        "unet_acs",
+                        "unet_acs_axis_aware_decoder",
+                        "unet_acs_with_cls",
+                        "unet_acs_cls_only",
+                    ):
                         x, y = pad_if_necessary(x, y)
                     if "fcn_resnet18" in self.config.model.lower():
                         # expects 3 channel input
                         x = torch.cat((x, x, x), dim=1)
                         # 2 channel output of network
                         y = categorical_to_one_hot(y, dim=1, expand_dim=False)
+
                     pred = self.model(x)
+
+                    if self.config.model.lower() == "unet_acs_cls_only":
+                        x_cls, y = pred  # y is target of cls
+                        x_cls, y = x_cls.to(self.device), y.to(self.device)
+                        pred = x_cls  # rename pred to not add if statements to loss calculation
+                        pr, rc, f1 = self.compute_precision_recall_f1(pred, y)
+                        self.stats.testing_precision.append(pr)
+                        self.stats.testing_recall.append(rc)
+                        self.stats.testing_f1.append(f1)
+
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
                     self.stats.validation_losses_sup.append(loss.item())
@@ -486,6 +530,22 @@ class Trainer:
                     self.dataset[i].reset()
             else:
                 self.dataset.reset()
+
+            if self.config.model.lower() == "unet_acs_cls_only":
+
+                avg_training_precision_of_epoch = np.average(self.stats.training_precision)
+                self.tb_writer.add_scalar("Avg Precision of Epoch (Training)", avg_training_precision_of_epoch, self.epoch_sup_current + 1)
+                avg_training_recall_of_epoch = np.average(self.stats.training_recall)
+                self.tb_writer.add_scalar("Avg Recall of Epoch (Training)", avg_training_recall_of_epoch, self.epoch_sup_current + 1)
+                avg_training_f1_of_epoch = np.average(self.stats.training_f1)
+                self.tb_writer.add_scalar("Avg F1 of Epoch (Training)", avg_training_f1_of_epoch, self.epoch_sup_current + 1)
+
+                avg_testing_precision_of_epoch = np.average(self.stats.testing_precision)
+                self.tb_writer.add_scalar("Avg Precision of Epoch (Testing)", avg_testing_precision_of_epoch, self.epoch_sup_current + 1)
+                avg_testing_recall_of_epoch = np.average(self.stats.testing_recall)
+                self.tb_writer.add_scalar("Avg Recall of Epoch (Testing)", avg_testing_recall_of_epoch, self.epoch_sup_current + 1)
+                avg_testing_f1_of_epoch = np.average(self.stats.testing_f1)
+                self.tb_writer.add_scalar("Avg F1 of Epoch (Testing)", avg_testing_f1_of_epoch, self.epoch_sup_current + 1)
 
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_sup)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Supervised", avg_training_loss_of_epoch, self.epoch_sup_current + 1)
@@ -501,11 +561,26 @@ class Trainer:
             else:
                 self.scheduler_sup.step(self.epoch_sup_current)
 
-            print(
-                "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
-                    self.epoch_sup_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
+            if self.config.model.lower() == "unet_acs_cls_only":
+                print(
+                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f} \n Precision:{:.4f} / {:.4f} ; Recall:{:.4f} / {:.4f} ; F1:{:.4f} / {:.4f} ".format(
+                        self.epoch_sup_current + 1,
+                        avg_validation_loss_of_epoch,
+                        avg_training_loss_of_epoch,
+                        avg_training_precision_of_epoch,
+                        avg_testing_precision_of_epoch,
+                        avg_training_recall_of_epoch,
+                        avg_testing_recall_of_epoch,
+                        avg_training_f1_of_epoch,
+                        avg_testing_f1_of_epoch,
+                    )
                 )
-            )
+            else:
+                print(
+                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f}".format(
+                        self.epoch_sup_current + 1, avg_validation_loss_of_epoch, avg_training_loss_of_epoch
+                    )
+                )
 
             try:
                 print("CURRNT SUP LR: {}".format(self.scheduler_sup.get_last_lr()))
@@ -629,6 +704,11 @@ class Trainer:
         elif self.config.model.lower() == "unet_acs_with_cls":
             print("LOADING UNET_ACS_CLS")
             self.model = UnetACSWithClassifier(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
+
+        elif self.config.model.lower() == "unet_acs_cls_only":
+            print("LOADING UNET_ACS_CLS_ONLY")
+            self.model = UnetACSWithClassifierOnly(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_acs_axis_aware_decoder":
