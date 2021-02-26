@@ -392,6 +392,8 @@ class Trainer:
             criterion.to(self.device)
         elif self.config.loss_function_sup.lower() == "dice":
             criterion = DiceLoss.dice_loss
+        elif self.config.loss_function_sup.lower() == "cross_entropy":
+            criterion = nn.CrossEntropyLoss()
         elif self.config.loss_function_sup == "mix_dice_bce":
             # https://discuss.pytorch.org/t/dice-loss-cross-entropy/53194
             raise NotImplementedError
