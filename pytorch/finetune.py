@@ -8,6 +8,7 @@ import numpy as np
 import time
 from datetime import timedelta
 from copy import deepcopy
+from sklearn.metrics import precision_recall_fscore_support
 
 from ACSConv.experiments.mylib.utils import categorical_to_one_hot
 
@@ -535,6 +536,14 @@ class Trainer:
         self.sup_timedelta = timedelta(seconds=time.time() - self.start_time)
         self._add_completed_flag_to_last_checkpoint_saved(phase="sup")
         print("FINISHED TRAINING SUP")
+
+    @staticmethod
+    def compute_precision_recall_f1(prediction, target):
+        # make target binary
+        predicted_labels = prediction.argmax(1)
+        # multi class f1-score will be done macro averaging as all classes are equally important #alternatily (emphasize z axis??)
+        pr, rec, f1, _ = precision_recall_fscore_support(target, predicted_labels, average="macro")
+        return pr, rec, f1
 
     def add_hparams_to_writer(self):
 
