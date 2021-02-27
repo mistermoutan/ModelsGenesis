@@ -264,7 +264,7 @@ class Tester:
 
         return train_minicubes_filenames[:k]
 
-    def save_segmentation_examples(self, nr_cubes=5):
+    def save_segmentation_examples(self, nr_cubes=3):
 
         # for mini cubes
 
