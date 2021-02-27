@@ -5,7 +5,7 @@ from dice_loss import DiceLoss
 from unet3d import UNet3D
 import json
 from copy import deepcopy
-from collections import defaultdict
+from collections import defaultdict, Counter
 import os
 import torch
 import nibabel
@@ -17,6 +17,10 @@ from utils import *
 from full_cube_segmentation import FullCubeSegmentator
 from finetune import Trainer
 from ACSConv.experiments.mylib.utils import categorical_to_one_hot
+
+from skimage.metrics import (
+    hausdorff_distance,
+)  # works for 3D, check https://github.com/scikit-image/scikit-image/pull/4382/commits/2b02fbb491f7abee35b23af7730d2eff9629f4e9
 
 
 class Tester:
@@ -104,9 +108,13 @@ class Tester:
 
         dataset_dict = dict()
         dataset_dict.setdefault("mini_cubes", {})
+
+        thresholds = []
+
         jaccard = []
         dice_binary = []
         dice_logits = []
+        hausdorff = []
 
         if dataset.x_test_filenames_original != []:
             previous_len = len(dataset.x_val_filenames_original)
@@ -146,8 +154,11 @@ class Tester:
                     y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     dice_logits.append(float(DiceLoss.dice_loss(pred, y_one_hot, return_loss=False, skip_zero_sum=True)))
 
-                pred = self._make_pred_mask_from_pred(pred)
+                threshold = self._set_threshold(pred, y)
+                thresholds.append(threshold)
+                pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
+                hausdorff.append(hausdorff_distance(pred.numpy(), y.numpy()))
 
                 if pred.shape[1] == 1:
                     # pred is binary here
@@ -171,15 +182,20 @@ class Tester:
             dataset.reset()
 
         avg_jaccard = sum(jaccard) / len(jaccard)
+        avg_hausdorff = sum(hausdorff) / len(hausdorff)
         avg_dice_soft = sum(dice_logits) / len(dice_logits)
         avg_dice_binary = sum(dice_binary) / len(dice_binary)
+
         dataset_dict["mini_cubes"]["jaccard_test"] = avg_jaccard
+        dataset_dict["mini_cubes"]["hausdorff_test"] = avg_hausdorff
         dataset_dict["mini_cubes"]["dice_test_soft"] = avg_dice_soft
         dataset_dict["mini_cubes"]["dice_test_binary"] = avg_dice_binary
 
         jaccard = []
         dice_logits = []
         dice_binary = []
+        hausdorff = []
+
         with torch.no_grad():
             self.model.eval()
             while True:
@@ -206,8 +222,12 @@ class Tester:
                     y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     dice_logits.append(float(DiceLoss.dice_loss(pred, y_one_hot, return_loss=False, skip_zero_sum=True)))
 
-                pred = self._make_pred_mask_from_pred(pred)
+                threshold = self._set_threshold(pred, y)
+                pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
+                thresholds.append(threshold)
+
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
+                hausdorff.append(hausdorff_distance(pred.numpy(), y.numpy()))
 
                 if pred.shape[1] == 1:
                     x_flat = pred[:, 0].contiguous().view(-1)
@@ -230,11 +250,16 @@ class Tester:
             dataset.reset()
 
         avg_jaccard = sum(jaccard) / len(jaccard)
+        avg_hausdorff = sum(hausdorff) / len(hausdorff)
         avg_dice_soft = sum(dice_logits) / len(dice_logits)
         avg_dice_binary = sum(dice_binary) / len(dice_binary)
+
         dataset_dict["mini_cubes"]["jaccard_train"] = avg_jaccard
+        dataset_dict["mini_cubes"]["hausdorff_train"] = avg_hausdorff
         dataset_dict["mini_cubes"]["dice_train_soft"] = avg_dice_soft
         dataset_dict["mini_cubes"]["dice_train_binary"] = avg_dice_binary
+
+        print("THRESHOLDS: ", Counter(thresholds))
 
         if unused is False:
             self.metric_dict[self.dataset_name] = dataset_dict
@@ -355,9 +380,12 @@ class Tester:
 
                 make_dir(save_dir)
 
+                label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))[sample_idx]
                 pred_mask_mini_cube = pred_mask_mini_cube.cpu()  # logits mask
+
                 if "fcn_resnet" not in self.config.model.lower():
-                    pred_mask_mini_cube_binary = self._make_pred_mask_from_pred(pred_mask_mini_cube)  # binary mask
+                    threshold = self._set_threshold(pred_mask_mini_cube, label_tensor_of_cube)
+                    pred_mask_mini_cube_binary = self._make_pred_mask_from_pred(pred_mask_mini_cube, threshold=threshold)  # binary mask
                 else:
                     # we want to use argmax in the dual channel output when fcn resnet 18
                     # pred_mask_mini_cube is 1 channel and  "hacked it" in the case of fcn resnet 18 case
@@ -384,7 +412,6 @@ class Tester:
 
                 # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx]))))
 
-                label_tensor_of_cube = torch.Tensor(self._load_cube_to_np_array(label_cubes_of_cubes_to_use_path[cube_idx]))[sample_idx]
                 label_tensor_of_cube_masked = np.array(label_tensor_of_cube)
                 label_tensor_of_cube_masked = np.ma.masked_where(
                     label_tensor_of_cube_masked < 0.5, label_tensor_of_cube_masked
@@ -453,14 +480,15 @@ class Tester:
 
                 dice_score_soft = float(DiceLoss.dice_loss(pred_mask_mini_cube, label_tensor_of_cube, return_loss=False))
                 dice_score_binary = float(DiceLoss.dice_loss(pred_mask_mini_cube_binary, label_tensor_of_cube, return_loss=False))
+                hausdorff = hausdorff_distance(pred_mask_mini_cube_binary.numpy(), label_tensor_of_cube.numpy())
                 x_flat = pred_mask_mini_cube_binary.contiguous().view(-1)
                 y_flat = label_tensor_of_cube.contiguous().view(-1)
                 x_flat = x_flat.cpu()
                 y_flat = y_flat.cpu()
                 jaccard_scr = jaccard_score(y_flat, x_flat)
-                metrics = {"dice_logits": dice_score_soft, "dice_binary": dice_score_binary, "jaccard": jaccard_scr}
+                metrics = {"dice_logits": dice_score_soft, "dice_binary": dice_score_binary, "jaccard": jaccard_scr, "hausdorff": hausdorff}
                 # print(dice)
-                with open(os.path.join(save_dir, "dice.json"), "w") as f:
+                with open(os.path.join(save_dir, "metrics.json"), "w") as f:
                     json.dump(metrics, f)
 
     def _load_cube_to_np_array(self, cube_path):
@@ -471,6 +499,27 @@ class Tester:
             # mini cubes were all made .npy in preprocessing
             raise ValueError
         return img_array
+
+    @staticmethod
+    def _set_threshold(pred, target, optimize_for: str = "dice"):
+        # set threshold which minimizes hausdorff distance, handles outliers
+        possible_values = np.arange(0.20, 1, 0.05)
+        threshold = False
+        best = 10000000000000
+        for t in possible_values:
+            tmp_pred = deepcopy(pred)
+            tmp_pred[tmp_pred >= t] = 1  # doesnt matter for hausdorff as all non zeros count
+            tmp_pred[tmp_pred < t] = 0
+
+            if optimize_for == "dice":
+                metric = DiceLoss.dice_loss(tmp_pred, target, return_loss=True)  # to conform with less is better of hausdorff
+            elif optimize_for == "hausdorff":
+                metric = hausdorff_distance(tmp_pred, target)
+
+            if metric < best:
+                best = metric
+                threshold = t
+        return threshold
 
     def _make_pred_mask_from_pred(self, pred, threshold=0.5, print_=True):
 
@@ -511,7 +560,7 @@ if __name__ == "__main__":
     config = load_object("objects/FROM_SCRATCH_fake_small_UNET_ACS/only_supervised/run_5/config.pkl")
     dataset = load_object("objects/FROM_SCRATCH_fake_small_UNET_ACS/only_supervised/run_5/dataset.pkl")
     t = Tester(config, dataset, test_all=False)
-    t.test_segmentation()
+    # t.test_segmentation()
 
     # config = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/config.pkl")
     # dataset = load_object("/home/moutan/ModelsGenesis/objects/FROM_SCRATCH_cellari_heart_sup_10_192_UNET_3D/only_supervised/run_1/dataset.pkl")
