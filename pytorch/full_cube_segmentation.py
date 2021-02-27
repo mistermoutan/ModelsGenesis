@@ -162,7 +162,10 @@ class FullCubeSegmentator:
                 inference_full_image = False
 
             if self.dataset_name.lower() in ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup"):
-                inference_full_image = True
+                if self.tried is False:
+                    inference_full_image = True
+                else:
+                    inference_full_image = False
 
             if inference_full_image is False:
                 print("CUBE TOO BIG, PATCHING")
@@ -246,6 +249,7 @@ class FullCubeSegmentator:
                                     torch.cuda.ipc_collect()
                                     torch.cuda.empty_cache()
                                     dump_tensors()
+                                    self.tried = True
                                     res = self.compute_metrics_for_all_cubes(inference_full_image=False)
                                     return res
 
@@ -313,6 +317,7 @@ class FullCubeSegmentator:
 
         # deal with recursion when defaulting to patchign
 
+        self.tried = False
         if "lidc" in self.dataset_name:
             return
 
@@ -351,11 +356,16 @@ class FullCubeSegmentator:
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
             if sum([i for i in np_array.shape]) > 500 and self.two_dim is False:
-                print("CUBE TOO BIG, PATCHING")
                 inference_full_image = False
 
-            if inference_full_image is False:
+            if self.dataset_name.lower() in ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup"):
+                if self.tried is False:
+                    inference_full_image = True
+                else:
+                    inference_full_image = False
 
+            if inference_full_image is False:
+                print("CUBE TOO BIG, PATCHING")
                 patcher = Patcher(np_array, two_dim=self.two_dim)
 
                 with torch.no_grad():
@@ -437,6 +447,7 @@ class FullCubeSegmentator:
                                     torch.cuda.ipc_collect()
                                     torch.cuda.empty_cache()
                                     dump_tensors()
+                                    self.tried = True
                                     self.save_segmentation_examples(inference_full_image=False)
                                     return
 
