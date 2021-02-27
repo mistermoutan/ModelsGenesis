@@ -44,42 +44,39 @@ class Tester:
 
         self.print_yet = False
 
-    def test_segmentation(self):
+    def test_segmentation_mini(self):
 
-        full_cubes_datasets = ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
+        # full_cubes_datasets = ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
 
         if isinstance(self.dataset, list):
             assert False, "SUPERVISION ON MULTIPLE DATASETS???"
-            for dataset in self.dataset:
-                self._test_dataset(dataset)
-                self.save_segmentation_examples()
-                if self.dataset_name.lower() in full_cubes_datasets:
-                    self._test_on_full_cubes(dataset)
-        else:
-            self._test_dataset(self.dataset)
-            self.save_segmentation_examples()
-            if self.dataset_name.lower() in full_cubes_datasets:
-                self._test_on_full_cubes(self.dataset)
+
+        self._test_dataset(self.dataset)
+        self.save_segmentation_examples()
 
         file_nr = 0
         filename = "test_results_new"
         while os.path.isfile(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr))):
             file_nr += 1
 
-        # to check if testing remains consistent
         with open(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr)), "w") as f:
             json.dump(self.metric_dict, f)
 
-        if self.test_all:
-            # set of dataset data dirs
-            remaining_datasets = get_unused_datasets(self.dataset)
-            if len(remaining_datasets) > 0:
-                for dataset in remaining_datasets:
-                    # test on all other unseen datasets
-                    full_test_ds = Dataset(data_dir=dataset, train_val_test=(0, 0, 1), file_names=None)
-                    if not full_test_ds.has_target:
-                        continue
-                    self._test_dataset(full_test_ds, unused=True)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
                 with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr)), "w") as f:
                     json.dump(self.metric_dict_unused, f)
