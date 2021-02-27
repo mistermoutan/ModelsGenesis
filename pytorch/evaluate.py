@@ -241,21 +241,6 @@ class Tester:
         else:
             self.metric_dict_unused[self.dataset_name] = dataset_dict
 
-    def _test_on_full_cubes(self, dataset):
-
-        full_cubes_dir = dataset_full_cubes_map[self.dataset_name]
-        full_cubes_labels_dir = dataset_full_cubes_labels_map[self.dataset_name]
-        fcs = FullCubeSegmentator(
-            model_path=os.path.join(self.config.model_path_save, "weights_sup.pt"),
-            dataset_dir=full_cubes_dir,
-            dataset_labels_dir=full_cubes_labels_dir,
-            dataset_name=self.dataset_name,
-        )
-
-        metric_dict = fcs.compute_metrics_for_all_cubes()  # {"dice": .., "jaccard":}
-        self.metric_dict[self.dataset_name]["full_cubes"] = metric_dict
-        fcs.save_segmentation_examples()
-
     def sample_k_mini_cubes_which_were_used_for_testing(self, k):
 
         # inside these cubes are N SAMPLES
