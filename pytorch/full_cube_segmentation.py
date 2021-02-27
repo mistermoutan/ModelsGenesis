@@ -119,11 +119,16 @@ class FullCubeSegmentator:
         dump_tensors()
         torch.cuda.empty_cache()
 
+        self.tried = False
+
         if "lidc" in self.dataset_name:
             return
 
         if hasattr(self.trainer, "model"):
             del self.trainer.model
+            del self.trainer
+            sleep(20)
+            self.trainer = Trainer(config=self.config, dataset=None)
             dump_tensors()
             torch.cuda.ipc_collect()
             torch.cuda.empty_cache()
@@ -283,7 +288,7 @@ class FullCubeSegmentator:
             torch.cuda.ipc_collect()
             torch.cuda.empty_cache()
             dump_tensors()
-
+            sleep(10)
             print(idx)
 
         avg_jaccard_test = sum(jaccard_test) / len(jaccard_test)
@@ -317,11 +322,14 @@ class FullCubeSegmentator:
 
         if hasattr(self.trainer, "model"):
             del self.trainer.model
+            del self.trainer
+            sleep(15)
+            self.trainer = Trainer(config=self.config, dataset=None)
             dump_tensors()
             torch.cuda.ipc_collect()
             torch.cuda.empty_cache()
             dump_tensors()
-
+            sleep(5)
         if inference_full_image is False:
             print("PATCHING Will be Done")
 
@@ -572,6 +580,7 @@ class FullCubeSegmentator:
             torch.cuda.ipc_collect()
             torch.cuda.empty_cache()
             dump_tensors()
+            sleep(10)
 
     def adjust_label_cube_acording_to_dataset(self, label_cube):
 
