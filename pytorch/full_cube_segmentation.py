@@ -5,6 +5,7 @@ import SimpleITK as sitk
 import torch
 from copy import deepcopy
 import json
+from time import sleep
 
 # from skimage.util.shape import view_as_windows
 import torch.nn.functional as F
