@@ -302,7 +302,7 @@ class Tester:
                 mini_cube_tensor = torch.unsqueeze(mini_cube_tensor, 0)  # (x,y,z) -> (1,x,y,z)
                 mini_cube_tensor = torch.unsqueeze(mini_cube_tensor, 0)  # (1,x,y,z) -> (1,1,x,y,z)
                 with torch.no_grad():
-                    self.trainer.model.eval()
+                    self.model.eval()
                     if self.two_dim is False:
                         if self.config.model.lower() in (
                             "vnet_mg",
@@ -331,7 +331,7 @@ class Tester:
                         for z_idx in range(mini_cube_tensor.size()[-1]):
                             tensor_slice = mini_cube_tensor[..., z_idx]  # SLICE : (1,1,C,H,W) -> (1,1,C,H)
                             assert tensor_slice.shape == (1, 1, self.original_cube_dimensions[0], self.original_cube_dimensions[1])
-                            pred = self.trainer.model(tensor_slice)
+                            pred = self.model(tensor_slice)
                             pred = torch.squeeze(pred, dim=0)  # (1, 1, C,H) -> (1,C,H)
                             pred = torch.squeeze(pred, dim=0)  # (1,C,H) -> (C,H)
                             pred_mask_mini_cube[..., z_idx] = pred
@@ -473,7 +473,7 @@ class Tester:
         return img_array
 
     def _make_pred_mask_from_pred(self, pred, threshold=0.5, print_=True):
-        
+
         res = deepcopy(pred)
         if res.shape[1] == 1:
             if print_:
