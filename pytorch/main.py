@@ -1118,7 +1118,8 @@ def test(**kwargs):
             )  # train_val_test is non relevant as is overwritten by files
 
         tester = Tester(config_object, dataset_object)
-        tester.test_segmentation()
+        tester.test_segmentation_mini()
+        tester.test_segmentation_full()
 
 
 if __name__ == "__main__":
