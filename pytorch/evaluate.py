@@ -62,24 +62,35 @@ class Tester:
         with open(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr)), "w") as f:
             json.dump(self.metric_dict, f)
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #
+    def test_segmentation_full(self):
 
-                with open(os.path.join(self.test_results_dir, "test_results_unused{}.json".format(file_nr)), "w") as f:
-                    json.dump(self.metric_dict_unused, f)
+        full_cubes_datasets = ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
+
+        file_nr = 0
+        filename = "test_results_new"
+
+        while not os.path.isfile(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr))):
+            file_nr += 1
+
+        with open(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr)), "r") as f:
+            self.metric_dict = json.load(f)
+
+        if self.dataset_name.lower() in full_cubes_datasets:
+            full_cubes_dir = dataset_full_cubes_map[self.dataset_name]
+            full_cubes_labels_dir = dataset_full_cubes_labels_map[self.dataset_name]
+            fcs = FullCubeSegmentator(
+                model_path=os.path.join(self.config.model_path_save, "weights_sup.pt"),
+                dataset_dir=full_cubes_dir,
+                dataset_labels_dir=full_cubes_labels_dir,
+                dataset_name=self.dataset_name,
+            )
+            metric_dict = fcs.compute_metrics_for_all_cubes()  # {"dice": .., "jaccard":}
+            self.metric_dict[self.dataset_name]["full_cubes"] = metric_dict
+
+            with open(os.path.join(self.test_results_dir, "{}{}.json".format(filename, file_nr)), "w") as f:
+                json.dump(self.metric_dict, f)
+            fcs.save_segmentation_examples()
 
     def _test_dataset(self, dataset, unused=False):
         # mini cubes settting
