@@ -32,12 +32,6 @@ class Tester:
         self.task_dir = "/".join(i for i in model_path.split("/")[1:-1])
         self.save_dir = os.path.join("viz_samples/", self.task_dir)
 
-        self.trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
-        self.trainer.load_model(
-            from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup", ensure_sup_is_completed=True
-        )
-        self.model = self.trainer.model
-
         self.metric_dict = dict()
         self.metric_dict_unused = dict()
 
@@ -92,6 +86,14 @@ class Tester:
 
     def _test_dataset(self, dataset, unused=False):
         # mini cubes settting
+
+        trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
+        trainer.load_model(
+            from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup", ensure_sup_is_completed=True
+        )
+
+        self.model = trainer.model
+
         dataset_dict = dict()
         dataset_dict.setdefault("mini_cubes", {})
         jaccard = []
@@ -272,6 +274,13 @@ class Tester:
     def save_segmentation_examples(self, nr_cubes=5):
 
         # for mini cubes
+
+        trainer = Trainer(config=self.config, dataset=None)  # instanciating trainer to load and access model
+        trainer.load_model(
+            from_path=True, path=os.path.join(self.config.model_path_save, "weights_sup.pt"), phase="sup", ensure_sup_is_completed=True
+        )
+
+        self.model = trainer.model
 
         cubes_to_use = []
         cubes_to_use.extend(self.sample_k_mini_cubes_which_were_used_for_testing(nr_cubes))
