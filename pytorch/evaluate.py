@@ -69,6 +69,8 @@ class Tester:
     #
     def test_segmentation_full(self):
 
+        if hasattr(self, "model"):
+            del self.model
         full_cubes_datasets = ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup")
 
         file_nr = 0
