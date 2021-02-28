@@ -158,7 +158,7 @@ class Tester:
                 thresholds.append(threshold)
                 pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
-                hausdorff.append(hausdorff_distance(pred.numpy(), y.numpy()))
+                hausdorff.append(hausdorff_distance(np.array(pred.cpu()), np.array(y.cpu())))
 
                 if pred.shape[1] == 1:
                     # pred is binary here
@@ -227,7 +227,7 @@ class Tester:
                 thresholds.append(threshold)
 
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
-                hausdorff.append(hausdorff_distance(pred.numpy(), y.numpy()))
+                hausdorff.append(hausdorff_distance(np.array(pred.cpu()), np.array(y.cpu())))
 
                 if pred.shape[1] == 1:
                     x_flat = pred[:, 0].contiguous().view(-1)
@@ -480,7 +480,7 @@ class Tester:
 
                 dice_score_soft = float(DiceLoss.dice_loss(pred_mask_mini_cube, label_tensor_of_cube, return_loss=False))
                 dice_score_binary = float(DiceLoss.dice_loss(pred_mask_mini_cube_binary, label_tensor_of_cube, return_loss=False))
-                hausdorff = hausdorff_distance(pred_mask_mini_cube_binary.numpy(), label_tensor_of_cube.numpy())
+                hausdorff = hausdorff_distance(np.array(pred_mask_mini_cube_binary.cpu()), np.array(label_tensor_of_cube.cpu()))
                 x_flat = pred_mask_mini_cube_binary.contiguous().view(-1)
                 y_flat = label_tensor_of_cube.contiguous().view(-1)
                 x_flat = x_flat.cpu()
