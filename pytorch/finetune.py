@@ -460,7 +460,7 @@ class Trainer:
                     x_cls, y = pred
                     x_cls, y = x_cls.to(self.device), y.to(self.device)
                     pred = x_cls
-                    pr, rc, f1 = self.compute_precision_recall_f1(pred, y)
+                    pr, rc, f1 = self.compute_precision_recall_f1(pred.cpu(), y.cpu())
                     self.stats.training_precision.append(pr)
                     self.stats.training_recall.append(rc)
                     self.stats.training_f1.append(f1)
@@ -512,7 +512,7 @@ class Trainer:
                         x_cls, y = pred  # y is target of cls
                         x_cls, y = x_cls.to(self.device), y.to(self.device)
                         pred = x_cls  # rename pred to not add if statements to loss calculation
-                        pr, rc, f1 = self.compute_precision_recall_f1(pred, y)
+                        pr, rc, f1 = self.compute_precision_recall_f1(pred.cpu(), y.cpu())
                         self.stats.testing_precision.append(pr)
                         self.stats.testing_recall.append(rc)
                         self.stats.testing_f1.append(f1)
