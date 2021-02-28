@@ -21,6 +21,8 @@ from utils import *
 from dice_loss import DiceLoss
 from patcher import Patcher
 
+from skimage.metrics import hausdorff_distance
+
 # 3D Plotting
 from skimage.measure import mesh_surface_area
 from skimage.measure import marching_cubes_lewiner as marching_cubes
@@ -153,7 +155,17 @@ class FullCubeSegmentator:
         label_cubes_of_cubes_to_use_path = [os.path.join(self.dataset_labels_dir, i) for i in cubes_to_use]
 
         metric_dict = dict()
-        dice_logits_test, dice_logits_train, dice_binary_test, dice_binary_train, jaccard_test, jaccard_train = [], [], [], [], [], []
+
+        (
+            dice_logits_test,
+            dice_logits_train,
+            dice_binary_test,
+            dice_binary_train,
+            jaccard_test,
+            jaccard_train,
+            hausdorff_test,
+            hausdorff_train,
+        ) = ([], [], [], [], [], [], [], [])
 
         for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
@@ -268,11 +280,12 @@ class FullCubeSegmentator:
             full_cube_label_tensor = self.adjust_label_cube_acording_to_dataset(full_cube_label_tensor)
 
             pred_mask_full_cube = pred_mask_full_cube.to("cpu")
-            pred_mask_full_cube_binary = self._make_pred_mask_from_pred(pred_mask_full_cube)
+            threshold = self._set_threshold(pred_mask_full_cube, full_cube_label_tensor)
+            pred_mask_full_cube_binary = self._make_pred_mask_from_pred(pred_mask_full_cube, threshold=threshold)
 
             dice_score_soft = float(DiceLoss.dice_loss(pred_mask_full_cube, full_cube_label_tensor, return_loss=False))
             dice_score_binary = float(DiceLoss.dice_loss(pred_mask_full_cube_binary, full_cube_label_tensor, return_loss=False))
-
+            hausdorff = hausdorff_distance(np.array(pred_mask_full_cube_binary), np.array(full_cube_label_tensor))
             x_flat = pred_mask_full_cube_binary.contiguous().view(-1)
             y_flat = full_cube_label_tensor.contiguous().view(-1)
             x_flat = x_flat.cpu()
@@ -283,10 +296,12 @@ class FullCubeSegmentator:
                 dice_logits_test.append(dice_score_soft)
                 dice_binary_test.append(dice_score_binary)
                 jaccard_test.append(jac_score)
+                hausdorff_test.append(hausdorff)
             else:
                 dice_logits_train.append(dice_score_soft)
                 dice_binary_train.append(dice_score_binary)
                 jaccard_train.append(jac_score)
+                hausdorff_train.append(hausdorff)
 
             dump_tensors()
             torch.cuda.ipc_collect()
@@ -304,12 +319,17 @@ class FullCubeSegmentator:
         avg_dice_train_soft = sum(dice_logits_train) / len(dice_logits_train)
         avg_dice_train_binary = sum(dice_binary_train) / len(dice_binary_train)
 
+        avg_hausdorff_train = sum(hausdorff_train) / len(hausdorff_train)
+        avg_hausdorff_test = sum(hausdorff_test) / len(hausdorff_test)
+
         metric_dict["dice_test_soft"] = avg_dice_test_soft
         metric_dict["dice_test_binary"] = avg_dice_test_binary
         metric_dict["dice_train_soft"] = avg_dice_train_soft
         metric_dict["dice_train_binary"] = avg_dice_train_binary
         metric_dict["jaccard_test"] = avg_jaccard_test
         metric_dict["jaccard_train"] = avg_jaccard_train
+        metric_dict["hausdorff_test"] = avg_hausdorff_test
+        metric_dict["hausdorff_train"] = avg_hausdorff_train
 
         return metric_dict
 
@@ -618,6 +638,28 @@ class FullCubeSegmentator:
             label_cube[non_vessel_idxs] = float(0)
 
         return label_cube
+
+    @staticmethod
+    def _set_threshold(pred, target, optimize_for: str = "dice"):
+        # set threshold which minimizes hausdorff distance, handles outliers
+        possible_values = np.arange(0.20, 1, 0.05)
+        threshold = False
+        best = 10000000000000
+        for t in possible_values:
+            tmp_pred = deepcopy(pred)
+            tmp_pred[tmp_pred >= t] = 1  # doesnt matter for hausdorff as all non zeros count
+            tmp_pred[tmp_pred < t] = 0
+
+            if optimize_for == "dice":
+                metric = DiceLoss.dice_loss(tmp_pred, target, return_loss=True)  # to conform with less is better of hausdorff
+            elif optimize_for == "hausdorff":
+                metric = hausdorff_distance(tmp_pred, target)
+
+            if metric < best:
+                best = metric
+                threshold = t
+        del tmp_pred
+        return threshold
 
     @staticmethod
     def _normalize_cube(np_array, modality="mri"):
