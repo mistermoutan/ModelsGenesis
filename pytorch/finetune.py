@@ -429,6 +429,8 @@ class Trainer:
                 self.stats.testing_recall = []
                 self.stats.testing_precision = []
                 self.stats.testing_f1 = []
+                self.stats.training_accuracy = []
+                self.stats.testing_accuracy = []
 
             for iteration, (x, y) in enumerate(train_data_loader):
 
@@ -460,10 +462,11 @@ class Trainer:
                     x_cls, y = pred
                     x_cls, y = x_cls.to(self.device), y.to(self.device)
                     pred = x_cls
-                    pr, rc, f1 = self.compute_precision_recall_f1(pred.cpu(), y.cpu())
+                    pr, rc, f1, accu = self.compute_precision_recall_f1(pred.cpu(), y.cpu())
                     self.stats.training_precision.append(pr)
                     self.stats.training_recall.append(rc)
                     self.stats.training_f1.append(f1)
+                    self.stats.training_accuracy.append(accu)
 
                 loss = criterion(pred, y)
                 loss.to(self.device)
@@ -512,10 +515,11 @@ class Trainer:
                         x_cls, y = pred  # y is target of cls
                         x_cls, y = x_cls.to(self.device), y.to(self.device)
                         pred = x_cls  # rename pred to not add if statements to loss calculation
-                        pr, rc, f1 = self.compute_precision_recall_f1(pred.cpu(), y.cpu())
+                        pr, rc, f1, accu = self.compute_precision_recall_f1(pred.cpu(), y.cpu())
                         self.stats.testing_precision.append(pr)
                         self.stats.testing_recall.append(rc)
                         self.stats.testing_f1.append(f1)
+                        self.stats.testing_accuracy.append(accu)
 
                     loss = criterion(pred, y)
                     self.tb_writer.add_scalar("Loss/Validation : Supervised", loss.item(), (self.epoch_sup_current + 1) * iteration)
@@ -539,6 +543,8 @@ class Trainer:
                 self.tb_writer.add_scalar("Avg Recall of Epoch (Training)", avg_training_recall_of_epoch, self.epoch_sup_current + 1)
                 avg_training_f1_of_epoch = np.average(self.stats.training_f1)
                 self.tb_writer.add_scalar("Avg F1 of Epoch (Training)", avg_training_f1_of_epoch, self.epoch_sup_current + 1)
+                avg_training_accuracy_of_epoch = np.average(self.stats.training_accuracy)
+                self.tb_writer.add_scalar("Avg Accuracy of Epoch(Training)", avg_training_accuracy_of_epoch, self.epoch_sup_current + 1)
 
                 avg_testing_precision_of_epoch = np.average(self.stats.testing_precision)
                 self.tb_writer.add_scalar("Avg Precision of Epoch (Testing)", avg_testing_precision_of_epoch, self.epoch_sup_current + 1)
@@ -546,6 +552,8 @@ class Trainer:
                 self.tb_writer.add_scalar("Avg Recall of Epoch (Testing)", avg_testing_recall_of_epoch, self.epoch_sup_current + 1)
                 avg_testing_f1_of_epoch = np.average(self.stats.testing_f1)
                 self.tb_writer.add_scalar("Avg F1 of Epoch (Testing)", avg_testing_f1_of_epoch, self.epoch_sup_current + 1)
+                avg_testing_accuracy_of_epoch = np.average(self.stats.testing_accuracy)
+                self.tb_writer.add_scalar("Avg Accuracy of Epoch(Testing)", avg_testing_accuracy_of_epoch, self.epoch_sup_current + 1)
 
             avg_training_loss_of_epoch = np.average(self.stats.training_losses_sup)
             self.tb_writer.add_scalar("Avg Loss Epoch/Training : Supervised", avg_training_loss_of_epoch, self.epoch_sup_current + 1)
@@ -620,7 +628,8 @@ class Trainer:
         predicted_labels = prediction.argmax(1)
         # multi class f1-score will be done macro averaging as all classes are equally important #alternatily (emphasize z axis??)
         pr, rec, f1, _ = precision_recall_fscore_support(target, predicted_labels, average="macro")
-        return pr, rec, f1
+        accuracy = (predicted_labels == target).sum() / len(target)
+        return pr, rec, f1, accuracy
 
     def add_hparams_to_writer(self):
 
