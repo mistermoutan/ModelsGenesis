@@ -58,6 +58,7 @@ class FullCubeSegmentator:
         # self.model = self.trainer.model
 
         self.all_cubes = [i for i in os.listdir(self.dataset_dir) if os.path.isfile(os.path.join(self.dataset_dir, i))]
+        self.tried = False
 
     def get_all_cubes_which_were_used_for_training(self):
 
@@ -121,8 +122,6 @@ class FullCubeSegmentator:
         dump_tensors()
         torch.cuda.empty_cache()
 
-        self.tried = False
-
         if "lidc" in self.dataset_name:
             return
 
@@ -170,7 +169,7 @@ class FullCubeSegmentator:
         for idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
-            if sum([i for i in np_array.shape]) > 600 and self.two_dim is False:
+            if sum([i for i in np_array.shape]) > 550 and self.two_dim is False:
                 inference_full_image = False
 
             if self.dataset_name.lower() in ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup"):
@@ -337,7 +336,6 @@ class FullCubeSegmentator:
 
         # deal with recursion when defaulting to patchign
 
-        self.tried = False
         if "lidc" in self.dataset_name:
             return
 
@@ -375,7 +373,7 @@ class FullCubeSegmentator:
         for cube_idx, cube_path in enumerate(cubes_to_use_path):
             np_array = self._load_cube_to_np_array(cube_path)  # (x,y,z)
             self.original_cube_dimensions = np_array.shape
-            if sum([i for i in np_array.shape]) > 600 and self.two_dim is False:
+            if sum([i for i in np_array.shape]) > 550 and self.two_dim is False:
                 inference_full_image = False
 
             if self.dataset_name.lower() in ("task04_sup", "task01_sup", "cellari_heart_sup_10_192", "cellari_heart_sup"):
