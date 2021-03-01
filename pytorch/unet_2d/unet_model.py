@@ -158,21 +158,19 @@ class UnetACSWithClassifierOnly(nn.Module):
 
     def forward(self, x):
         x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5, shape1, shape2, shape3 = self.down4(x4)
-
-        # x = self.up1(x5, x4)
-        # x = self.up2(x, x3)
-        # x = self.up3(x, x2)
-        # x = self.up4(x, x1)
-        # logits = self.outc(x)
+        x2, shapea_1, shapec_1, shapes_1 = self.down1(x1)
+        # print(shapea_1, shapec_1, shapes_1)
+        x3, shapea_2, shapec_2, shapes_2 = self.down2(x2)
+        # print(shapea_2, shapec_2, shapes_2)
+        x4, shapea_3, shapec_3, shapes_3 = self.down3(x3)
+        # print(shapea_3, shapec_3, shapes_3)
+        x5, shapea_4, shapec_4, shapes_4 = self.down4(x4)
+        # print(shapea_4, shapec_4, shapes_4)
 
         # do the classificationa as well
-        # x_a, x_c, x_s = x5[:, :shape1], x5[:, shape1 : shape1 + shape2], x5[:, shape1 + shape2 :]
-        x_cls, targets, nr_feat = self._get_data_for_classification(last_down_features=x5, shape1=shape1, shape2=shape2, shape3=shape3)
-        # print("NUMBE FEAT:", nr_feat)
+        if self.encoder_depth == 4:
+            x_cls, targets, _ = self._get_data_for_classification(last_down_features=x5, shape1=shapea_4, shape2=shapec_4, shape3=shapes_4)
+
         # make spatial dimensions unitary and flatten them into (B,N)
         # x_cls = F.adaptive_avg_pool3d(x_cls, output_size=1).view(x_cls.size(0), -1)
         x_cls = x_cls.view(x_cls.size(0), -1)  # (B,170,4,4,2) -> flatten along batch dimensions
