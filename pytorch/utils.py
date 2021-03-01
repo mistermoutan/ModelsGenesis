@@ -386,6 +386,8 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["make_acs_kernel_split_adaptive_to_input_dimensions"] = args_object.make_acs_kernel_split_adaptive_to_input_dimensions
     kwargs_dict["data_limit_2d"] = args_object.data_limit_2d
     kwargs_dict["enforce_test_again"] = args_object.enforce_test_again
+    kwargs_dict["mini_only"] = args_object.mini_only
+    kwargs_dict["full_only"] = args_object.full_only
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):

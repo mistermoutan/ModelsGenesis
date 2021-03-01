@@ -1054,6 +1054,8 @@ def test(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     task_name = kwargs_dict_["task_name"]
     enforce_test_again = kwargs_dict_["enforce_test_again"]
+    mini_only = kwargs_dict_["mini_only"]
+    full_only = kwargs_dict_["full_only"]
     task_dirs = get_task_dirs()
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
@@ -1118,8 +1120,13 @@ def test(**kwargs):
             )  # train_val_test is non relevant as is overwritten by files
 
         tester = Tester(config_object, dataset_object)
-        tester.test_segmentation_mini()
-        tester.test_segmentation_full()
+        if mini_only:
+            tester.test_segmentation_mini()
+        elif full_only:
+            tester.test_segmentation_full()
+        else:
+            tester.test_segmentation_mini()
+            tester.test_segmentation_full()
 
 
 if __name__ == "__main__":
@@ -1169,6 +1176,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--data_limit_2d", dest="data_limit_2d", required=False, default=None, type=int)
     parser.add_argument("--enforce_test_again", dest="enforce_test_again", action="store_true", required=False)
+    parser.add_argument("--mini_only", dest="mini_only", action="store_true", required=False)
+    parser.add_argument("--full_only", dest="full_only", action="store_true", required=False)
 
     args = parser.parse_args()
 
