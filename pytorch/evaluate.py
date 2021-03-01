@@ -412,6 +412,8 @@ class Tester:
                     nifty_img = nibabel.Nifti1Image(np_array[sample_idx].astype(np.float32), np.eye(4))
                     nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "sample{}.nii.gz".format(sample_idx)))
 
+                nifty_img = nibabel.Nifti1Image(np.array(label_tensor_of_cube).astype(np.float32), np.eye(4))
+                nibabel.save(nifty_img, os.path.join(save_dir, cubes_to_use[cube_idx][:-4] + "sample{}_gt.nii.gz".format(sample_idx)))
                 # self.save_3d_plot(np.array(pred_mask_full_cube), os.path.join(save_dir, "{}_plt3d.png".format(cubes_to_use[idx]))))
 
                 label_tensor_of_cube_masked = np.array(label_tensor_of_cube)
