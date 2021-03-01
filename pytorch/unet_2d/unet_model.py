@@ -131,12 +131,13 @@ class UnetACSWithClassifier(nn.Module):
 class UnetACSWithClassifierOnly(nn.Module):
     "To be used with ACS conversion only"
 
-    def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False):
+    def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False, encoder_depth=4):
         super(UnetACSWithClassifierOnly, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
+        self.encoder_depth = encoder_depth
 
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = DownACS(64, 128)
