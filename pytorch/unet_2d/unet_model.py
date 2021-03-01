@@ -153,6 +153,9 @@ class UnetACSWithClassifierOnly(nn.Module):
         self.outc = OutConv(64, n_classes) if apply_sigmoid_to_output is False else OutConv(64, n_classes, sigmoid=True)
         self.fc1 = nn.Linear(170, 3, bias=True)
 
+        if self.encoder_depth == 4:
+            self.fc1 = nn.Linear(170 * 4 * 4 * 2, 3, bias=True)
+
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
@@ -171,7 +174,8 @@ class UnetACSWithClassifierOnly(nn.Module):
         x_cls, targets, nr_feat = self._get_data_for_classification(last_down_features=x5, shape1=shape1, shape2=shape2, shape3=shape3)
         # print("NUMBE FEAT:", nr_feat)
         # make spatial dimensions unitary and flatten them into (B,N)
-        x_cls = F.adaptive_avg_pool3d(x_cls, output_size=1).view(x_cls.size(0), -1)
+        # x_cls = F.adaptive_avg_pool3d(x_cls, output_size=1).view(x_cls.size(0), -1)
+        x_cls = x_cls.view(x_cls.size(0), -1)  # (B,170,4,4,2) -> flatten along batch dimensions
         x_cls = self.fc1(x_cls)
         return (x_cls, targets)
 
