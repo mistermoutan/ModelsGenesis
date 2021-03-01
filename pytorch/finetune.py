@@ -628,7 +628,7 @@ class Trainer:
         predicted_labels = prediction.argmax(1)
         # multi class f1-score will be done macro averaging as all classes are equally important #alternatily (emphasize z axis??)
         pr, rec, f1, _ = precision_recall_fscore_support(target, predicted_labels, average="macro")
-        accuracy = float((predicted_labels == target).sum()) / float(target)
+        accuracy = float((predicted_labels == target).sum()) / float(len(target))
         return pr, rec, f1, accuracy
 
     def add_hparams_to_writer(self):
