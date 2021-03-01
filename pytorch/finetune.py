@@ -571,7 +571,7 @@ class Trainer:
 
             if self.config.model.lower() == "unet_acs_cls_only":
                 print(
-                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f} \n Precision:{:.4f} / {:.4f} ; Recall:{:.4f} / {:.4f} ; F1:{:.4f} / {:.4f} ".format(
+                    "Epoch {}, validation loss is {:.4f}, training loss is {:.4f} \n Precision:{:.4f} / {:.4f} ; Recall:{:.4f} / {:.4f} ; F1:{:.4f} / {:.4f}, Accuracy:{:.4f} / {:.4f} ".format(
                         self.epoch_sup_current + 1,
                         avg_validation_loss_of_epoch,
                         avg_training_loss_of_epoch,
@@ -581,6 +581,8 @@ class Trainer:
                         avg_testing_recall_of_epoch,
                         avg_training_f1_of_epoch,
                         avg_testing_f1_of_epoch,
+                        avg_training_accuracy_of_epoch,
+                        avg_testing_accuracy_of_epoch,
                     )
                 )
             else:
