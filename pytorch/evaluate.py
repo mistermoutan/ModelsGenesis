@@ -160,7 +160,11 @@ class Tester:
                 thresholds.append(threshold)
                 pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
-                hausdorff.append(hausdorff_distance(np.array(pred.cpu()), np.array(y.cpu())))
+                h_dist = hausdorff_distance(np.array(pred[0, 0].cpu()), np.array(y[0, 0].cpu()))
+                if np.isinf(h_dist):
+                    raise ValueError
+                else:
+                    hausdorff.append(h_dist)
 
                 if pred.shape[1] == 1:
                     # pred is binary here
@@ -229,7 +233,11 @@ class Tester:
                 thresholds.append(threshold)
 
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
-                hausdorff.append(hausdorff_distance(np.array(pred.cpu()), np.array(y.cpu())))
+                h_dist = hausdorff_distance(np.array(pred[0, 0].cpu()), np.array(y[0, 0].cpu()))
+                if np.isinf(h_dist):
+                    raise ValueError
+                else:
+                    hausdorff.append(h_dist)
 
                 if pred.shape[1] == 1:
                     x_flat = pred[:, 0].contiguous().view(-1)
