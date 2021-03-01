@@ -140,9 +140,9 @@ class UnetACSWithClassifierOnly(nn.Module):
         self.encoder_depth = encoder_depth
 
         self.inc = DoubleConv(n_channels, 64)
-        self.down1 = DownACS(64, 128)
-        self.down2 = DownACS(128, 256)
-        self.down3 = DownACS(256, 512)
+        self.down1 = DownACS(64, 128, return_splits=True)
+        self.down2 = DownACS(128, 256, return_splits=True)
+        self.down3 = DownACS(256, 512, return_splits=True)
         factor = 2 if bilinear else 1
         self.down4 = DownACS(512, 1024 // factor, return_splits=True)
 
