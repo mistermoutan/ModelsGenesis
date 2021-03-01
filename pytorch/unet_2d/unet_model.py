@@ -150,8 +150,7 @@ class UnetACSWithClassifierOnly(nn.Module):
         # self.up2 = Up(512, 256 // factor, bilinear)
         # self.up3 = Up(256, 128 // factor, bilinear)
         # self.up4 = Up(128, 64, bilinear)
-        self.outc = OutConv(64, n_classes) if apply_sigmoid_to_output is False else OutConv(64, n_classes, sigmoid=True)
-        self.fc1 = nn.Linear(170, 3, bias=True)
+        # self.outc = OutConv(64, n_classes) if apply_sigmoid_to_output is False else OutConv(64, n_classes, sigmoid=True)
 
         if self.encoder_depth == 4:
             self.fc1 = nn.Linear(170 * 4 * 4 * 2, 3, bias=True)
