@@ -161,9 +161,7 @@ class Tester:
                 pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
                 h_dist = hausdorff_distance(np.array(pred[0, 0].cpu()), np.array(y[0, 0].cpu()))
-                if np.isinf(h_dist):
-                    raise ValueError
-                else:
+                if not np.isinf(h_dist):
                     hausdorff.append(h_dist)
 
                 if pred.shape[1] == 1:
@@ -191,6 +189,8 @@ class Tester:
         avg_hausdorff = sum(hausdorff) / len(hausdorff)
         avg_dice_soft = sum(dice_logits) / len(dice_logits)
         avg_dice_binary = sum(dice_binary) / len(dice_binary)
+
+        print("HAUSDORFF INF: {} / {}".format(len(hausdorff), len(dice_logits)))
 
         dataset_dict["mini_cubes"]["jaccard_test"] = avg_jaccard
         dataset_dict["mini_cubes"]["hausdorff_test"] = avg_hausdorff
@@ -234,9 +234,7 @@ class Tester:
 
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
                 h_dist = hausdorff_distance(np.array(pred[0, 0].cpu()), np.array(y[0, 0].cpu()))
-                if np.isinf(h_dist):
-                    raise ValueError
-                else:
+                if not np.isinf(h_dist):
                     hausdorff.append(h_dist)
 
                 if pred.shape[1] == 1:
@@ -263,6 +261,8 @@ class Tester:
         avg_hausdorff = sum(hausdorff) / len(hausdorff)
         avg_dice_soft = sum(dice_logits) / len(dice_logits)
         avg_dice_binary = sum(dice_binary) / len(dice_binary)
+
+        print("HAUSDORFF INF: {} / {}".format(len(hausdorff), len(dice_logits)))
 
         dataset_dict["mini_cubes"]["jaccard_train"] = avg_jaccard
         dataset_dict["mini_cubes"]["hausdorff_train"] = avg_hausdorff
