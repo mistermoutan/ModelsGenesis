@@ -284,7 +284,7 @@ class Tester:
             test_minicubes_filenames.extend(self.dataset.x_test_filenames_original)
         test_minicubes_filenames.sort()
         if self.dataset_name == "lidc":
-            assert len(test_minicubes_filenames) == 2
+            assert len(test_minicubes_filenames) in (1, 2)
             return test_minicubes_filenames
         return test_minicubes_filenames[:k]
 
