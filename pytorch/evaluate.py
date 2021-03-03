@@ -282,6 +282,7 @@ class Tester:
         test_minicubes_filenames = self.dataset.x_val_filenames_original
         if self.dataset.x_test_filenames_original != []:
             test_minicubes_filenames.extend(self.dataset.x_test_filenames_original)
+            test_minicubes_filenames = list(set(test_minicubes_filenames))
         test_minicubes_filenames.sort()
         if self.dataset_name == "lidc":
             print("LIDC MINI CUBES FILENAMES: {}".format(test_minicubes_filenames))
