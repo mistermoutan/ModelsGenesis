@@ -1064,9 +1064,15 @@ def test(**kwargs):
                 print("{} not in {}\n Continuing".format(task_name, task_dir))
                 continue
         if not enforce_test_again:
-            if task_dir_already_has_metric_dict_computed(task_dir) is True:
-                print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
-                continue
+            if not full_only:
+                if task_dir_already_has_metric_dict_computed(task_dir) is True:
+                    print("\n\n SKIPPED TESTING WEIGHTS FROM AS IS ALREADY COMPUTED: ", task_dir)
+                    continue
+            # only do full cubes after mini
+            else:
+                if task_dir_already_has_metric_dict_computed(task_dir) is False:
+                    print("\n\n SKIPPED FULL CUBES TESTING WEIGHTS AS MINI IS NOT YET COMPUTED: ", task_dir)
+                    continue
         if "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG" in task_dir:
             if "new_folder" in task_dir:
                 pass
