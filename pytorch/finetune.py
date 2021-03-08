@@ -1214,8 +1214,8 @@ class Trainer:
                     tmp_middle = "bn2"
                 else:
                     raise ValueError
-                    tmp.insert(1, tmp_middle)
-                new_key = ".".join(tmp)
+                    tmp_keep.insert(1, tmp_middle)
+                new_key = ".".join(tmp_keep)
                 print("REPLACING {} by {} in model state dict".format(key, new_key))
                 state_dict_copy[new_key] = state_dict_copy[key]
                 del state_dict_copy[key]
