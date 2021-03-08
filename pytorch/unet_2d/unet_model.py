@@ -168,7 +168,9 @@ class UnetACSWithClassifierOnly(nn.Module):
 
     def forward(self, x):
         if self.freeze_encoder:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             w0 = self.down1.conv1.weight.detach().clone()
+            self.check_against, w0 = self.check_against.to(device), w0.to(device)
             # assert weight is same
             assert torch.all(torch.eq(self.check_against, w0))
 
