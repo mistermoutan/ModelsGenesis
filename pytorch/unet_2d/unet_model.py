@@ -139,6 +139,7 @@ class UnetACSWithClassifierOnly(nn.Module):
         self.bilinear = bilinear
         self.encoder_depth = encoder_depth
         self.freeze_encoder = freeze_encoder
+        self.check_against = None
 
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = DownACS(64, 128, return_splits=True)
@@ -156,7 +157,6 @@ class UnetACSWithClassifierOnly(nn.Module):
                 p.requires_grad = False
             for p in self.down4.parameters():
                 p.requires_grad = False
-            self.check_against = self.down1.conv1.weight.detach().clone()
         # self.up1 = Up(1024, 512 // factor, bilinear)
         # self.up2 = Up(512, 256 // factor, bilinear)
         # self.up3 = Up(256, 128 // factor, bilinear)
@@ -167,7 +167,11 @@ class UnetACSWithClassifierOnly(nn.Module):
             self.fc1 = nn.Linear(170 * 4 * 4 * 2, 3, bias=True)
 
     def forward(self, x):
+
         if self.freeze_encoder:
+            if self.check_against is None:
+                self.check_against = self.down1.conv1.weight.detach().clone()
+
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             w0 = self.down1.conv1.weight.detach().clone()
             self.check_against, w0 = self.check_against.to(device), w0.to(device)
