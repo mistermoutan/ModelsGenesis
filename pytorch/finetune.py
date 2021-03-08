@@ -943,7 +943,7 @@ class Trainer:
             except RuntimeError as e:
                 if "Missing key(s) in state_dict" in str(e):
                     unParalled_state_dict = self._convert_state_dict_between_archs(unParalled_state_dict)
-                    res = self.model.load_state_dict(unParalled_state_dict)
+                    res = self.model.load_state_dict(unParalled_state_dict, strict=False)
             print("LOAD STATE DICT OUTPUT:", res)
         convert_acs = kwargs.get("convert_acs", False)
         if convert_acs is True:
