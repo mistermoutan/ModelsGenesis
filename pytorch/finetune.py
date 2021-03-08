@@ -1198,6 +1198,7 @@ class Trainer:
     @staticmethod
     def _convert_state_dict_between_archs(state_dict):
         # because of module arrangemnt made on ACS for easy return splits
+        state_dict_copy = deepcopy(state_dict)
         for key in state_dict.keys():
             if "down" in key:
                 tmp = key.split(".")
@@ -1216,9 +1217,9 @@ class Trainer:
                     tmp.insert(1, tmp_middle)
                 new_key = ".".join(tmp)
                 print("REPLACING {} by {} in model state dict".format(key, new_key))
-                state_dict[new_key] = state_dict[key]
-                del state_dict[key]
-        return state_dict
+                state_dict_copy[new_key] = state_dict_copy[key]
+                del state_dict_copy[key]
+        return state_dict_copy
 
 
 if __name__ == "__main__":
