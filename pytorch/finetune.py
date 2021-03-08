@@ -439,8 +439,10 @@ class Trainer:
 
                 if x is None:
                     raise RuntimeError
-
-                x, y = x.float().to(self.device), y.float().to(self.device)
+                if y is not None:
+                    x, y = x.float().to(self.device), y.float().to(self.device)
+                else:
+                    x = x.float().to(self.device)
                 if self.config.model.lower() in (
                     "vnet_mg",
                     "unet_3d",
@@ -493,7 +495,10 @@ class Trainer:
                     # x, y = self.dataset.get_val(batch_size=self.config.batch_size_sup)
                     # if x is None:
                     #    break
-                    x, y = x.float().to(self.device), y.float().to(self.device)
+                    if y is not None:
+                        x, y = x.float().to(self.device), y.float().to(self.device)
+                    else:
+                        x = x.float().to(self.device)
                     if self.config.model.lower() in (
                         "vnet_mg",
                         "unet_3d",
@@ -1226,7 +1231,9 @@ class Trainer:
 
 
 if __name__ == "__main__":
-    pass
+    d = dict()
+    d["down4.maxpool_conv.1.double_conv.0.weight"] = "bala"
+    Trainer._convert_state_dict_between_archs(d)
     # from ACSConv.acsconv.converters import ACSConverter
 
     # model = UNet(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
