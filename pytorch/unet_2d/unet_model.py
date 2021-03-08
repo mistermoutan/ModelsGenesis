@@ -131,13 +131,14 @@ class UnetACSWithClassifier(nn.Module):
 class UnetACSWithClassifierOnly(nn.Module):
     "To be used with ACS conversion only"
 
-    def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False, encoder_depth=4):
+    def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False, freeze_encoder=False, encoder_depth=4):
         super(UnetACSWithClassifierOnly, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
         self.encoder_depth = encoder_depth
+        self.freeze_encoder = freeze_encoder
 
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = DownACS(64, 128, return_splits=True)
@@ -146,6 +147,16 @@ class UnetACSWithClassifierOnly(nn.Module):
         factor = 2 if bilinear else 1
         self.down4 = DownACS(512, 1024 // factor, return_splits=True)
 
+        if self.freeze_encoder is True:
+            for p in self.down1.parameters():
+                p.requires_grad = False
+            for p in self.down2.parameters():
+                p.requires_grad = False
+            for p in self.down3.parameters():
+                p.requires_grad = False
+            for p in self.down4.parameters():
+                p.requires_grad = False
+            self.check_against = self.down1.conv1.weight.detach().clone()
         # self.up1 = Up(1024, 512 // factor, bilinear)
         # self.up2 = Up(512, 256 // factor, bilinear)
         # self.up3 = Up(256, 128 // factor, bilinear)
@@ -156,6 +167,11 @@ class UnetACSWithClassifierOnly(nn.Module):
             self.fc1 = nn.Linear(170 * 4 * 4 * 2, 3, bias=True)
 
     def forward(self, x):
+        if self.freeze_encoder:
+            w0 = self.down1.conv1.weight.detach().clone()
+            # assert weight is same
+            assert torch.all(torch.eq(self.check_against, w0))
+
         x1 = self.inc(x)
         x2, shapea_1, shapec_1, shapes_1 = self.down1(x1)
         # print(shapea_1, shapec_1, shapes_1)

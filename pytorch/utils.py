@@ -369,6 +369,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
         "unet_acs_with_cls",
         "unet_acs_axis_aware_decoder",
         "unet_acs_cls_only",
+        "unet_acs_cls_only_frozen_encoder",
     )
     kwargs_dict["model"] = args_object.model
     if args_object.model.lower() == "unet_2d":

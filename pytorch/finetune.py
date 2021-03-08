@@ -422,7 +422,7 @@ class Trainer:
             self.stats.validation_losses_sup = []
             self.model.train()
 
-            if self.config.model.lower() == "unet_acs_cls_only":
+            if "unet_acs_cls_only" in self.config.model.lower():
                 self.stats.training_recall = []
                 self.stats.training_precision = []
                 self.stats.training_f1 = []
@@ -458,7 +458,7 @@ class Trainer:
 
                 pred = self.model(x)
 
-                if self.config.model.lower() == "unet_acs_cls_only":
+                if "unet_acs_cls_only" in self.config.model.lower():
                     x_cls, y = pred
                     x_cls, y = x_cls.to(self.device), y.to(self.device)
                     pred = x_cls
@@ -511,7 +511,7 @@ class Trainer:
 
                     pred = self.model(x)
 
-                    if self.config.model.lower() == "unet_acs_cls_only":
+                    if "unet_acs_cls_only" in self.config.model.lower():
                         x_cls, y = pred  # y is target of cls
                         x_cls, y = x_cls.to(self.device), y.to(self.device)
                         pred = x_cls  # rename pred to not add if statements to loss calculation
@@ -535,7 +535,7 @@ class Trainer:
             else:
                 self.dataset.reset()
 
-            if self.config.model.lower() == "unet_acs_cls_only":
+            if "unet_acs_cls_only" in self.config.model.lower():
 
                 avg_training_precision_of_epoch = np.average(self.stats.training_precision)
                 self.tb_writer.add_scalar("Avg Precision of Epoch (Training)", avg_training_precision_of_epoch, self.epoch_sup_current + 1)
@@ -569,7 +569,7 @@ class Trainer:
             else:
                 self.scheduler_sup.step(self.epoch_sup_current)
 
-            if self.config.model.lower() == "unet_acs_cls_only":
+            if "unet_acs_cls_only" in self.config.model.lower():
                 print(
                     "Epoch {}, validation loss is {:.4f}, training loss is {:.4f} \n Precision:{:.4f} / {:.4f} ; Recall:{:.4f} / {:.4f} ; F1:{:.4f} / {:.4f}, Accuracy:{:.4f} / {:.4f} ".format(
                         self.epoch_sup_current + 1,
@@ -720,6 +720,13 @@ class Trainer:
         elif self.config.model.lower() == "unet_acs_cls_only":
             print("LOADING UNET_ACS_CLS_ONLY")
             self.model = UnetACSWithClassifierOnly(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+            self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
+
+        elif self.config.model.lower() == "unet_acs_cls_only_frozen_encoder":
+            print("LOADING UNET_ACS_CLS_ONLY_FROZEN_ENCODER")
+            self.model = UnetACSWithClassifierOnly(
+                n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True, freeze_encoder=True
+            )
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_acs_axis_aware_decoder":
