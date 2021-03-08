@@ -938,7 +938,12 @@ class Trainer:
             unParalled_state_dict = {}
             for key in state_dict.keys():
                 unParalled_state_dict[key.replace("module.", "")] = state_dict[key]
-            res = self.model.load_state_dict(unParalled_state_dict)
+            try:
+                res = self.model.load_state_dict(unParalled_state_dict)
+            except RuntimeError as e:
+                if "Missing key(s) in state_dict" in str(e):
+                    unParalled_state_dict = self._convert_state_dict_between_archs(unParalled_state_dict)
+                    res = self.model.load_state_dict(unParalled_state_dict)
             print("LOAD STATE DICT OUTPUT:", res)
         convert_acs = kwargs.get("convert_acs", False)
         if convert_acs is True:
@@ -1189,6 +1194,31 @@ class Trainer:
             epoch_b = check_b["epoch_sup"]
 
         return dir_a if epoch_a > epoch_b else dir_b
+
+    @staticmethod
+    def _convert_state_dict_between_archs(state_dict):
+        # because of module arrangemnt made on ACS for easy return splits
+        for key in state_dict.keys():
+            if "down" in key:
+                tmp = key.split(".")
+                tmp_keep = list(tmp[0]) + list(tmp[-1])  # [down1, weight/bias/num_batches ...]
+                tmp_middle = ".".join(tmp[1:-1])
+                if tmp_middle == "maxpool_conv.1.double_conv.0":
+                    tmp_middle = "conv1"
+                elif tmp_middle == "maxpool_conv.1.double_conv.1":
+                    tmp_middle = "bn1"
+                elif tmp_middle == "maxpool_conv.1.double_conv.3":
+                    tmp_middle = "conv2"
+                elif tmp_middle == "maxpool_conv.1.double_conv.4":
+                    tmp_middle = "bn2"
+                else:
+                    raise ValueError
+                    tmp.insert(1, tmp_middle)
+                new_key = ".".join(tmp)
+                print("REPLACING {} by {} in model state dict".format(key, new_key))
+                state_dict[new_key] = state_dict[key]
+                del state_dict[key]
+        return state_dict
 
 
 if __name__ == "__main__":
