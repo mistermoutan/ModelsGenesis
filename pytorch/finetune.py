@@ -1202,7 +1202,9 @@ class Trainer:
         for key in state_dict.keys():
             if "down" in key:
                 tmp = key.split(".")
-                tmp_keep = list(tmp[0]) + list(tmp[-1])  # [down1, weight/bias/num_batches ...]
+                tmp_keep = []
+                tmp_keep.insert(0, tmp[0])
+                tmp_keep.insert(1, tmp[-1])  # [down1, weight/bias/num_batches ...]
                 tmp_middle = ".".join(tmp[1:-1])
                 if tmp_middle == "maxpool_conv.1.double_conv.0":
                     tmp_middle = "conv1"
@@ -1214,7 +1216,8 @@ class Trainer:
                     tmp_middle = "bn2"
                 else:
                     raise ValueError
-                    tmp_keep.insert(1, tmp_middle)
+
+                tmp_keep.insert(1, tmp_middle)
                 new_key = ".".join(tmp_keep)
                 print("REPLACING {} by {} in model state dict".format(key, new_key))
                 state_dict_copy[new_key] = state_dict_copy[key]
