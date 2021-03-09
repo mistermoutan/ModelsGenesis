@@ -389,6 +389,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["enforce_test_again"] = args_object.enforce_test_again
     kwargs_dict["mini_only"] = args_object.mini_only
     kwargs_dict["full_only"] = args_object.full_only
+    kwargs_dict["pool_features"] = args_object.pool_features
     #! update possible keys in replace_config_param_attributes if you add params
     if search_for_params:
         if isinstance(args_object.optimizer_ss, str):

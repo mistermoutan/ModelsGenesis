@@ -630,6 +630,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     mode = kwargs_dict_.get("mode", "")
     convert_acs = kwargs_dict_["convert_to_acs"]
     new_folder = kwargs_dict_["new_folder"]
+    pool_features = kwargs_dict_["pool_features"]
 
     datasets_used_str = get_datasets_used_str(
         dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"], convert_to_acs=convert_acs
@@ -676,7 +677,7 @@ def use_model_weights_and_finetune_on_dataset_without_ss(**kwargs):
     save_object(dataset, "dataset", config.object_dir)
 
     trainer = Trainer(config, dataset)
-    trainer.load_model(from_directory=True, directory=model_weights_dir, convert_acs=convert_acs)
+    trainer.load_model(from_directory=True, directory=model_weights_dir, convert_acs=convert_acs, pool_features=pool_features)
     trainer.finetune_supervised()
     trainer.add_hparams_to_writer()
     trainer.get_stats()
@@ -858,6 +859,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     split = kwargs_dict_.get("split", (0.8, 0.2, 0))
     mode = kwargs_dict_.get("mode", "")
     make_acs_kernel_split_adaptive_to_input_dimensions = kwargs_dict_.get("make_acs_kernel_split_adaptive_to_input_dimensions", None)
+    pool_features = kwargs_dict_["pool_features"]
 
     datasets_used_str = get_datasets_used_str(dataset_list, mode, two_dim_data=kwargs_dict_["two_dimensional_data"])
     if make_acs_kernel_split_adaptive_to_input_dimensions is True:
@@ -910,7 +912,7 @@ def train_from_scratch_on_dataset_no_ss(**kwargs):
     save_object(dataset, "dataset", config.object_dir)
 
     trainer = Trainer(config, dataset)
-    trainer.load_model(from_scratch=True, acs_kernel_split=acs_kernel_split)
+    trainer.load_model(from_scratch=True, acs_kernel_split=acs_kernel_split, pool_features=pool_features)
     trainer.finetune_supervised()
     trainer.add_hparams_to_writer()
     trainer.get_stats()
@@ -1188,6 +1190,7 @@ if __name__ == "__main__":
     parser.add_argument("--enforce_test_again", dest="enforce_test_again", action="store_true", required=False)
     parser.add_argument("--mini_only", dest="mini_only", action="store_true", required=False)
     parser.add_argument("--full_only", dest="full_only", action="store_true", required=False)
+    parser.add_argument("--pool_features", dest="pool_features", action="store_true", required=False)
 
     args = parser.parse_args()
 

@@ -700,7 +700,16 @@ class Trainer:
         from ACSConv.acsconv.converters import ACSConverter
         from ACSConv.experiments.lidc.resnet import FCNResNet
 
+        from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
+        from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
+        from_provided_weights = kwargs.get("from_provided_weights", False)
+        from_scratch = kwargs.get("from_scratch", False)
+        from_directory = kwargs.get("from_directory", False)
+        from_path = kwargs.get("from_path", False)
+        ensure_sup_is_completed = kwargs.get("ensure_sup_is_completed", False)
         acs_kernel_split = kwargs.get("acs_kernel_split", None)
+        pool_features = kwargs.get("pool_features", False)
+
         if "unet_acs" not in self.config.model.lower():
             assert acs_kernel_split is None
 
@@ -724,13 +733,15 @@ class Trainer:
 
         elif self.config.model.lower() == "unet_acs_cls_only":
             print("LOADING UNET_ACS_CLS_ONLY")
-            self.model = UnetACSWithClassifierOnly(n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True)
+            self.model = UnetACSWithClassifierOnly(
+                n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True, pool_features=pool_features
+            )
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         elif self.config.model.lower() == "unet_acs_cls_only_frozen_encoder":
             print("LOADING UNET_ACS_CLS_ONLY_FROZEN_ENCODER")
             self.model = UnetACSWithClassifierOnly(
-                n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True, freeze_encoder=True
+                n_channels=1, n_classes=1, bilinear=True, apply_sigmoid_to_output=True, freeze_encoder=True, pool_features=pool_features
             )
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
@@ -758,14 +769,6 @@ class Trainer:
             self.model = ACSConverter(self.model, acs_kernel_split=acs_kernel_split)
 
         self.model.to(self.device)
-
-        from_latest_checkpoint = kwargs.get("from_latest_checkpoint", False)
-        from_latest_improvement_ss = kwargs.get("from_latest_improvement_ss", False)
-        from_provided_weights = kwargs.get("from_provided_weights", False)
-        from_scratch = kwargs.get("from_scratch", False)
-        from_directory = kwargs.get("from_directory", False)
-        from_path = kwargs.get("from_path", False)
-        ensure_sup_is_completed = kwargs.get("ensure_sup_is_completed", False)
 
         if from_directory is not False:
             specific_weight_dir = kwargs.get("directory", None)

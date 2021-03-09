@@ -131,7 +131,16 @@ class UnetACSWithClassifier(nn.Module):
 class UnetACSWithClassifierOnly(nn.Module):
     "To be used with ACS conversion only"
 
-    def __init__(self, n_channels, n_classes, bilinear=True, apply_sigmoid_to_output=False, freeze_encoder=False, encoder_depth=4):
+    def __init__(
+        self,
+        n_channels,
+        n_classes,
+        bilinear=True,
+        apply_sigmoid_to_output=False,
+        freeze_encoder=False,
+        pool_features=False,
+        encoder_depth=4,
+    ):
         super(UnetACSWithClassifierOnly, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.n_channels = n_channels
@@ -139,7 +148,10 @@ class UnetACSWithClassifierOnly(nn.Module):
         self.bilinear = bilinear
         self.encoder_depth = encoder_depth
         self.freeze_encoder = freeze_encoder
+        self.pool_features = pool_features
         self.check_against = None
+
+        print("ENCODER DEPTH FROM WHICH FEATURES WILL COME: {}".format(encoder_depth))
 
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = DownACS(64, 128, return_splits=True)
@@ -163,11 +175,22 @@ class UnetACSWithClassifierOnly(nn.Module):
         # self.up4 = Up(128, 64, bilinear)
         # self.outc = OutConv(64, n_classes) if apply_sigmoid_to_output is False else OutConv(64, n_classes, sigmoid=True)
 
+        if self.encoder_depth == 1:
+            self.fc1 = nn.Linear(42, 3, bias=True)
+        if self.encoder_depth == 2:
+            self.fc1 = nn.Linear(85, 3, bias=True)
+        if self.encoder_depth == 3:
+            self.fc1 = nn.Linear(170, 3, bias=True)
         if self.encoder_depth == 4:
-            self.fc1 = nn.Linear(170 * 4 * 4 * 2, 3, bias=True)
+            if pool_features:
+                # make 2,2,2 cube, in ACS they reduce to 1 but that seems too reductive
+                self.fc1 = nn.Linear(170 * 2 * 2 * 2, 3, bias=True)
+            else:
+                self.fc1 = nn.Linear(170 * 4 * 4 * 2, 3, bias=True)
 
     def forward(self, x):
 
+        # sanity check that weights dont update
         if self.freeze_encoder:
             if self.check_against is None:
                 self.check_against = self.down1.conv1.weight.detach().clone()
@@ -191,10 +214,12 @@ class UnetACSWithClassifierOnly(nn.Module):
         # do the classificationa as well
         if self.encoder_depth == 4:
             x_cls, targets, _ = self._get_data_for_classification(last_down_features=x5, shape1=shapea_4, shape2=shapec_4, shape3=shapes_4)
+            if self.pool_features:
+                # reduce spatial dimensions and flatten them into (B,N)
+                x_cls = F.adaptive_avg_pool3d(x_cls, output_size=2).view(x_cls.size(0), -1)
+            else:
+                x_cls = x_cls.view(x_cls.size(0), -1)  # (B,170,4,4,2) -> flatten along batch dimensions
 
-        # make spatial dimensions unitary and flatten them into (B,N)
-        # x_cls = F.adaptive_avg_pool3d(x_cls, output_size=1).view(x_cls.size(0), -1)
-        x_cls = x_cls.view(x_cls.size(0), -1)  # (B,170,4,4,2) -> flatten along batch dimensions
         x_cls = self.fc1(x_cls)
         return (x_cls, targets)
 
