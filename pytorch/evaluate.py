@@ -156,9 +156,13 @@ class Tester:
                     y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     dice_logits.append(float(DiceLoss.dice_loss(pred, y_one_hot, return_loss=False, skip_zero_sum=True)))
 
-                threshold = self._set_threshold(pred, y)
-                thresholds.append(threshold)
-                pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
+                if "fcn_resnet18" in self.config.model.lower():
+                    pred = self._make_pred_mask_from_pred(pred, threshold=False)
+                else:
+                    threshold = self._set_threshold(pred, y)
+                    thresholds.append(threshold)
+                    pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
+
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
                 h_dist = hausdorff_distance(np.array(pred[0, 0].cpu()), np.array(y[0, 0].cpu()))
                 if not np.isinf(h_dist):
@@ -228,9 +232,12 @@ class Tester:
                     y_one_hot = categorical_to_one_hot(y, dim=1, expand_dim=False)
                     dice_logits.append(float(DiceLoss.dice_loss(pred, y_one_hot, return_loss=False, skip_zero_sum=True)))
 
-                threshold = self._set_threshold(pred, y)
-                pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
-                thresholds.append(threshold)
+                if "fcn_resnet18" in self.config.model.lower():
+                    pred = self._make_pred_mask_from_pred(pred, threshold=False)
+                else:
+                    threshold = self._set_threshold(pred, y)
+                    thresholds.append(threshold)
+                    pred = self._make_pred_mask_from_pred(pred, threshold=threshold)
 
                 dice_binary.append(float(DiceLoss.dice_loss(pred, y, return_loss=False)))
                 h_dist = hausdorff_distance(np.array(pred[0, 0].cpu()), np.array(y[0, 0].cpu()))
@@ -526,7 +533,7 @@ class Tester:
             tmp_pred[tmp_pred < t] = 0
 
             if optimize_for == "dice":
-                metric = DiceLoss.dice_loss(tmp_pred, target, return_loss=True)  # to conform with less is better of hausdorff
+                metric = DiceLoss.dice_loss(tmp_pred, target, return_loss=True)  # to conform with "less is better" of hausdorff
             elif optimize_for == "hausdorff":
                 metric = hausdorff_distance(tmp_pred, target)
 
