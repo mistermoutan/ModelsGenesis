@@ -152,6 +152,8 @@ class UnetACSWithClassifierOnly(nn.Module):
         self.check_against = None
 
         print("ENCODER DEPTH FROM WHICH FEATURES WILL COME: {}".format(encoder_depth))
+        if self.pool_features is True:
+            print("GOING TO POOL FEATURES")
 
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = DownACS(64, 128, return_splits=True)
