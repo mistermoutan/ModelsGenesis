@@ -411,6 +411,7 @@ class Tester:
                     pred_mask_mini_cube_binary = self._make_pred_mask_from_pred(pred_fcn)
                     pred_mask_mini_cube_binary = torch.squeeze(pred_mask_mini_cube_binary, dim=0)
                     pred_mask_mini_cube_binary = torch.squeeze(pred_mask_mini_cube_binary, dim=0)
+                    pred_mask_mini_cube_binary = pred_mask_mini_cube_binary.cpu()
                     assert len(pred_mask_mini_cube_binary.shape) == 3
 
                 # save nii's
