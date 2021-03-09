@@ -1090,12 +1090,12 @@ def test(**kwargs):
                     already_done = True
                 if already_done is True:
                     continue
-
-        print("\n\n TESTING WEIGHTS FROM: ", task_dir)
         if "run_1_copy" in task_dir:
             continue
         if "UNET_ACS_CLS_ONLY" in task_dir:
             continue
+
+        print("\n\n TESTING WEIGHTS FROM: ", task_dir)
 
         config_object = get_config_object_of_task_dir(task_dir)
         if config_object is None:
