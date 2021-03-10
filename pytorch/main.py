@@ -1096,9 +1096,6 @@ def test(**kwargs):
             continue
         if "UNET_ACS_CLS_ONLY" in task_dir:
             continue
-
-        print("\n\n TESTING WEIGHTS FROM: ", task_dir)
-
         config_object = get_config_object_of_task_dir(task_dir)
         if config_object is None:
             config_object = models_genesis_config(add_model_to_task=False)
@@ -1110,6 +1107,16 @@ def test(**kwargs):
             print("SKIPPING, supervised is False in config: \n", task_dir)
             # not testing modules which have not been tuned for segmentation
             continue
+
+        print("\n\n TESTING WEIGHTS FROM: ", task_dir)
+
+        if ("FROM_PROVIDED_WEIGHTS_SUP_ONLY_lidc_VNET_MG" in config_object.model_path_save) or (
+            "FROM_PROVIDED_WEIGHTS_SS_AND_SUP_lidc_VNET_MG" in config_object.model_path_save
+        ):
+            specific_weight_path_split = config_object.model_path_save.split("/")
+            specific_weight_path_split[1] = "FROM_PROVIDED_WEIGHTS_lidc_VNET_MG"
+            specific_weight_path = "/".join(specific_weight_path_split)
+            config_object.model_path_save = specific_weight_path
 
         checkpoint = torch.load(
             os.path.join(config_object.model_path_save, "weights_sup.pt"),
