@@ -11,3 +11,4 @@ matplotlib
 dill
 pandas
 torchio
+umap-learn
