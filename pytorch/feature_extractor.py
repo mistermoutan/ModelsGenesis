@@ -74,6 +74,7 @@ class FeatureExtractor:
         global feature_maps
 
         # TESTING GET
+        self._load_model()
         with torch.no_grad():
             self.model.eval()
             self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
