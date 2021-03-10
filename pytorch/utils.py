@@ -384,6 +384,7 @@ def build_kwargs_dict(args_object, search_for_params=True, **kwargs):
     kwargs_dict["new_folder"] = args_object.new_folder
     kwargs_dict["use_supervision_transforms"] = args_object.use_supervision_transforms
     kwargs_dict["task_name"] = args_object.task_name
+    kwargs_dict["task_name_exact"] = args_object.task_name_exact
     kwargs_dict["make_acs_kernel_split_adaptive_to_input_dimensions"] = args_object.make_acs_kernel_split_adaptive_to_input_dimensions
     kwargs_dict["data_limit_2d"] = args_object.data_limit_2d
     kwargs_dict["enforce_test_again"] = args_object.enforce_test_again

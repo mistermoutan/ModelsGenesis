@@ -1153,13 +1153,18 @@ def test(**kwargs):
     def extract_features(**kwargs):
         kwargs_dict_ = kwargs["kwargs_dict"]
         task_name = kwargs_dict_["task_name"]
+        task_name_exact = kwargs_dict_["task_name_exact"]
         task_dirs = get_task_dirs()
         # print("TASK DIRS ", task_dirs)
         for task_dir in task_dirs:
+            if task_name_exact is not None:
+                if task_name_exact != task_dir:
+                    continue
             if task_name is not None:
                 if task_name not in task_dir:
                     print("{} not in {}\n Continuing".format(task_name, task_dir))
                     continue
+
             if "run_1_copy" in task_dir:
                 continue
 
@@ -1207,6 +1212,7 @@ if __name__ == "__main__":
     parser.add_argument("--loss_function_sup", required=False, dest="loss_function_sup", type=str)
     parser.add_argument("--model", required=False, default="VNET_MG", dest="model", type=str)
     parser.add_argument("--task_name", required=False, dest="task_name", type=str, default=None)
+    parser.add_argument("--task_name_exact", required=False, dest="task_name_exact", type=str, default=None)
     parser.add_argument("--num_cv_folds", dest="num_cv_folds", type=int, required=False, default=None)
     parser.add_argument("--two_dimensional_data", dest="two_dimensional_data", action="store_true", required=False)
     parser.add_argument("--convert_to_acs", dest="convert_to_acs", action="store_true", required=False)
