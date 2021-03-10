@@ -709,6 +709,7 @@ class Trainer:
         ensure_sup_is_completed = kwargs.get("ensure_sup_is_completed", False)
         acs_kernel_split = kwargs.get("acs_kernel_split", None)
         pool_features = kwargs.get("pool_features", False)
+        data_paralell = kwargs.get("data_paralell", True)
 
         if "unet_acs" not in self.config.model.lower():
             assert acs_kernel_split is None
@@ -968,7 +969,8 @@ class Trainer:
 
         nr_devices = len([i for i in range(torch.cuda.device_count())])
         print("FOUND {} CUDA DEVICES".format(nr_devices))
-        self.model = nn.DataParallel(self.model, device_ids=[i for i in range(torch.cuda.device_count())])
+        if data_paralell:
+            self.model = nn.DataParallel(self.model, device_ids=[i for i in range(torch.cuda.device_count())])
 
     def _add_completed_flag_to_last_checkpoint_saved(self, phase: str):
 

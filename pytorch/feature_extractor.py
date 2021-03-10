@@ -346,12 +346,11 @@ class FeatureExtractor:
                     path=os.path.join(self.config.model_path_save, "weights_sup.pt"),
                     phase="sup",
                     ensure_sup_is_completed=True,
+                    data_paralell=False,
                 )
             elif "weights_ss.pt" in weight_files:
                 trainer.load_model(
-                    from_path=True,
-                    path=os.path.join(self.config.model_path_save, "weights_ss.pt"),
-                    phase="ss",
+                    from_path=True, path=os.path.join(self.config.model_path_save, "weights_ss.pt"), phase="ss", data_paralell=False
                 )
             else:
                 raise ValueError
