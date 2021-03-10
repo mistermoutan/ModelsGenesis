@@ -163,6 +163,8 @@ class UnetACSWithClassifierOnly(nn.Module):
         self.down4 = DownACS(512, 1024 // factor, return_splits=True)
 
         if self.freeze_encoder is True:
+            for p in self.inc.parameters():
+                p.requires_grad = False
             for p in self.down1.parameters():
                 p.requires_grad = False
             for p in self.down2.parameters():
