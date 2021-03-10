@@ -196,14 +196,34 @@ class UnetACSWithClassifierOnly(nn.Module):
 
         # sanity check that weights dont update
         if self.freeze_encoder:
+
             if self.check_against is None:
-                self.check_against = self.down1.conv1.weight.detach().clone()
+                self.check_against_inc = self.inc.double_conv[3].weight.detach().clone()
+                self.check_against_1 = self.down1.conv1.weight.detach().clone()
+                self.check_against_2 = self.down2.conv2.weight.detach().clone()
+                self.check_against_3 = self.down3.conv1.weight.detach().clone()
+                self.check_against_4 = self.down4.conv2.weight.detach().clone()
+                self.check_against = True
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            w0 = self.down1.conv1.weight.detach().clone()
-            self.check_against, w0 = self.check_against.to(device), w0.to(device)
+
+            w0 = self.inc.double_conv[3].weight.detach().clone()
+            w1 = self.down1.conv1.weight.detach().clone()
+            w2 = self.down2.conv2.weight.detach().clone()
+            w3 = self.down3.conv1.weight.detach().clone()
+            w4 = self.down4.conv2.weight.detach().clone()
+
+            self.check_against_inc, w0 = self.check_against_inc.to(device), w0.to(device)
+            self.check_against_1, w1 = self.check_against_1.to(device), w1.to(device)
+            self.check_against_2, w2 = self.check_against_2.to(device), w2.to(device)
+            self.check_against_3, w3 = self.check_against_3.to(device), w3.to(device)
+            self.check_against_4, w4 = self.check_against_4.to(device), w4.to(device)
             # assert weight is same
-            assert torch.all(torch.eq(self.check_against, w0))
+            assert torch.all(torch.eq(self.check_against_inc, w0))
+            assert torch.all(torch.eq(self.check_against_1, w1))
+            assert torch.all(torch.eq(self.check_against_2, w2))
+            assert torch.all(torch.eq(self.check_against_3, w3))
+            assert torch.all(torch.eq(self.check_against_4, w4))
 
         x1 = self.inc(x)
         x2, shapea_1, shapec_1, shapes_1 = self.down1(x1)
