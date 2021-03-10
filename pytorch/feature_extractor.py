@@ -18,6 +18,8 @@ from full_cube_segmentation import FullCubeSegmentator
 
 from unet_2d.unet_parts import AxisAwareUpBlock
 
+feature_maps = {}
+
 
 class FeatureExtractor:
     def __init__(self, config, dataset, test_all: bool = False):
@@ -69,7 +71,6 @@ class FeatureExtractor:
             assert previous_val_filenames != dataset.x_val_filenames_original
 
         # Hook to save feature maps https://discuss.pytorch.org/t/visualize-feature-map/29597
-        feature_maps = {}
         global feature_maps
 
         # TESTING GET
