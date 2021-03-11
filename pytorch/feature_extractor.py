@@ -86,7 +86,7 @@ class FeatureExtractor:
             self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
             self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
             self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
-            self.model.up1.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='outconv')) In out conv acs_split = (1,0,0) cause 1 channel
+            # self.model.up1.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='outconv')) In out conv acs_split = (1,0,0) cause 1 channel
 
             while True:
                 x, _ = dataset.get_val(batch_size=1, return_tensor=True)
