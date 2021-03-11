@@ -217,28 +217,30 @@ class FeatureExtractor:
             plt.close(fig=fig)
 
     def _get_feature_map_training(self):
-        if os.path.isfile(os.path.join(self.feature_dir, "features_train_8.pt")):
+        if len(os.listdir(self.feature_dir)) > 0:
             all_features = {}
             for i in range(9):
-                features_specific_layer = torch.load(
-                    os.path.join(self.feature_dir, "features_train_{}.pt", format(i)), map_location=self.device
-                )
-                for k, v in features_specific_layer.items():
-                    all_features[k] = v
+                if os.path.isfile(os.path.join(self.feature_dir, "features_train_{}.pt".format(i))):
+                    features_specific_layer = torch.load(
+                        os.path.join(self.feature_dir, "features_train_{}.pt".format(i)), map_location=self.device
+                    )
+                    for k, v in features_specific_layer.items():
+                        all_features[k] = v
             return all_features
         else:
             self._save_features_dataset(self.dataset)
             return self._get_feature_map_training()
 
     def _get_feature_map_testing(self):
-        if os.path.isfile(os.path.join(self.feature_dir, "features_test_8.pt")):
+        if len(os.listdir(self.feature_dir)) > 0:
             all_features = {}
             for i in range(9):
-                features_specific_layer = torch.load(
-                    os.path.join(self.feature_dir, "features_test_{}.pt", format(i)), map_location=self.device
-                )
-                for k, v in features_specific_layer.items():
-                    all_features[k] = v
+                if os.path.isfile(os.path.join(self.feature_dir, "features_test_{}.pt".format(i))):
+                    features_specific_layer = torch.load(
+                        os.path.join(self.feature_dir, "features_test_{}.pt".format(i)), map_location=self.device
+                    )
+                    for k, v in features_specific_layer.items():
+                        all_features[k] = v
             return all_features
         else:
             self._save_features_dataset(self.dataset)
