@@ -1097,7 +1097,7 @@ def test(**kwargs):
             continue
         if "UNET_ACS_CLS_ONLY" in task_dir:
             continue
-        if "cellari_heart_sup_2D_UNET_2D" in task_dir:
+        if "cellari_heart_sup_2D_UNET_2D" in task_dir or "cellari_heart_sup_10_192_2D_UNET_2D" in task_dir:
             continue
         config_object = get_config_object_of_task_dir(task_dir)
         if config_object is None:
