@@ -77,19 +77,19 @@ class FeatureExtractor:
         self._load_model()
         with torch.no_grad():
             self.model.eval()
-            # self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
-            # self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
-            # self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
-            # self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
+            self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
+            self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
+            self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
+            self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
             self.model.down4.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down4"))
-            # self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
-            # self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
-            # self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
-            # self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
-            # self.model.up1.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='outconv')) In out conv acs_split = (1,0,0) cause 1 channel
+            self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
+            self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
+            self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
+            self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
+            self.model.up1.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='outconv')) In out conv acs_split = (1,0,0) cause 1 channel
 
             while True:
-                x, y = dataset.get_val(batch_size=1, return_tensor=True)
+                x, _ = dataset.get_val(batch_size=1, return_tensor=True)
                 if x is None:
                     break
                 x = x.float().to(self.device)
@@ -109,24 +109,15 @@ class FeatureExtractor:
 
         torch.save(feature_maps, os.path.join(self.feature_dir, "features_test.pt"))
         feature_maps.clear()
+
         # TRAINING SET
         with torch.no_grad():
             self.model.eval()
-            # self.model.inc.register_forward_hook(self.get_activation(shapes=(22,21,21), layer_name='inc'))
-            # self.model.down1.register_forward_hook(self.get_activation(shapes=(43,43,42), layer_name='down1'))
-            # self.model.down2.register_forward_hook(self.get_activation(shapes=(86,85,85), layer_name='down2'))
-            # self.model.down3.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='down3'))
-            # self.model.down4.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='down4'))
-            # self.model.up1.register_forward_hook(self.get_activation(shapes=(86,85,85), layer_name='up1'))
-            # self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name='up2'))
-            # self.model.up3.register_forward_hook(self.get_activation(shapes=(22,21,21), layer_name='up3'))
-            # self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name='up4'))
-
             while True:
-                x, y = dataset.get_train(batch_size=1, return_tensor=True)
+                x, _ = dataset.get_train(batch_size=1, return_tensor=True)
                 if x is None:
                     break
-                x, y = x.float().to(self.device), y.float().to(self.device)
+                x = x.float().to(self.device)
 
                 if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
                     x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
