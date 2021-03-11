@@ -174,10 +174,10 @@ class FeatureExtractor:
                     labels.extend(["a" for _ in range(features_a.shape[0])])
                 if "_c" in key:
                     features_c = features[key]
-                    labels.extend(["a" for _ in range(features_c.shape[1])])
+                    labels.extend(["c" for _ in range(features_c.shape[0])])
                 if "_s" in key:
                     features_s = features[key]
-                    labels.extend(["a" for _ in range(features_s.shape[2])])
+                    labels.extend(["s" for _ in range(features_s.shape[0])])
 
             all_features = torch.cat([features_a, features_c, features_s], dim=0)
             all_features = all_features.cpu().numpy()
