@@ -78,6 +78,7 @@ class FeatureExtractor:
 
         # TESTING GET
         for i in range(9):
+            print(i)
             if len(handles) > 0:
                 for handle in handles:
                     handle.remove()
