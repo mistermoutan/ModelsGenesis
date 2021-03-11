@@ -72,66 +72,74 @@ class FeatureExtractor:
 
         # Hook to save feature maps https://discuss.pytorch.org/t/visualize-feature-map/29597
         global feature_maps
-
+        handles = []
         # TESTING GET
-        self._load_model()
-        with torch.no_grad():
-            self.model.eval()
-            self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
-            self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
-            self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
-            self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
-            self.model.down4.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down4"))
-            self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
-            self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
-            self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
-            self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
-            # self.model.up1.register_forward_hook(self.get_activation(shapes=(171,171,170), layer_name='outconv')) In out conv acs_split = (1,0,0) cause 1 channel
+        for block in ("encoder", "decoder"):
+            if len(handles) > 0:
+                for handle in handles:
+                    handle.remove()
+            handles.clear()
+            self._load_model()
+            with torch.no_grad():
+                self.model.eval()
+                if block == "encoder":
+                    h0 = self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
+                    h1 = self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
+                    h2 = self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
+                    h3 = self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
+                    h4 = self.model.down4.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down4"))
+                    handles.extend([h0, h1, h2, h3, h4])
+                if block == "decoder":
+                    h0 = self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
+                    h1 = self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
+                    h2 = self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
+                    h3 = self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
+                    handles.extend([h0, h1, h2, h3, h4])
+                while True:
+                    x, _ = dataset.get_val(batch_size=1, return_tensor=True)
+                    if x is None:
+                        break
+                    x = x.float().to(self.device)
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
+                        x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
+                        pred = self.model(x)
+                        pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                    elif "fcn_resnet18" in self.config.model.lower():
+                        x = torch.cat((x, x, x), dim=1)
+                        if 86 in x.shape:
+                            continue
+                        pred = self.model(x)
+                    else:
+                        pred = self.model(x)
 
-            while True:
-                x, _ = dataset.get_val(batch_size=1, return_tensor=True)
-                if x is None:
-                    break
-                x = x.float().to(self.device)
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
-                    x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
-                    pred = self.model(x)
-                    pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
-                elif "fcn_resnet18" in self.config.model.lower():
-                    x = torch.cat((x, x, x), dim=1)
-                    if 86 in x.shape:
-                        continue
-                    pred = self.model(x)
-                else:
-                    pred = self.model(x)
+                dataset.reset()
+            print("SAVING FEATS FOR TEST {}".format(block))
+            torch.save(feature_maps, os.path.join(self.feature_dir, "features_test_{}.pt".format(block)))
+            feature_maps.clear()
 
-            dataset.reset()
+            # TRAINING SET
+            with torch.no_grad():
+                self.model.eval()
+                while True:
+                    x, _ = dataset.get_train(batch_size=1, return_tensor=True)
+                    if x is None:
+                        break
+                    x = x.float().to(self.device)
 
-        torch.save(feature_maps, os.path.join(self.feature_dir, "features_test.pt"))
-        feature_maps.clear()
-
-        # TRAINING SET
-        with torch.no_grad():
-            self.model.eval()
-            while True:
-                x, _ = dataset.get_train(batch_size=1, return_tensor=True)
-                if x is None:
-                    break
-                x = x.float().to(self.device)
-
-                if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
-                    x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
-                    pred = self.model(x)
-                    pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
-                elif "fcn_resnet18" in self.config.model.lower():
-                    x = torch.cat((x, x, x), dim=1)
-                    if 86 in x.shape:
-                        continue
-                    pred = self.model(x)
-                else:
-                    pred = self.model(x)
-            dataset.reset()
-        torch.save(feature_maps, os.path.join(self.feature_dir, "features_train.pt"))
+                    if self.config.model.lower() in ("vnet_mg", "unet_3d", "unet_acs", "unet_acs_axis_aware_decoder", "unet_acs_with_cls"):
+                        x, pad_tuple = pad_if_necessary_one_array(x, return_pad_tuple=True)
+                        pred = self.model(x)
+                        pred = FullCubeSegmentator._unpad_3d_array(pred, pad_tuple)
+                    elif "fcn_resnet18" in self.config.model.lower():
+                        x = torch.cat((x, x, x), dim=1)
+                        if 86 in x.shape:
+                            continue
+                        pred = self.model(x)
+                    else:
+                        pred = self.model(x)
+                dataset.reset()
+            print("SAVING FEATS FOR TRAIn {}".format(block))
+            torch.save(feature_maps, os.path.join(self.feature_dir, "features_train.pt"))
 
     # also save acs slices of input? of 1 specific and only the features of that
 
