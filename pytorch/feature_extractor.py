@@ -73,28 +73,38 @@ class FeatureExtractor:
         # Hook to save feature maps https://discuss.pytorch.org/t/visualize-feature-map/29597
         global feature_maps
         handles = []
+        self._load_model()
+        self.model.eval()
+
         # TESTING GET
-        for block in ("encoder", "decoder"):
+        for i in range(9):
             if len(handles) > 0:
                 for handle in handles:
                     handle.remove()
             handles.clear()
-            self._load_model()
             with torch.no_grad():
-                self.model.eval()
-                if block == "encoder":
-                    h0 = self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
-                    h1 = self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
-                    h2 = self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
-                    h3 = self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
-                    h4 = self.model.down4.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down4"))
-                    handles.extend([h0, h1, h2, h3, h4])
-                if block == "decoder":
-                    h0 = self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
-                    h1 = self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
-                    h2 = self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
-                    h3 = self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
-                    handles.extend([h0, h1, h2, h3, h4])
+
+                if i == 0:
+                    h = self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
+                if i == 1:
+                    h = self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
+                if i == 2:
+                    h = self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
+                if i == 3:
+                    h = self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
+                if i == 4:
+                    h = self.model.down4.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down4"))
+                if i == 5:
+                    h = self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
+                if i == 6:
+                    h = self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
+                if i == 7:
+                    h = self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
+                if i == 8:
+                    h = self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
+
+                handles.append(h)
+
                 while True:
                     x, _ = dataset.get_val(batch_size=1, return_tensor=True)
                     if x is None:
@@ -113,8 +123,8 @@ class FeatureExtractor:
                         pred = self.model(x)
 
                 dataset.reset()
-            print("SAVING FEATS FOR TEST {}".format(block))
-            torch.save(feature_maps, os.path.join(self.feature_dir, "features_test_{}.pt".format(block)))
+            print("SAVING FEATS FOR TEST {}".format(i))
+            torch.save(feature_maps, os.path.join(self.feature_dir, "features_test_{}.pt".format(i)))
             feature_maps.clear()
 
             # TRAINING SET
@@ -138,8 +148,8 @@ class FeatureExtractor:
                     else:
                         pred = self.model(x)
                 dataset.reset()
-            print("SAVING FEATS FOR TRAIn {}".format(block))
-            torch.save(feature_maps, os.path.join(self.feature_dir, "features_train.pt"))
+            print("SAVING FEATS FOR TRAIn {}".format(i))
+            torch.save(feature_maps, os.path.join(self.feature_dir, "features_train_{}.pt".format(i)))
 
     # also save acs slices of input? of 1 specific and only the features of that
 
@@ -200,15 +210,29 @@ class FeatureExtractor:
             plt.close(fig=fig)
 
     def _get_feature_map_training(self):
-        if os.path.isfile(os.path.join(self.feature_dir, "features_train.pt")):
-            return torch.load(os.path.join(self.feature_dir, "features_train.pt"), map_location=self.device)
+        if os.path.isfile(os.path.join(self.feature_dir, "features_train_8.pt")):
+            all_features = {}
+            for i in range(9):
+                features_specific_layer = torch.load(
+                    os.path.join(self.feature_dir, "features_train_{}.pt", format(i)), map_location=self.device
+                )
+                for k, v in features_specific_layer.items():
+                    all_features[k] = v
+            return all_features
         else:
             self._save_features_dataset(self.dataset)
             return self._get_feature_map_training()
 
     def _get_feature_map_testing(self):
-        if os.path.isfile(os.path.join(self.feature_dir, "features_test.pt")):
-            return torch.load(os.path.join(self.feature_dir, "features_test.pt"), map_location=self.device)
+        if os.path.isfile(os.path.join(self.feature_dir, "features_test_8.pt")):
+            all_features = {}
+            for i in range(9):
+                features_specific_layer = torch.load(
+                    os.path.join(self.feature_dir, "features_test_{}.pt", format(i)), map_location=self.device
+                )
+                for k, v in features_specific_layer.items():
+                    all_features[k] = v
+            return all_features
         else:
             self._save_features_dataset(self.dataset)
             return self._get_feature_map_testing()
@@ -355,6 +379,7 @@ class FeatureExtractor:
                 raise ValueError
 
             self.model = trainer.model
+            self.model.eval()
 
     @staticmethod
     def get_activation(shapes: tuple, layer_name: str):
