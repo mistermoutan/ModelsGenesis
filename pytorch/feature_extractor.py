@@ -395,10 +395,10 @@ class FeatureExtractor:
         # BUILD DICT, shape will be (N, Activatios/Feature Maps (1...N), spatial dims)
         def hook(model, input, output):
             if isinstance(output, tuple):
-                o = output.detach()[0].cpu()
+                o = output.detach()[0]
                 assert isinstance(o, torch.Tensor)
             elif isinstance(output, torch.Tensor):
-                o = output.detach().cpu()
+                o = output.detach()
             else:
                 raise ValueError
 
