@@ -86,10 +86,13 @@ class FeatureExtractor:
             with torch.no_grad():
 
                 if i == 0:
+                    continue
                     h = self.model.inc.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="inc"))
                 if i == 1:
                     h = self.model.down1.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="down1"))
+                    continue
                 if i == 2:
+                    continue
                     h = self.model.down2.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="down2"))
                 if i == 3:
                     h = self.model.down3.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down3"))
@@ -98,10 +101,13 @@ class FeatureExtractor:
                 if i == 5:
                     h = self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
                 if i == 6:
+                    continue
                     h = self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
                 if i == 7:
+                    continue
                     h = self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
                 if i == 8:
+                    continue
                     h = self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
 
                 handles.append(h)
