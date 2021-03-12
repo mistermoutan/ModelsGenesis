@@ -1180,6 +1180,34 @@ def extract_features(**kwargs):
         feature_extractor.extract_features(layer)
 
 
+def plot_features(**kwargs):
+    kwargs_dict_ = kwargs["kwargs_dict"]
+    task_name = kwargs_dict_["task_name"]
+    task_name_exact = kwargs_dict_["task_name_exact"]
+    task_dirs = get_task_dirs()
+    # print("TASK DIRS ", task_dirs)
+    for task_dir in task_dirs:
+        if task_name_exact is not None:
+            if task_name_exact != task_dir:
+                continue
+        if task_name is not None:
+            if task_name not in task_dir:
+                print("{} not in {}\n Continuing".format(task_name, task_dir))
+                continue
+
+        if "run_1_copy" in task_dir:
+            continue
+
+        config_object = get_config_object_of_task_dir(task_dir)
+        if config_object is None:
+            raise ValueError
+
+        print("\n\n EXTRACTING FEATURES FROM: ", task_dir)
+        dataset_object = get_dataset_object_of_task_dir(task_dir)
+        feature_extractor = FeatureExtractor(config_object, dataset_object)
+        feature_extractor.plot_feature_maps_on_low_dimensional_space()
+
+
 if __name__ == "__main__":
 
     import argparse
@@ -1383,5 +1411,9 @@ if __name__ == "__main__":
     elif args.command == "extract_features":
         kwargs_dict = build_kwargs_dict(args, search_for_params=False)
         extract_features(kwargs_dict=kwargs_dict)
+
+    elif args.command == "plot_features":
+        kwargs_dict = build_kwargs_dict(args, search_for_params=False)
+        plot_features(kwargs_dict=kwargs_dict)
     else:
         raise ValueError("Input a valid command")
