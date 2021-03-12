@@ -1155,6 +1155,7 @@ def extract_features(**kwargs):
     kwargs_dict_ = kwargs["kwargs_dict"]
     task_name = kwargs_dict_["task_name"]
     task_name_exact = kwargs_dict_["task_name_exact"]
+    layer = kwargs_dict_["layer"]
     task_dirs = get_task_dirs()
     # print("TASK DIRS ", task_dirs)
     for task_dir in task_dirs:
@@ -1176,7 +1177,7 @@ def extract_features(**kwargs):
         print("\n\n EXTRACTING FEATURES FROM: ", task_dir)
         dataset_object = get_dataset_object_of_task_dir(task_dir)
         feature_extractor = FeatureExtractor(config_object, dataset_object)
-        feature_extractor.plot_feature_maps_on_low_dimensional_space()
+        feature_extractor.extract_features(layer)
 
 
 if __name__ == "__main__":
@@ -1230,6 +1231,7 @@ if __name__ == "__main__":
     parser.add_argument("--mini_only", dest="mini_only", action="store_true", required=False)
     parser.add_argument("--full_only", dest="full_only", action="store_true", required=False)
     parser.add_argument("--pool_features", dest="pool_features", action="store_true", required=False)
+    parser.add_argument("--layer", dest="layer", required=False, type=int, default=None)
 
     args = parser.parse_args()
 

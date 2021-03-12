@@ -50,11 +50,18 @@ class FeatureExtractor:
         feature_map_testing = self._get_feature_map_testing()
         self._plot_feature_maps_on_low_dimensional_space_phase(feature_map_testing, "test")
 
+    def extract_features(self, layer=None):
+        if layer is not None:
+            print("DOING LAYER {}".format(layer))
+        else:
+            print("DOING ALL LAYERS")
+        self._save_features_dataset(self.dataset, layer)
+
     def plots_kernel_partitions_acs(self):
         pass
         # self.save_plots_kernel_partitions_acs()
 
-    def _save_features_dataset(self, dataset):
+    def _save_features_dataset(self, dataset, layer=None):
 
         # to see: does each partition have different activations
 
@@ -78,7 +85,9 @@ class FeatureExtractor:
 
         # TESTING GET
         for i in range(9):
-            print(i)
+            if layer is not None:
+                if i != layer:
+                    continue
             if len(handles) > 0:
                 for handle in handles:
                     handle.remove()
@@ -112,6 +121,7 @@ class FeatureExtractor:
 
                 handles.append(h)
 
+                print("{} samples testing".format(dataset.get_len_val()))
                 while True:
                     x, _ = dataset.get_val(batch_size=1, return_tensor=True)
                     if x is None:
@@ -137,6 +147,7 @@ class FeatureExtractor:
             # TRAINING SET
             with torch.no_grad():
                 self.model.eval()
+                print("{} samples train".format(dataset.get_len_train()))
                 while True:
                     x, _ = dataset.get_train(batch_size=1, return_tensor=True)
                     if x is None:
