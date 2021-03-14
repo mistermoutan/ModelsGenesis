@@ -232,7 +232,7 @@ class FeatureExtractor:
                 ax.scatter(u[:, 0], u[:, 1], u[:, 2], c=labels, s=100, cmap="Spectral")
 
             plt.gca().set_aspect("equal", "datalim")
-            plt.colorbar(boundaries=np.arange(4) - 0.5).set_ticks(np.arange(3))
+            # plt.colorbar(boundaries=np.arange(4) - 0.5).set_ticks(np.arange(3))
             fig.savefig(
                 os.path.join(self.feature_plots_dir, "{}/".format(layer_name), "umap_{}d_projection_{}.jpg".format(n_components, phase)),
                 bbox_inches="tight",
