@@ -185,6 +185,8 @@ class FeatureExtractor:
                     features_s = features[key]
                     labels.extend(["s" for _ in range(features_s.shape[0])])
 
+            if labels == []:
+                continue
             # make same number of feature maps per a,c,s
             allowed_number_features = min(features_a.shape[1], features_c.shape[1], features_s.shape[1])
 
@@ -201,10 +203,9 @@ class FeatureExtractor:
             features_c = features_c.view(features_c.size(0), -1)  # flatten into (N, dims)
             features_s = features_s.view(features_s.size(0), -1)  # flatten into (N, dims)
 
-            if len(labels) > 0:
-                all_features = torch.cat([features_a, features_c, features_s], dim=0)
-                all_features = all_features.cpu().numpy()
-                self.draw_umap(all_features, labels, layer, phase=phase)
+            all_features = torch.cat([features_a, features_c, features_s], dim=0)
+            all_features = all_features.cpu().numpy()
+            self.draw_umap(all_features, labels, layer, phase=phase)
 
     def draw_umap(self, data, labels, layer_name: str, phase: str, n_neighbors=15, min_dist=0.1, metric="euclidean"):
 
