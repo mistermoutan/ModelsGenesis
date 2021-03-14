@@ -185,21 +185,21 @@ class FeatureExtractor:
                     features_s = features[key]
                     labels.extend(["s" for _ in range(features_s.shape[0])])
 
-                # make same number of feature maps per a,c,s
-                allowed_number_features = min(features_a.shape[1], features_c.shape[1], features_s.shape[1])
+            # make same number of feature maps per a,c,s
+            allowed_number_features = min(features_a.shape[1], features_c.shape[1], features_s.shape[1])
 
-                if features_a.shape[1] != allowed_number_features:
-                    features_a = torch.narrow(features_a, 1, 1, features_a.shape[1] - 1)
+            if features_a.shape[1] != allowed_number_features:
+                features_a = torch.narrow(features_a, 1, 1, features_a.shape[1] - 1)
 
-                if features_c.shape[1] != allowed_number_features:
-                    features_c = torch.narrow(features_c, 1, 1, features_c.shape[1] - 1)
+            if features_c.shape[1] != allowed_number_features:
+                features_c = torch.narrow(features_c, 1, 1, features_c.shape[1] - 1)
 
-                if features_s.shape[1] != allowed_number_features:
-                    features_s = torch.narrow(features_s, 1, 1, features_s.shape[1] - 1)
+            if features_s.shape[1] != allowed_number_features:
+                features_s = torch.narrow(features_s, 1, 1, features_s.shape[1] - 1)
 
-                features_a = features_a.view(value.size(0), -1)  # flatten into (N, dims)
-                features_c = features_c.view(value.size(0), -1)  # flatten into (N, dims)
-                features_s = features_s.view(value.size(0), -1)  # flatten into (N, dims)
+            features_a = features_a.view(features_a.size(0), -1)  # flatten into (N, dims)
+            features_c = features_c.view(features_c.size(0), -1)  # flatten into (N, dims)
+            features_s = features_s.view(features_s.size(0), -1)  # flatten into (N, dims)
 
             if len(labels) > 0:
                 all_features = torch.cat([features_a, features_c, features_s], dim=0)
