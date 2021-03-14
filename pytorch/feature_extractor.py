@@ -167,6 +167,8 @@ class FeatureExtractor:
 
     def _plot_feature_maps_on_low_dimensional_space_phase(self, features, phase):
 
+        print("PLOTTING FEETURES OF {} for phase {}".format(features.keys(), phase))
+
         layers = ("inc", "down1", "down2", "down3", "down4", "up1", "up2", "up3", "up4")
         for layer in layers:
             labels = []
@@ -183,10 +185,10 @@ class FeatureExtractor:
                 if "_s" in key:
                     features_s = features[key]
                     labels.extend(["s" for _ in range(features_s.shape[0])])
-
-            all_features = torch.cat([features_a, features_c, features_s], dim=0)
-            all_features = all_features.cpu().numpy()
-            self.draw_umap(all_features, labels, layer, phase=phase)
+            if len(labels) > 0:
+                all_features = torch.cat([features_a, features_c, features_s], dim=0)
+                all_features = all_features.cpu().numpy()
+                self.draw_umap(all_features, labels, layer, phase=phase)
 
     def draw_umap(self, data, labels, layer_name: str, phase: str, n_neighbors=15, min_dist=0.1, metric="euclidean"):
 
