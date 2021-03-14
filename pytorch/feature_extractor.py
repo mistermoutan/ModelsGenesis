@@ -177,13 +177,13 @@ class FeatureExtractor:
                     continue
                 if "_a" in key:
                     features_a = features[key]
-                    labels.extend(["a" for _ in range(features_a.shape[0])])
+                    labels.extend(["green" for _ in range(features_a.shape[0])])
                 if "_c" in key:
                     features_c = features[key]
-                    labels.extend(["c" for _ in range(features_c.shape[0])])
+                    labels.extend(["blue" for _ in range(features_c.shape[0])])
                 if "_s" in key:
                     features_s = features[key]
-                    labels.extend(["s" for _ in range(features_s.shape[0])])
+                    labels.extend(["yellow" for _ in range(features_s.shape[0])])
 
             if labels == []:
                 continue
