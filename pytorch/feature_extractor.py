@@ -88,6 +88,9 @@ class FeatureExtractor:
             if layer is not None:
                 if i != layer:
                     continue
+            if os.path.isfile(os.path.join(self.feature_dir, "features_train_{}.pt".format(i))):
+                print("Features, have alreadby been extracted for {}, layer {}".format(self.task_dir, i))
+                continue
             if len(handles) > 0:
                 for handle in handles:
                     handle.remove()
@@ -105,12 +108,20 @@ class FeatureExtractor:
                 if i == 4:
                     h = self.model.down4.register_forward_hook(self.get_activation(shapes=(171, 171, 170), layer_name="down4"))
                 if i == 5:
+                    if "unet_acs_cls_only" in self.config.model.lower():
+                        continue
                     h = self.model.up1.register_forward_hook(self.get_activation(shapes=(86, 85, 85), layer_name="up1"))
                 if i == 6:
+                    if "unet_acs_cls_only" in self.config.model.lower():
+                        continue
                     h = self.model.up2.register_forward_hook(self.get_activation(shapes=(43, 43, 42), layer_name="up2"))
                 if i == 7:
+                    if "unet_acs_cls_only" in self.config.model.lower():
+                        continue
                     h = self.model.up3.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up3"))
                 if i == 8:
+                    if "unet_acs_cls_only" in self.config.model.lower():
+                        continue
                     h = self.model.up4.register_forward_hook(self.get_activation(shapes=(22, 21, 21), layer_name="up4"))
 
                 handles.append(h)
