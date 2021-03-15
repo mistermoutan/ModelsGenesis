@@ -231,7 +231,7 @@ class FeatureExtractor:
                 ax = fig.add_subplot(111, projection="3d")
                 ax.scatter(u[:, 0], u[:, 1], u[:, 2], c=labels, s=100, cmap="Spectral")
 
-            plt.gca().set_aspect("equal", "datalim")
+            plt.gca().set_aspect("auto", "datalim")
             # plt.colorbar(boundaries=np.arange(4) - 0.5).set_ticks(np.arange(3))
             make_dir(os.path.join(self.feature_plots_dir, "{}/".format(layer_name)))
             fig.savefig(
